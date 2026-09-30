@@ -75,26 +75,43 @@ Ainda em aberto:
 
 ## Linguagem
 
-Parte da sintaxe já está registrada em [04-LANGUAGE.md](04-LANGUAGE.md).
+A Etapa 8 possui especificação implementável em [18-LANGUAGE-V0-SPEC.md](18-LANGUAGE-V0-SPEC.md).
 
-Ainda em aberto:
+**Já definido para v0:**
 
-- nome;
-- extensão oficial;
-- gramática formal;
-- tipagem;
-- gerenciamento de memória;
-- VM/bytecode vs interpretação;
-- semântica de herança com `from`;
+- extensão de trabalho `.sl`;
+- gramática/sintaxe mínima;
+- tipagem inferida/dinâmica na superfície;
+- tipos básicos mínimos;
+- variáveis, globais e constantes;
+- funções e parâmetros com default;
+- múltiplos retornos;
+- `if`, `else`, `for`, listas;
+- imports;
+- categorias `@`;
+- símbolos;
+- escopo lexical;
+- semântica de `from`;
 - semântica de `modify`;
-- parâmetros opcionais definitivos;
-- namespaces;
-- módulos avançados;
-- tratamento de erros;
+- merge recursivo de estruturas;
+- conflitos explícitos para patches incompatíveis;
+- AST mínimo;
+- diagnósticos mínimos.
+
+**Ainda em aberto, mas não bloqueia a v0:**
+
+- nome definitivo da linguagem;
+- gerenciamento de memória interno;
+- VM/bytecode vs interpretação direta;
+- namespaces avançados;
+- sistema avançado de módulos/export;
 - async/coroutines;
-- FFI;
-- visibilidade;
-- generics.
+- FFI completo;
+- visibilidade avançada;
+- generics;
+- pattern matching;
+- macros/metaprogramação;
+- debugger completo.
 
 ## Mods
 
