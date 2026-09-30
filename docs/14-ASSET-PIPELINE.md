@@ -291,6 +291,10 @@ Formato-fonte principal atual:
 - GLB/GLTF;
 - fastgltf para importação.
 
+A geometria mais comum será simples e baseada em cubos/cuboids. O formato GLB/GLTF é escolhido pelo pipeline e não por exigir geometria complexa.
+
+O player base segue a estrutura geométrica/proporcional blocada do player clássico de Minecraft como referência.
+
 ### Texturas embutidas
 
 **Definido:** o pipeline de modelos deve trabalhar naturalmente com texturas embutidas dentro de GLB/GLTF.
