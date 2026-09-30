@@ -115,6 +115,10 @@ Detalhes: [14-ASSET-PIPELINE.md](14-ASSET-PIPELINE.md)
 
 ## Etapa 8 — Linguagem v0
 
+Especificação normativa: [18-LANGUAGE-V0-SPEC.md](18-LANGUAGE-V0-SPEC.md)
+
+Esta etapa **não está bloqueada** por gramática, tipagem, `from` ou `modify`; esses contratos já estão definidos para v0.
+
 - lexer;
 - parser;
 - AST;

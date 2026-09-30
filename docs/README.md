@@ -21,6 +21,7 @@ Esta pasta registra a visão atual do projeto. Ela deve ser atualizada conforme 
 - [15-ECS-ENTITIES.md](15-ECS-ENTITIES.md) — etapa 5: ECS, componentes, runtime entity IDs e systems.
 - [16-MOD-MANIFEST-LOADER.md](16-MOD-MANIFEST-LOADER.md) — etapa 6: `mod.json`, `assets.json`, dependências e fluxo do loader.
 - [17-ART-DIRECTION-MODELING.md](17-ART-DIRECTION-MODELING.md) — direção de modelagem, cuboids, player, rig e regras visuais.
+- [18-LANGUAGE-V0-SPEC.md](18-LANGUAGE-V0-SPEC.md) — especificação normativa e implementável da linguagem v0.
 
 ## Documentação para modders
 
