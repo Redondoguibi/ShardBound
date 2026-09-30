@@ -108,3 +108,23 @@ Runtime entity: #4812
 ## Critério de conclusão
 
 O v0 está pronto quando for possível criar uma entidade, adicionar Transform + Model, mover a entidade e fazer o renderer desenhá-la.
+
+
+## Player e modelo visual
+
+A entidade do player usa o mesmo sistema de componentes das demais entidades, mas seu modelo base possui uma convenção visual importante.
+
+**Definido:** a geometria/proporções do player seguem a estrutura blocada clássica do player de Minecraft como referência:
+
+```text
+Head
+Body
+LeftArm
+RightArm
+LeftLeg
+RightLeg
+```
+
+O projeto deverá fornecer rig/template próprio e estável para skins, armaduras, equipamentos, animações e mods.
+
+A hierarquia de Transform/bones precisa permitir anexar armas, itens, armaduras e VFX às partes corretas.
