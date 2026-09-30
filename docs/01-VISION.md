@@ -44,6 +44,8 @@ MODS
 - Bibliotecas externas são permitidas.
 - O jogo será 3D.
 - A identidade visual pretendida é pixel-art/3D estilizado.
+- A maior parte da geometria usa cubos/cuboids simples, em uma linguagem visual semelhante à modelagem blocada de Minecraft.
+- O player usa como referência estrutural a mesma geometria/proporções blocadas do player clássico de Minecraft; o projeto terá seu próprio template/rig e assets próprios.
 - O jogo base deverá ser relativamente pequeno.
 - Mods poderão adicionar conteúdo e alterar conteúdo já existente.
 - Mods poderão depender de outros mods.
