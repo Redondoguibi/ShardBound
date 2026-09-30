@@ -63,6 +63,14 @@ Detalhes: [13-RENDERER-D3D11.md](13-RENDERER-D3D11.md)
 
 ## Etapa 4 — Asset manager e pipeline mínimo
 
+Detalhes: [14-ASSET-PIPELINE.md](14-ASSET-PIPELINE.md)
+
+- IDs universais `namespace:path`;
+- VFS/mounts;
+- cache compilado incremental;
+- handles/lifetime;
+- dependências entre assets;
+- metadata/import settings;
 - IDs de recursos;
 - filesystem virtual/mounts;
 - GLB/GLTF;
