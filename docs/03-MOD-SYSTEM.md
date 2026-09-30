@@ -80,3 +80,26 @@ Saves que referenciem conteúdo removido exigirão política específica, ainda 
 ## C++ em mods
 
 Será possível em princípio, mas extensões nativas devem ser tratadas separadamente porque possuem riscos maiores de estabilidade e segurança.
+
+
+## Registro de assets
+
+Assets públicos do mod devem ser declarados explicitamente. Apenas colocar um arquivo em `models/`, `textures/` ou outra pasta não cria automaticamente uma API pública.
+
+Isso permite reorganizar sources sem quebrar IDs consumidos por outros mods.
+
+## Merge e replace
+
+Política definida:
+
+- operações estruturalmente combináveis podem usar merge;
+- substituições destrutivas precisam ser declaradas explicitamente;
+- conflitos incompatíveis devem gerar diagnóstico em vez de serem silenciosamente resolvidos por ordem de arquivos.
+
+A regra de prioridade entre dois replaces explícitos ainda será especificada.
+
+## Preparação no startup
+
+Quando novos/alterados mods exigirem compilação significativa, o jogo exibirá uma tela dedicada **Preparing Mods** com progresso e diagnóstico.
+
+Mods já totalmente cacheados não devem causar espera perceptível.
