@@ -395,6 +395,10 @@ A organização dos arquivos é responsabilidade do autor do mod, dentro das reg
 
 ---
 
+# Guia para autores de mods
+
+Para uma visão prática voltada a modders, veja [modding/04-SCRIPTING-AND-CONTENT.md](modding/04-SCRIPTING-AND-CONTENT.md).
+
 # Divisão de responsabilidades
 
 ```text
