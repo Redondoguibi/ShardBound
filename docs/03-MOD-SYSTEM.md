@@ -103,3 +103,28 @@ A regra de prioridade entre dois replaces explícitos ainda será especificada.
 Quando novos/alterados mods exigirem compilação significativa, o jogo exibirá uma tela dedicada **Preparing Mods** com progresso e diagnóstico.
 
 Mods já totalmente cacheados não devem causar espera perceptível.
+
+
+## Documentação pública para autores
+
+A documentação orientada a modders está em [modding/README.md](modding/README.md).
+
+Ela é o ponto de entrada recomendado para autores externos e cobre:
+
+- primeiro mod;
+- manifest;
+- assets;
+- GLB/GLTF;
+- modelagem;
+- scripting;
+- compatibilidade;
+- performance;
+- distribuição.
+
+## Direção de modelos
+
+Mods podem fornecer qualquer geometria suportada pelo pipeline, mas a identidade principal do jogo usa majoritariamente cubos/cuboids.
+
+O player segue a estrutura geométrica/proporcional blocada do player clássico de Minecraft como referência. O projeto fornecerá template próprio; autores não devem depender de arquivos internos de terceiros.
+
+Detalhes: [17-ART-DIRECTION-MODELING.md](17-ART-DIRECTION-MODELING.md).
