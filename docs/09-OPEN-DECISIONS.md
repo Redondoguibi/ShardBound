@@ -2,61 +2,111 @@
 
 Este arquivo evita fechar prematuramente decisões importantes.
 
+Para decisões já tomadas sobre a fundação técnica, veja [10-TECH-STACK.md](10-TECH-STACK.md). Para a sintaxe atual da linguagem, veja [04-LANGUAGE.md](04-LANGUAGE.md).
+
 ## Core
 
-- Windows-only inicialmente?
-- C++20, C++23 ou outra versão?
-- CMake, Meson ou outro build system?
-- arquitetura de módulos;
-- sistema de jobs/threads.
+Já definido:
+
+- Windows-only inicialmente;
+- C++20;
+- MSVC;
+- CMake + Ninja;
+- vcpkg.
+
+Ainda em aberto:
+
+- arquitetura detalhada dos módulos internos;
+- sistema de jobs/threads;
+- política de alocação de memória;
+- logging;
+- profiling.
 
 ## Rendering
 
-- Direct3D 12, Vulkan ou camada de abstração?
-- biblioteca de janela/input;
+Baseline definida:
+
+- Direct3D 11;
+- SDL3;
+- camada própria de abstração do renderer.
+
+Ainda em aberto:
+
 - formato de shaders;
 - pipeline de materiais;
 - iluminação;
-- estética pixel-art exata.
+- sombras;
+- pós-processamento;
+- estética pixel-art exata;
+- estratégia de batching/instancing;
+- resolução dinâmica/upscaling;
+- eventual backend D3D12.
 
 ## Física
 
-- Jolt;
-- PhysX;
-- outra biblioteca;
-- solução própria para partes específicas.
+Baseline definida:
+
+- Jolt Physics através de uma API própria.
+
+Ainda em aberto:
+
+- política de layers;
+- character controller;
+- integração física/ECS;
+- determinismo;
+- parâmetros de timestep.
 
 ## Entidades
 
-- ECS puro;
-- composição por componentes;
-- objetos tradicionais;
-- arquitetura híbrida.
+Baseline definida:
+
+- EnTT por baixo;
+- API própria de entidades/componentes por cima.
+
+Ainda em aberto:
+
+- modelo exato de componentes;
+- registries;
+- lifecycle;
+- serialização;
+- systems/schedulers;
+- componentes definidos por mods;
+- fronteira entre ECS e objetos tradicionais.
 
 ## Linguagem
 
+Parte da sintaxe já está registrada em [04-LANGUAGE.md](04-LANGUAGE.md).
+
+Ainda em aberto:
+
 - nome;
-- extensão de arquivo;
-- sintaxe;
+- extensão oficial;
+- gramática formal;
 - tipagem;
 - gerenciamento de memória;
 - VM/bytecode vs interpretação;
-- classes/componentes;
-- módulos;
-- erros;
+- semântica de herança com `from`;
+- semântica de `modify`;
+- parâmetros opcionais definitivos;
+- namespaces;
+- módulos avançados;
+- tratamento de erros;
 - async/coroutines;
-- FFI.
+- FFI;
+- visibilidade;
+- generics.
 
 ## Mods
 
 - extensão/pacote;
-- estrutura obrigatória;
+- estrutura mínima obrigatória;
 - assinatura/verificação;
 - permissões;
 - load order;
 - patch/override;
 - isolamento;
-- dependências quebradas;
+- conflitos;
+- comportamento de dependências quebradas;
 - versionamento de API.
 
 ## C++ nativo
@@ -70,13 +120,21 @@ Este arquivo evita fechar prematuramente decisões importantes.
 
 ## Assets
 
-- GLB/GLTF oficial?
-- formatos de textura;
+Baseline atual:
+
+- GLB/GLTF;
+- fastgltf;
+- DirectXTex.
+
+Ainda em aberto:
+
+- formatos finais de textura;
 - formatos de áudio;
 - formato de mapas;
 - compressão;
 - cache;
-- shaders de mods.
+- shaders de mods;
+- formato interno compilado.
 
 ## Mundo
 
@@ -84,8 +142,9 @@ Este arquivo evita fechar prematuramente decisões importantes.
 - transição entre áreas;
 - streaming;
 - mapas construídos;
-- procedural;
-- persistência.
+- geração procedural;
+- persistência;
+- formato de scene/map.
 
 ## Save
 
@@ -94,7 +153,8 @@ Este arquivo evita fechar prematuramente decisões importantes.
 - mod atualizado;
 - migrações;
 - dados órfãos;
-- rollback.
+- rollback;
+- versionamento de save.
 
 ## Ferramentas
 
@@ -107,4 +167,14 @@ Este arquivo evita fechar prematuramente decisões importantes.
 
 ---
 
-A próxima etapa deve atacar essas decisões por dependência: primeiro **runtime/plataforma**, depois **asset model**, depois **mod model**, e só então os detalhes completos da linguagem.
+A sequência recomendada agora é:
+
+```text
+Runtime mínimo
+→ Asset model
+→ Entity/component API
+→ Mod model
+→ Mod loader
+→ Linguagem formal
+→ Gameplay
+```
