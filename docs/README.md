@@ -20,6 +20,18 @@ Esta pasta registra a visão atual do projeto. Ela deve ser atualizada conforme 
 - [14-ASSET-PIPELINE.md](14-ASSET-PIPELINE.md) — etapa 4: IDs, VFS, importação, cache compilado e lifetime de assets.
 - [15-ECS-ENTITIES.md](15-ECS-ENTITIES.md) — etapa 5: ECS, componentes, runtime entity IDs e systems.
 - [16-MOD-MANIFEST-LOADER.md](16-MOD-MANIFEST-LOADER.md) — etapa 6: `mod.json`, `assets.json`, dependências e fluxo do loader.
+- [17-ART-DIRECTION-MODELING.md](17-ART-DIRECTION-MODELING.md) — direção de modelagem, cuboids, player, rig e regras visuais.
+
+## Documentação para modders
+
+Autores externos devem começar em:
+
+- [modding/README.md](modding/README.md) — índice do guia profissional de modding.
+- [modding/01-GETTING-STARTED.md](modding/01-GETTING-STARTED.md) — primeiro mod.
+- [modding/02-MOD-STRUCTURE-AND-MANIFEST.md](modding/02-MOD-STRUCTURE-AND-MANIFEST.md) — estrutura, IDs e manifest.
+- [modding/03-ASSETS-AND-MODELS.md](modding/03-ASSETS-AND-MODELS.md) — GLB/GLTF, texturas embutidas e modelagem.
+- [modding/04-SCRIPTING-AND-CONTENT.md](modding/04-SCRIPTING-AND-CONTENT.md) — scripting.
+- [modding/05-PROFESSIONAL-MOD-PRACTICES.md](modding/05-PROFESSIONAL-MOD-PRACTICES.md) — práticas profissionais.
 
 ## Regra de documentação
 
