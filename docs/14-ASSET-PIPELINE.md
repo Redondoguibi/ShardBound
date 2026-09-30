@@ -336,9 +336,20 @@ desert:scarab
 └─ animation/attack
 ```
 
-Esses sub-recursos são detalhes internos por padrão. Eles só precisam virar IDs públicos separados se a API de modding exigir referência/override individual.
+**Definido:** sub-recursos de modelos poderão ser endereçados individualmente por mods avançados.
 
-Essa política de exposição ainda precisa ser decidida.
+Exemplos conceituais:
+
+```text
+desert:scarab/mesh/body
+desert:scarab/material/body
+desert:scarab/texture/Body
+desert:scarab/animation/attack
+```
+
+Isso permite que outro mod altere apenas uma textura, material, mesh ou animação embutida sem substituir o GLB/GLTF inteiro.
+
+O asset principal continua sendo um único modelo do ponto de vista do autor, enquanto o compilador expõe sub-recursos internos quando necessário.
 
 O runtime não precisa parsear todo GLB/GLTF novamente a cada carregamento se existir cache compilado válido.
 
@@ -596,7 +607,6 @@ erro de referência gera diagnóstico claro
 - formato final de pacote de mod;
 - estratégia exata de compressão;
 - prioridade quando dois mods declaram replaces incompatíveis;
-- se sub-recursos de GLB/GLTF serão publicamente endereçáveis por outros mods;
 - carregamento assíncrono v1 vs etapa posterior;
 - formato interno de áudio;
 - formato de mapas/scenes.
