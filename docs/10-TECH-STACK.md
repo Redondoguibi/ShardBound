@@ -72,6 +72,27 @@ D3D11 backend
 
 Um backend D3D12 poderá ser criado futuramente sem exigir reescrever sistemas superiores.
 
+### Pipeline gráfico
+
+Baseline atual:
+
+- forward renderer;
+- HLSL;
+- feature level 11_0 ou superior;
+- DXGI flip-model swap chain;
+- double buffering ou superior;
+- resolução interna separada da resolução da janela;
+- frustum culling;
+- distance culling;
+- instancing;
+- render queues com sorting;
+- material system pequeno;
+- iluminação principal simples;
+- shadow map configurável;
+- pós-processamento leve.
+
+Deferred rendering, TAA pesado, SSR, volumetria cara e ray tracing não fazem parte da baseline inicial.
+
 ## Entidades
 
 **Baseline atual:**
