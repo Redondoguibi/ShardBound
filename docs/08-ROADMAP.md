@@ -2,113 +2,171 @@
 
 O objetivo é validar a arquitetura antes de criar um jogo completo.
 
-## Fase 0 — Especificação
+## Etapa 1 — Skeleton C++
 
-- definir requisitos do runtime;
-- escolher bibliotecas fundamentais;
-- escolher sistema de build;
-- definir estrutura do repositório;
-- decidir arquitetura de entidades;
-- especificar formato de mod;
-- desenhar linguagem v0.
+Detalhes: [11-RUNTIME-SKELETON.md](11-RUNTIME-SKELETON.md)
 
-**Resultado:** especificação mínima implementável.
+- C++20 / MSVC;
+- CMake + Ninja;
+- vcpkg;
+- estrutura modular do repositório;
+- `Application`;
+- loop mínimo;
+- logging;
+- lifecycle;
+- builds Debug/Release.
 
-## Fase 1 — Runtime mínimo
+**Resultado:** executável C++ funcional com fundação modular, ainda sem janela real.
 
-Aplicação C++ capaz de:
+## Etapa 2 — Janela, input e game loop
 
-- abrir janela;
-- processar input;
-- renderizar uma cena 3D simples;
-- carregar uma câmera;
-- importar um modelo;
-- carregar textura;
-- mover um objeto.
+Detalhes: [12-WINDOW-INPUT-GAMELOOP.md](12-WINDOW-INPUT-GAMELOOP.md)
 
-**Resultado:** sandbox 3D própria.
+- SDL3;
+- janela;
+- keyboard/mouse;
+- estrutura de gamepad;
+- eventos próprios;
+- ações de input;
+- delta time;
+- fixed update a 60 Hz;
+- frame limiter;
+- foco/minimização.
 
-## Fase 2 — Asset pipeline
+**Resultado:** runtime com janela e loop estável, ainda sem renderização 3D.
+
+## Etapa 3 — Renderer D3D11
+
+- device/context;
+- swap chain;
+- backbuffer;
+- render targets;
+- resize;
+- clear/present;
+- shaders;
+- buffers;
+- primeira geometria;
+- integração com VSync;
+- abstração própria sobre D3D11.
+
+**Resultado:** primeira cena/gráfico desenhado pela engine.
+
+## Etapa 4 — Asset manager e pipeline mínimo
 
 - IDs de recursos;
 - filesystem virtual/mounts;
-- importação GLB/GLTF;
+- GLB/GLTF;
 - texturas;
-- áudio;
 - cache;
 - diagnósticos.
 
 **Resultado:** conteúdo externo vira recurso de runtime.
 
-## Fase 3 — Mod loader v0
+## Etapa 5 — ECS
 
+- EnTT encapsulado;
+- Entity IDs;
+- componentes básicos;
+- Transform;
+- lifecycle;
+- systems.
+
+**Resultado:** objetos de jogo existem como entidades/componentes.
+
+## Etapa 6 — Mod manifest e discovery
+
+- estrutura mínima de mod;
+- `mod.json`;
 - descobrir mods;
-- ler manifest;
+- IDs/namespaces;
+- versões;
+- dependências.
+
+**Resultado:** runtime identifica pacotes externos.
+
+## Etapa 7 — Mod loader
+
 - resolver ordem;
-- registrar assets;
-- dependências simples;
-- mensagens de erro.
+- montar assets;
+- registries;
+- erros;
+- dependências ausentes;
+- ciclo de vida.
 
-**Resultado:** um pacote externo modifica o conteúdo carregado.
+**Resultado:** um mod consegue registrar conteúdo externo.
 
-## Fase 4 — Linguagem v0
-
-Começar pequeno:
+## Etapa 8 — Linguagem v0
 
 - lexer;
 - parser;
 - AST;
-- tipos básicos;
+- variáveis;
 - funções;
-- módulos;
-- chamadas para APIs do jogo;
-- compilação/interpretação mínima.
+- `if`;
+- `for`;
+- listas;
+- `import`;
+- categorias `@`;
+- `from`;
+- `modify`;
+- chamadas de API do jogo.
 
 **Resultado:** um mod executa lógica sem C++.
 
-## Fase 5 — Gameplay framework
+## Etapa 9 — Bridge linguagem ↔ runtime
 
-Criar apenas o mínimo:
+- `spawn(...)`;
+- entidades;
+- registries;
+- eventos;
+- assets;
+- chamadas do runtime;
+- diagnósticos estruturados.
+
+**Resultado:** scripts controlam conteúdo real do jogo.
+
+## Etapa 10 — Primeiro mod funcional
+
+Vertical slice:
+
+- um modelo próprio;
+- uma entidade simples;
+- registro via mod;
+- script;
+- spawn;
+- asset carregado;
+- conteúdo visível no runtime.
+
+**Resultado:** provar o workflow completo de mod.
+
+## Etapa 11 — Gameplay framework
 
 - player;
 - câmera;
 - movimento;
-- entidade;
 - health;
 - dano;
 - item;
 - inventário;
-- interação.
+- interação;
+- física Jolt;
+- áudio miniaudio.
 
-Tudo exposto ao sistema de mods.
+Tudo exposto através das APIs próprias do runtime.
 
-## Fase 6 — Mod vertical slice
-
-Criar um mod oficial de teste com:
-
-- pequena área;
-- inimigo;
-- item;
-- equipamento;
-- evento;
-- assets próprios;
-- lógica própria.
-
-**Resultado:** provar o workflow completo.
-
-## Fase 7 — Extensibilidade avançada
+## Etapa 12 — Extensibilidade avançada
 
 - hooks;
 - eventos;
 - patch/override;
 - componentes customizados;
-- extensões nativas C++;
-- save compatível com mods;
-- ferramentas CLI completas.
+- C++ nativo;
+- saves compatíveis com mods;
+- ferramentas CLI.
 
-## Fase 8 — Jogo
+## Etapa 13 — Jogo
 
-Somente depois da plataforma funcional:
+Somente depois da plataforma estar funcional:
 
 - hub;
 - combate real;
