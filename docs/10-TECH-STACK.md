@@ -21,12 +21,43 @@ A compatibilidade com outras plataformas não é prioridade nesta fase.
 - Ninja
 - vcpkg
 
+## Janela e input
+
+**Baseline atual:**
+
+- SDL3.
+
+SDL3 será usado para:
+
+- criação de janela;
+- eventos de janela;
+- teclado;
+- mouse;
+- gamepad.
+
+Gameplay e mods não devem depender diretamente de SDL3.
+
+A camada pública deve usar abstrações próprias de janela, eventos, teclas, e principalmente ações de gameplay.
+
+## Game loop
+
+**Definido como baseline:**
+
+- update variável com `deltaTime`;
+- fixed update separado;
+- fixed update inicial de 60 Hz;
+- renderização desacoplada da simulação;
+- frame limiter configurável;
+- estrutura preparada para VSync;
+- tratamento explícito de foco e minimização.
+
+A velocidade do jogo não pode depender do FPS.
+
 ## Renderização
 
 **Baseline atual:**
 
 - Direct3D 11 como backend inicial.
-- SDL3 para janela/input.
 - O renderer deve possuir uma abstração própria para evitar acoplamento de gameplay/mods diretamente ao D3D11.
 
 Arquitetura desejada:
@@ -39,7 +70,7 @@ Renderer API do projeto
 D3D11 backend
 ```
 
-Um backend D3D12 poderá ser criado futuramente sem exigir reescrever os sistemas de gameplay.
+Um backend D3D12 poderá ser criado futuramente sem exigir reescrever sistemas superiores.
 
 ## Entidades
 
@@ -91,6 +122,7 @@ Bibliotecas externas são detalhes de implementação.
 Nunca:
 
 ```text
+Mod → SDL3
 Mod → EnTT
 Mod → Jolt
 Mod → DirectX
@@ -99,20 +131,30 @@ Mod → DirectX
 Sempre:
 
 ```text
-Mod
- ↓
+Mod / Gameplay
+      ↓
 APIs estáveis do jogo
- ↓
+      ↓
 implementação/bibliotecas
 ```
 
-Essa separação é essencial para permitir trocar bibliotecas no futuro sem quebrar o ecossistema de mods.
+Essa separação permite trocar bibliotecas no futuro sem quebrar o ecossistema de mods.
 
 ## Desempenho
 
 O projeto priorizará eficiência desde o início.
 
-A meta exata de hardware/FPS ainda deve ser formalizada, mas a arquitetura deverá suportar presets gráficos e evitar depender de recursos de GPU caros para o estilo visual principal.
+Requisitos atuais:
+
+- evitar busy loops;
+- reduzir trabalho quando a janela estiver minimizada;
+- fixed timestep estável;
+- render desacoplado;
+- suporte a frame limiter;
+- presets gráficos futuramente;
+- evitar depender de efeitos de GPU caros para a identidade visual principal.
+
+A meta numérica de hardware/FPS ainda será formalizada.
 
 ## Status
 
