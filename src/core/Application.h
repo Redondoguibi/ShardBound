@@ -2,6 +2,7 @@
 #include "core/GameLoop.h"
 #include "platform/WindowSystem.h"
 #include "platform/InputSystem.h"
+#include "renderer/Renderer.h"
 namespace game {
 class Application {
 public:
@@ -16,6 +17,10 @@ private:
     WindowConfig windowConfig_;
     std::unique_ptr<WindowSystem> window_;
     InputSystem input_;
+    RenderConfig renderConfig_;
+    std::unique_ptr<Renderer> renderer_;
+    MeshHandle demoMesh_;
+    std::filesystem::path root_;
     bool initialized_ = false;
 };
 }

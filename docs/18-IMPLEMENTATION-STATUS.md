@@ -25,6 +25,21 @@ VSync será conectado ao present na etapa 3. Shutdown destrói a janela e SDL.
 
 ## Build e execução
 
+## Etapa 3 — renderer v0
+
+D3D11 com feature level 11+, flip-model double buffer, debug layer quando
+disponível, resize, color/depth, HLSL, câmera e mesh indexado. Handles próprios
+encapsulam COM. Material lit/unlit, textura RGBA com nearest/linear e sRGB,
+render scale independente da janela e `--no-vsync`. Contadores de draws,
+triângulos e tempo CPU. Um cubo técnico valida a renderização inicial.
+
+O teste de GPU verifica pixels desenhados e resize com scale de 50%. Os critérios
+v0 do documento 13 são atendidos; sombras, instancing, culling, partículas,
+transparência, cache de shaders e perfis de área permanecem trabalho posterior
+da direção completa do renderer, sem alegação de implementação.
+
+## Build e execução
+
 Requisitos: Visual Studio 2022 com C++ x64 e Windows SDK, CMake >= 3.25, Ninja,
 vcpkg inicializado e variável `VCPKG_ROOT` apontando para ele.
 
@@ -47,7 +62,8 @@ adicionadas somente na etapa em que forem utilizadas.
 
 ## Limites do planejamento
 
-A etapa 8 exige formalizar blocos/indentação, tipos, execução, `from` e `modify`.
-Os exemplos publicados não definem essas regras e não serão substituídos por uma
-linguagem incompatível. Saves, ABI nativa, cenas e gameplay final também precisam
-de especificações adicionais antes de serem considerados implementados.
+A especificação normativa da linguagem v0 foi publicada em
+[18-LANGUAGE-V0-SPEC.md](18-LANGUAGE-V0-SPEC.md) e incorporada do remoto durante
+a implementação. Ela substitui as dúvidas anteriores de gramática/tipagem.
+Saves, ABI nativa, cenas e gameplay final ainda precisam de especificações
+adicionais antes de serem considerados implementados.
