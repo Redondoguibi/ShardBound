@@ -25,6 +25,18 @@ O pipeline poderá extrair esses elementos para sub-recursos internos otimizados
 
 GLTF textual também poderá ser aceito quando suas imagens estiverem embutidas no próprio asset/formato suportado pelo importador.
 
+## Geometria e modelagem
+
+**Definido:** a maioria dos modelos é construída principalmente a partir de cubos/cuboids simples, mesmo sendo distribuída em GLB/GLTF.
+
+O modelo base do player segue a mesma estrutura geométrica/proporcional blocada do player clássico de Minecraft como referência de forma.
+
+O projeto deverá manter seu próprio template/rig e assets próprios para uso oficial e por modders.
+
+Modelos não cúbicos continuam permitidos quando a direção artística exigir.
+
+Veja [17-ART-DIRECTION-MODELING.md](17-ART-DIRECTION-MODELING.md).
+
 ## Pixel-art 3D
 
 **Definido:** a estética pixel-art vem principalmente dos assets e materiais, enquanto a imagem final continua sendo uma renderização 3D normal.
