@@ -11,7 +11,19 @@ vcpkg, logging, Application com shutdown idempotente e loop com limite de frames
 `--frames N` permite encerrar smoke tests sem intervenção; sem essa opção o loop
 continua até receber uma solicitação de encerramento.
 
-## Build
+## Etapa 2
+
+SDL3 encapsulado em WindowSystem, janela 1280×720, eventos próprios, teclado,
+mouse e conexão/desconexão de gamepads. InputSystem aceita ações registradas por
+nome e bindings substituíveis. Foco perdido limpa botões; minimização suspende
+simulação/render e aguarda 50 ms por iteração.
+
+GameLoop separa poll/fixed/update/render: fixed update de 60 Hz, delta limitado
+a 250 ms para evitar recuperação ilimitada após travamentos, interpolação e
+frame limiter (`--fps 0|30|60|120|144|...`). `--hidden` atende testes de startup.
+VSync será conectado ao present na etapa 3. Shutdown destrói a janela e SDL.
+
+## Build e execução
 
 Requisitos: Visual Studio 2022 com C++ x64 e Windows SDK, CMake >= 3.25, Ninja,
 vcpkg inicializado e variável `VCPKG_ROOT` apontando para ele.
