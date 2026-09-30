@@ -1,6 +1,8 @@
 #include "core/Application.h"
 #include "core/Log.h"
 #include "ecs/RenderSystem.h"
+#include "mods/ModLoader.h"
+#include "game/PreparationScreen.h"
 #include <charconv>
 #include <exception>
 #include <string_view>
@@ -47,6 +49,15 @@ bool Application::initialize() {
     auto cube=world_->create("cube");
     world_->add(cube,TransformComponent{});
     world_->add(cube,ModelComponent{AssetId("core:cube"),assets_->model(AssetId("core:cube"))});
+    PreparationScreen preparation(*renderer_);
+    ModLoader loader(vfs_,*assets_);
+    loader.load(root_/"mods",[&](std::string_view mod,size_t done,size_t total) {
+        for (const auto& event:window_->pollEvents()) {
+            if (event.type==EventType::Closed) throw std::runtime_error("Startup cancelled");
+            if (event.type==EventType::Resized) renderer_->resize(event.width,event.height);
+        }
+        if (!window_->minimized()) preparation.show(mod,done,total);
+    });
     initialized_ = true;
     LOG_INFO("CORE", "Runtime initialized");
     return true;

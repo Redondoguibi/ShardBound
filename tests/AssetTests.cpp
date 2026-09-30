@@ -3,6 +3,7 @@
 #include "assets/Fingerprint.h"
 #include "assets/ModelCompiler.h"
 #include "platform/WindowSystem.h"
+#include "mods/ModLoader.h"
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -35,6 +36,10 @@ int main() {
         require(renderer.stats().triangles==12,"Imported GLB was not drawn");
         model.reset(); model=assets.model(game::AssetId("core:cube"));
         require(assets.cacheHits()>=2,"Compiled model was not reused");
+        game::ModLoader loader(vfs,assets);
+        const auto report=loader.load("mods");
+        require(report.mods.size()==1 && report.registeredAssets==1 && report.diagnostics.empty(),"Mod discovery/load failed");
+        require(bool(assets.model(game::AssetId("example:cube"))),"External model registry did not load");
         assets.unmount("core"); rejected = false;
         try { assets.texture(game::AssetId("core:checker")); } catch (...) { rejected = true; }
         require(rejected,"Removed namespace still resolves");

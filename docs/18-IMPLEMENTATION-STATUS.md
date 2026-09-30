@@ -53,8 +53,6 @@ animações, sub-recursos públicos e dependências de arquivos externos fica pe
 O teste importa o cubo original gerado por `tools/generate-demo-model.py`, valida
 textura embutida, desenha na GPU e verifica reutilização do cache compilado.
 
-## Build e execução
-
 ## Etapa 5 — ECS v0
 
 EnTT é privado à implementação de World. IDs de runtime não são reutilizados;
@@ -62,6 +60,22 @@ Name/Active/Transform/Model usam API própria add/get/has/remove. Hierarquia
 parent/child impede ciclos, compõe transforms e desanexa filhos ao destruir pai
 (preservando transform local). RenderSystem coleta modelos ativos. O runtime
 agora desenha uma entidade com GLB importado, sem tipos EnTT no gameplay.
+
+## Build e execução
+
+## Etapas 6–7 — manifest e loader
+
+Discovery ordenado, manifest `api: 0.1`, namespaces reservados/duplicados,
+versões numéricas (2–3 componentes), dependências `id` ou `id >= 1.0.0`
+(também `==`, `<`, `<=`, `>`), topologia e diagnóstico de ciclos. Dependências
+ausentes/incompatíveis não descartam assets independentes. IDs duplicados
+excluem ambos os pacotes; ciclos impedem inicialização de scripts envolvidos.
+
+`assets.json` suporta registries `models` e `textures`; conteúdo é registrado
+explicitamente no VFS/AssetManager, validado e cacheado. Falhas são isoladas por
+asset. Replaces implícitos e import settings não implementados são rejeitados.
+Uma tela dedicada Preparing Mods exibe pacote/progresso; logs preservam detalhes
+dos erros. Scripts serão conectados nas etapas 8–9.
 
 ## Build e execução
 

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Runtime v0 mod manifest", "type": "object",
+  "required": ["id", "name", "version", "api"],
+  "properties": {
+    "id": {"type":"string","pattern":"^[a-z0-9_-]+$","not":{"const":"core"}},
+    "name": {"type":"string","minLength":1},
+    "version": {"type":"string","pattern":"^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"},
+    "api": {"const":"0.1"}, "entry": {"type":"string"},
+    "dependencies": {"type":"array","items":{"type":"string","pattern":"^[a-z0-9_-]+( (>=|<=|==|>|<) [0-9]+\\.[0-9]+(\\.[0-9]+)?)?$"}},
+    "optional_dependencies": {"$ref":"#/properties/dependencies"}
+  }
+}
