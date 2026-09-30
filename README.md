@@ -60,4 +60,6 @@ Remover um mod e reiniciar o jogo remove o conteúdo fornecido por ele, respeita
 
 Veja [docs/README.md](docs/README.md).
 
+Para criar mods, comece pelo [Guia oficial de modding](docs/modding/README.md).
+
 > Estado atual: planejamento inicial. Muitas decisões técnicas continuam deliberadamente abertas.
