@@ -14,6 +14,8 @@ Esta pasta registra a visão atual do projeto. Ela deve ser atualizada conforme 
 - [08-ROADMAP.md](08-ROADMAP.md) — ordem de implementação sugerida.
 - [09-OPEN-DECISIONS.md](09-OPEN-DECISIONS.md) — decisões ainda não fechadas.
 - [10-TECH-STACK.md](10-TECH-STACK.md) — baseline técnica atual do runtime.
+- [11-RUNTIME-SKELETON.md](11-RUNTIME-SKELETON.md) — etapa 1: skeleton C++, estrutura de pastas, lifecycle, logging e build.
+- [12-WINDOW-INPUT-GAMELOOP.md](12-WINDOW-INPUT-GAMELOOP.md) — etapa 2: SDL3, janela, input, eventos e game loop.
 
 ## Regra de documentação
 
@@ -23,3 +25,7 @@ Evitar transformar hipótese em decisão. Cada documento diferencia:
 - **Direção preferida / baseline** — escolha atual, mas substituível se houver motivo técnico.
 - **Provisório** — aceito para continuar o desenho, mas precisa ser revisitado.
 - **Em aberto** — precisa ser decidido.
+
+## Regra operacional
+
+A partir de agora, decisões técnicas tomadas durante o planejamento devem ser registradas no repositório no mesmo fluxo da conversa, em vez de ficarem apenas no chat.
