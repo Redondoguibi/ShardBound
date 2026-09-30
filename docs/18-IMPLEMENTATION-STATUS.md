@@ -23,8 +23,6 @@ a 250 ms para evitar recuperação ilimitada após travamentos, interpolação e
 frame limiter (`--fps 0|30|60|120|144|...`). `--hidden` atende testes de startup.
 VSync será conectado ao present na etapa 3. Shutdown destrói a janela e SDL.
 
-## Build e execução
-
 ## Etapa 3 — renderer v0
 
 D3D11 com feature level 11+, flip-model double buffer, debug layer quando
@@ -37,6 +35,23 @@ O teste de GPU verifica pixels desenhados e resize com scale de 50%. Os critéri
 v0 do documento 13 são atendidos; sombras, instancing, culling, partículas,
 transparência, cache de shaders e perfis de área permanecem trabalho posterior
 da direção completa do renderer, sem alegação de implementação.
+
+## Etapa 4 — assets v0
+
+AssetId, VFS com mounts e contenção de paths, diagnóstico estruturado, cache
+SHA-256 (source + versão do compilador + settings), publicação atômica do cache,
+handles compartilhados e descarregamento quando o último usuário libera o handle.
+PNG é convertido por DirectXTex e cacheado em DDS; GLB/GLTF autocontido é importado
+por fastgltf e cacheado em CBOR com vértices, índices, transforms, materiais e
+pixels embutidos. O cache não altera sources. nlohmann-json é dependência privada
+para serialização/validação, não integra a API de gameplay.
+
+Escopo do importador atual: triângulos estáticos, POSITION/NORMAL, TEXCOORD_0 para
+texturas, material opaco. Rejeita skins/animações e arquivos externos, com erro
+claro. GLTF com data URI e GLB com bufferView são aceitos. Suporte completo a
+animações, sub-recursos públicos e dependências de arquivos externos fica pendente.
+O teste importa o cubo original gerado por `tools/generate-demo-model.py`, valida
+textura embutida, desenha na GPU e verifica reutilização do cache compilado.
 
 ## Build e execução
 

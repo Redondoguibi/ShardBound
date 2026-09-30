@@ -3,6 +3,7 @@
 #include "platform/WindowSystem.h"
 #include "platform/InputSystem.h"
 #include "renderer/Renderer.h"
+#include "assets/AssetManager.h"
 namespace game {
 class Application {
 public:
@@ -21,6 +22,9 @@ private:
     std::unique_ptr<Renderer> renderer_;
     MeshHandle demoMesh_;
     std::filesystem::path root_;
+    VirtualFileSystem vfs_;
+    std::unique_ptr<AssetManager> assets_;
+    TextureHandle demoTexture_;
     bool initialized_ = false;
 };
 }

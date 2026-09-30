@@ -41,6 +41,10 @@ bool Application::initialize() {
     window_ = std::make_unique<WindowSystem>(windowConfig_);
     renderer_ = std::make_unique<Renderer>(window_->nativeHandle(),window_->width(),window_->height(),root_ / "assets/core/shaders/forward.hlsl", renderConfig_);
     demoMesh_ = createDemoCube(*renderer_);
+    vfs_.mount("core",root_ / "assets/core");
+    assets_ = std::make_unique<AssetManager>(vfs_,*renderer_,root_ / "user/cache");
+    assets_->registerTexture({AssetId("core:checker"),"textures/checker.png"});
+    demoTexture_ = assets_->texture(AssetId("core:checker"));
     initialized_ = true;
     LOG_INFO("CORE", "Runtime initialized");
     return true;
@@ -60,7 +64,7 @@ void Application::run() {
     };
     callbacks.suspended = [&] { return window_->minimized(); };
     callbacks.render = [&](double) {
-        RenderItem item{demoMesh_,{{0.25f,0.8f,0.65f,1},{},false},{}};
+        RenderItem item{demoMesh_,{{0.25f,0.8f,0.65f,1},demoTexture_,false},{}};
         renderer_->render({},std::span(&item,1)); renderer_->present();
     };
     loop_.run(config_, callbacks);
@@ -68,6 +72,9 @@ void Application::run() {
 void Application::shutdown() noexcept {
     loop_.stop();
     demoMesh_.reset();
+    demoTexture_.reset();
+    assets_.reset();
+    vfs_.unmount("core");
     renderer_.reset();
     window_.reset();
     if (!initialized_) return;
