@@ -187,6 +187,30 @@ O VFS deve esconder detalhes de onde um arquivo está fisicamente armazenado.
 
 No futuro isso também permitirá mods distribuídos como pastas ou pacotes/arquivos sem alterar as APIs de gameplay.
 
+## Registro explícito de assets
+
+**Definido:** assets públicos de um mod não são registrados automaticamente apenas porque um arquivo foi colocado em uma pasta.
+
+O autor declara explicitamente o Asset ID e seu source.
+
+Exemplo conceitual:
+
+```json
+{
+  "models": {
+    "desert:scarab": {
+      "source": "models/scarab.glb"
+    }
+  }
+}
+```
+
+Isso evita que nomes/pastas virem API pública por acidente e permite reorganizar arquivos sem quebrar outros mods.
+
+A forma exata do arquivo de declaração ainda será definida; pode ser parte do manifest ou um arquivo de assets separado.
+
+Arquivos internos que pertencem a um asset composto não precisam necessariamente ser registrados como assets públicos independentes.
+
 ## Pipeline de descoberta
 
 Ao iniciar:
@@ -198,7 +222,9 @@ read manifests
 ↓
 mount sources
 ↓
-discover/register asset metadata
+read explicit asset declarations
+↓
+register asset metadata
 ↓
 compare fingerprints/cache
 ↓
@@ -265,6 +291,25 @@ Formato-fonte principal atual:
 - GLB/GLTF;
 - fastgltf para importação.
 
+### Texturas embutidas
+
+**Definido:** o pipeline de modelos deve trabalhar naturalmente com texturas embutidas dentro de GLB/GLTF.
+
+A intenção principal é que um asset de modelo possa carregar em um único source:
+
+```text
+model.glb
+├─ meshes
+├─ materials
+├─ embedded textures
+├─ skeleton
+└─ animations
+```
+
+O autor não deve ser obrigado a manter texturas do modelo em arquivos externos separados.
+
+Para GLTF textual, o importador deverá aceitar imagens realmente embutidas (por exemplo via buffer/data URI) quando o arquivo utilizar essa forma. GLB é o formato mais conveniente para um pacote único.
+
 O compilador poderá extrair:
 
 - vertex/index data;
@@ -274,9 +319,28 @@ O compilador poderá extrair:
 - skinning;
 - animações;
 - bounds;
-- referências a texturas.
+- texturas/imagens embutidas.
 
-O runtime não precisa parsear todo GLB novamente a cada carregamento se existir cache compilado válido.
+No cache compilado, essas texturas podem virar sub-recursos independentes para upload, streaming e deduplicação interna, mesmo que para o modder continuem pertencendo ao modelo.
+
+### Sub-recursos do modelo
+
+Direção provisória:
+
+```text
+desert:scarab
+├─ mesh/body
+├─ material/body
+├─ texture/albedo
+├─ texture/emissive
+└─ animation/attack
+```
+
+Esses sub-recursos são detalhes internos por padrão. Eles só precisam virar IDs públicos separados se a API de modding exigir referência/override individual.
+
+Essa política de exposição ainda precisa ser decidida.
+
+O runtime não precisa parsear todo GLB/GLTF novamente a cada carregamento se existir cache compilado válido.
 
 ## Texturas
 
@@ -312,23 +376,40 @@ O formato interno exato será decidido quando a etapa de áudio for implementada
 
 ## Metadata/import settings
 
-Assets podem precisar de configuração além do próprio arquivo.
+Assets precisam ser declarados explicitamente e podem receber configuração além do próprio arquivo.
 
 Exemplo conceitual:
 
 ```json
 {
   "id": "desert:scarab",
-  "source": "textures/scarab.png",
-  "filter": "nearest",
-  "srgb": true,
-  "mipmaps": true
+  "type": "model",
+  "source": "models/scarab.glb",
+  "import": {
+    "embedded_textures": true,
+    "texture_filter": "nearest",
+    "mipmaps": true
+  }
 }
 ```
 
-O formato final pode ser JSON, manifest parcial ou outro arquivo declarativo.
+Outro asset pode ser uma textura independente:
 
-A meta é evitar depender apenas de convenções mágicas de pasta.
+```json
+{
+  "id": "desert:ui_icon",
+  "type": "texture",
+  "source": "textures/ui/icon.png",
+  "import": {
+    "filter": "nearest",
+    "srgb": true
+  }
+}
+```
+
+O formato final pode ser JSON, parte do manifest ou outro arquivo declarativo.
+
+A meta é que o que vira API pública do mod seja explícito, e não consequência acidental da organização de pastas.
 
 ## Dependências entre assets
 
@@ -388,6 +469,56 @@ Quando necessário:
 - CPU conversion
 
 podem acontecer fora da thread principal, enquanto criação/upload final de certos recursos respeita as regras do renderer.
+
+## Conflitos, merge e replace
+
+**Definido:** o sistema seguirá uma política híbrida de **B + C**:
+
+1. substituição destrutiva precisa ser declarada explicitamente;
+2. alterações naturalmente combináveis podem ser mescladas quando a semântica for segura e definida.
+
+Exemplos:
+
+```text
+append loot entry       → merge possível
+add event listener      → merge possível
+add component metadata  → merge possível
+
+replace model            → explícito
+replace shader           → explícito
+replace complete entity  → explícito
+```
+
+O loader não deve escolher silenciosamente um vencedor apenas por ordem de arquivos.
+
+Se dois mods fizerem replaces incompatíveis no mesmo alvo, o loader deve detectar o conflito e mostrar diagnóstico claro. A regra final de resolução/prioridade ainda será definida.
+
+## Preparing Mods
+
+**Definido:** quando houver compilação/validação relevante no startup, o jogo mostrará uma tela explícita de preparação de mods em vez de esconder o trabalho.
+
+Exemplo:
+
+```text
+Preparing Mods
+
+Desert Expansion
+154 / 320 assets
+
+Compiling scarab.glb...
+```
+
+A tela deverá conseguir mostrar:
+
+- mod atual;
+- etapa atual;
+- progresso total;
+- assets em processamento;
+- warnings;
+- erros que impedem determinada parte do mod;
+- cache hits/misses em modo detalhado.
+
+Se não houver trabalho relevante, essa etapa pode ser praticamente instantânea.
 
 ## Development vs distribution
 
@@ -461,10 +592,11 @@ erro de referência gera diagnóstico claro
 ## Decisões ainda em aberto
 
 - formato binário interno exato;
-- formato de metadata/import settings;
+- arquivo/sintaxe exata das declarações explícitas de assets;
 - formato final de pacote de mod;
 - estratégia exata de compressão;
-- política exata de colisão/override de IDs;
+- prioridade quando dois mods declaram replaces incompatíveis;
+- se sub-recursos de GLB/GLTF serão publicamente endereçáveis por outros mods;
 - carregamento assíncrono v1 vs etapa posterior;
 - formato interno de áudio;
 - formato de mapas/scenes.
