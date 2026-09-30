@@ -17,9 +17,13 @@ Mods poderão conter:
 
 ## Modelos
 
-GLB/GLTF é uma forte opção inicial por ser moderno, aberto e adequado a pipelines automatizados.
+GLB/GLTF é o formato-fonte principal planejado para modelos 3D.
 
-A escolha final ainda deve considerar animação, skeletal meshes, materiais, compressão, importação rápida, geração por IA e ferramentas existentes.
+**Definido:** modelos devem poder utilizar texturas embutidas. O fluxo preferido permite que mesh, materiais, texturas, skeleton e animações viajem juntos no mesmo asset, especialmente em GLB.
+
+O pipeline poderá extrair esses elementos para sub-recursos internos otimizados durante a compilação sem exigir que o autor do mod separe as texturas manualmente.
+
+GLTF textual também poderá ser aceito quando suas imagens estiverem embutidas no próprio asset/formato suportado pelo importador.
 
 ## Pixel-art 3D
 
@@ -135,4 +139,9 @@ Decisões atuais:
 - cache é incremental e externo aos sources do mod;
 - Asset Manager retorna handles controlados;
 - assets devem poder ser descarregados por área/lifetime;
-- GLB/GLTF e PNG são formatos-fonte principais atuais.
+- GLB/GLTF são formatos-fonte principais de modelos;
+- texturas de modelos podem e preferencialmente poderão estar embutidas;
+- PNG continua disponível para texturas independentes/UI/VFX;
+- assets públicos precisam ser declarados explicitamente;
+- merges seguros são permitidos; replaces destrutivos precisam ser explícitos;
+- compilação relevante de mods usa uma tela "Preparing Mods".
