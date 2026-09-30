@@ -1,6 +1,6 @@
 #include "core/Application.h"
 #include "core/Log.h"
-#include "game/DemoScene.h"
+#include "ecs/RenderSystem.h"
 #include <charconv>
 #include <exception>
 #include <string_view>
@@ -40,11 +40,13 @@ bool Application::initialize() {
     LOG_INFO("CORE", "Application starting");
     window_ = std::make_unique<WindowSystem>(windowConfig_);
     renderer_ = std::make_unique<Renderer>(window_->nativeHandle(),window_->width(),window_->height(),root_ / "assets/core/shaders/forward.hlsl", renderConfig_);
-    demoMesh_ = createDemoCube(*renderer_);
     vfs_.mount("core",root_ / "assets/core");
     assets_ = std::make_unique<AssetManager>(vfs_,*renderer_,root_ / "user/cache");
-    assets_->registerTexture({AssetId("core:checker"),"textures/checker.png"});
-    demoTexture_ = assets_->texture(AssetId("core:checker"));
+    assets_->registerModel({AssetId("core:cube"),"models/cube.glb"});
+    world_ = std::make_unique<World>();
+    auto cube=world_->create("cube");
+    world_->add(cube,TransformComponent{});
+    world_->add(cube,ModelComponent{AssetId("core:cube"),assets_->model(AssetId("core:cube"))});
     initialized_ = true;
     LOG_INFO("CORE", "Runtime initialized");
     return true;
@@ -64,15 +66,14 @@ void Application::run() {
     };
     callbacks.suspended = [&] { return window_->minimized(); };
     callbacks.render = [&](double) {
-        RenderItem item{demoMesh_,{{0.25f,0.8f,0.65f,1},demoTexture_,false},{}};
-        renderer_->render({},std::span(&item,1)); renderer_->present();
+        const auto items=collectRenderItems(*world_);
+        renderer_->render({},items); renderer_->present();
     };
     loop_.run(config_, callbacks);
 }
 void Application::shutdown() noexcept {
     loop_.stop();
-    demoMesh_.reset();
-    demoTexture_.reset();
+    world_.reset();
     assets_.reset();
     vfs_.unmount("core");
     renderer_.reset();

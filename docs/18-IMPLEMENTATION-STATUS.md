@@ -55,6 +55,16 @@ textura embutida, desenha na GPU e verifica reutilização do cache compilado.
 
 ## Build e execução
 
+## Etapa 5 — ECS v0
+
+EnTT é privado à implementação de World. IDs de runtime não são reutilizados;
+Name/Active/Transform/Model usam API própria add/get/has/remove. Hierarquia
+parent/child impede ciclos, compõe transforms e desanexa filhos ao destruir pai
+(preservando transform local). RenderSystem coleta modelos ativos. O runtime
+agora desenha uma entidade com GLB importado, sem tipos EnTT no gameplay.
+
+## Build e execução
+
 Requisitos: Visual Studio 2022 com C++ x64 e Windows SDK, CMake >= 3.25, Ninja,
 vcpkg inicializado e variável `VCPKG_ROOT` apontando para ele.
 

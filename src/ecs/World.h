@@ -1,0 +1,41 @@
+#pragma once
+#include "assets/AssetManager.h"
+#include <variant>
+namespace game {
+struct EntityId { std::uint64_t value = 0; auto operator<=>(const EntityId&) const = default; explicit operator bool() const { return value!=0; } };
+struct TransformComponent { Transform local; };
+struct NameComponent { std::string name; };
+struct ModelComponent { AssetId definition; ModelHandle model; };
+struct ActiveComponent { bool value = true; };
+using Component = std::variant<TransformComponent,NameComponent,ModelComponent,ActiveComponent>;
+template<class T> constexpr size_t componentIndex() {
+    if constexpr (std::is_same_v<T,TransformComponent>) return 0;
+    else if constexpr (std::is_same_v<T,NameComponent>) return 1;
+    else if constexpr (std::is_same_v<T,ModelComponent>) return 2;
+    else if constexpr (std::is_same_v<T,ActiveComponent>) return 3;
+    else static_assert(sizeof(T)==0,"Unregistered component type");
+}
+class World {
+public:
+    World();
+    ~World();
+    EntityId create(std::string name = {});
+    bool alive(EntityId id) const;
+    void destroy(EntityId id);
+    EntityId find(std::string_view name) const;
+    std::vector<EntityId> entities() const;
+    template<class T> void add(EntityId id,T value) { put(id,Component(std::move(value))); }
+    template<class T> T& get(EntityId id) { return *static_cast<T*>(component(id,componentIndex<T>(),true)); }
+    template<class T> bool has(EntityId id) { return component(id,componentIndex<T>(),false)!=nullptr; }
+    template<class T> void remove(EntityId id) { removeComponent(id,componentIndex<T>()); }
+    void setParent(EntityId child,EntityId parent);
+    EntityId parent(EntityId child) const;
+    Matrix worldMatrix(EntityId id);
+private:
+    void put(EntityId id,Component value);
+    void* component(EntityId id,size_t kind,bool required);
+    void removeComponent(EntityId id,size_t kind);
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+}

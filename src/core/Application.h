@@ -4,6 +4,7 @@
 #include "platform/InputSystem.h"
 #include "renderer/Renderer.h"
 #include "assets/AssetManager.h"
+#include "ecs/World.h"
 namespace game {
 class Application {
 public:
@@ -20,11 +21,10 @@ private:
     InputSystem input_;
     RenderConfig renderConfig_;
     std::unique_ptr<Renderer> renderer_;
-    MeshHandle demoMesh_;
     std::filesystem::path root_;
     VirtualFileSystem vfs_;
     std::unique_ptr<AssetManager> assets_;
-    TextureHandle demoTexture_;
+    std::unique_ptr<World> world_;
     bool initialized_ = false;
 };
 }
