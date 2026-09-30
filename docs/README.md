@@ -18,6 +18,8 @@ Esta pasta registra a visão atual do projeto. Ela deve ser atualizada conforme 
 - [12-WINDOW-INPUT-GAMELOOP.md](12-WINDOW-INPUT-GAMELOOP.md) — etapa 2: SDL3, janela, input, eventos e game loop.
 - [13-RENDERER-D3D11.md](13-RENDERER-D3D11.md) — etapa 3: renderer D3D11, pipeline, materiais, iluminação, culling e performance.
 - [14-ASSET-PIPELINE.md](14-ASSET-PIPELINE.md) — etapa 4: IDs, VFS, importação, cache compilado e lifetime de assets.
+- [15-ECS-ENTITIES.md](15-ECS-ENTITIES.md) — etapa 5: ECS, componentes, runtime entity IDs e systems.
+- [16-MOD-MANIFEST-LOADER.md](16-MOD-MANIFEST-LOADER.md) — etapa 6: `mod.json`, `assets.json`, dependências e fluxo do loader.
 
 ## Regra de documentação
 
