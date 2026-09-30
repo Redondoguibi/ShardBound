@@ -23,14 +23,50 @@ A escolha final ainda deve considerar animação, skeletal meshes, materiais, co
 
 ## Pixel-art 3D
 
-A direção visual desejada combina:
+**Definido:** a estética pixel-art vem principalmente dos assets e materiais, enquanto a imagem final continua sendo uma renderização 3D normal.
+
+A direção visual combina:
 
 - geometria 3D;
 - texturas de baixa resolução;
 - filtragem nearest/point onde aplicável;
 - materiais estilizados;
 - iluminação 3D;
-- efeitos e partículas coerentes com pixel-art.
+- efeitos e partículas coerentes com pixel-art;
+- resolução final não deliberadamente pixelada.
+
+O render scale poderá reduzir resolução interna por performance, mas isso não é parte obrigatória da identidade visual.
+
+## Perfis visuais de área
+
+Cada área poderá definir sua própria identidade cromática sem eliminar o ciclo dia/noite.
+
+Um perfil de área poderá influenciar futuramente:
+
+- ambient color;
+- fog;
+- color grading;
+- exposição;
+- céu;
+- intensidade/temperatura de iluminação;
+- matiz geral.
+
+Esses perfis devem ser data-driven e futuramente acessíveis a mods.
+
+## VFX
+
+O jogo pretende suportar combates com muitos efeitos e partículas.
+
+Assets de VFX poderão incluir:
+
+- sprites/atlases;
+- texturas emissivas;
+- meshes simples;
+- parâmetros de partículas;
+- materiais additive/alpha;
+- referências opcionais a dynamic lights.
+
+O formato definitivo ainda será especificado.
 
 ## Mapas
 
