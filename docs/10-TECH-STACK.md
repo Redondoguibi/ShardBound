@@ -93,6 +93,18 @@ Baseline atual:
 
 Deferred rendering, TAA pesado, SSR, volumetria cara e ray tracing não fazem parte da baseline inicial.
 
+### Direção visual e iluminação
+
+Definido:
+
+- pixel-art principalmente nos assets/texturas, não na resolução final;
+- ciclo dia/noite por área;
+- perfis cromáticos/lighting profiles específicos por área;
+- muitos VFX e partículas em combate;
+- partículas emissivas não implicam uma luz dinâmica por partícula;
+- dynamic lights usam orçamento/priorização;
+- particle system deve ser batch/instancing-friendly e escalável por preset.
+
 ## Entidades
 
 **Baseline atual:**
