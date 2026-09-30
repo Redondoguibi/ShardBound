@@ -136,22 +136,18 @@ O método final de upscale ainda será decidido.
 
 ## Pixel-art 3D
 
-A identidade visual ainda precisa de uma decisão importante:
+**Definido:** a identidade pixel-art ficará principalmente nos **assets**, não em uma renderização final deliberadamente pixelada.
 
-### Opção A — pixel-art nos assets
+Direção visual:
 
 - modelos 3D;
 - texturas pixeladas/baixa resolução;
 - point/nearest filtering onde aplicável;
-- imagem final continua em resolução normal.
+- materiais estilizados;
+- imagem final renderizada normalmente na resolução interna escolhida;
+- UI e efeitos podem manter linguagem visual pixel-art sem exigir que a tela inteira seja low-res.
 
-### Opção B — imagem 3D também pixelada
-
-- cena renderizada em resolução interna deliberadamente baixa;
-- upscale controlado;
-- pixels visíveis na imagem final.
-
-O renderer deve conseguir suportar ambos, mas precisamos escolher qual será a identidade principal do jogo antes de finalizar o pipeline de pós-processamento.
+O render scale continua existindo como ferramenta de performance, não como parte obrigatória da estética.
 
 ## Materiais
 
@@ -185,16 +181,44 @@ Não criar um sistema de materiais gigantesco no primeiro renderer.
 
 ## Iluminação
 
-Baseline recomendada:
+Baseline:
 
-- uma luz direcional principal;
+- uma luz direcional principal representando o Sol/Lua;
 - ambient/hemisphere light simples;
-- número controlado de point/spot lights;
-- luzes dinâmicas limitadas por área/objeto visível.
+- point/spot lights controladas;
+- luzes dinâmicas limitadas por importância, distância e visibilidade.
 
-Não implementar centenas de luzes dinâmicas no renderer inicial.
+### Ciclo diurno
 
-A necessidade de ciclo dia/noite ainda está em aberto.
+**Definido:** áreas possuem ciclo dia/noite normal, com iluminação variando ao longo do tempo.
+
+Cada área poderá, porém, definir sua própria identidade cromática. Exemplos:
+
+- floresta com matiz mais quente/esverdeada;
+- área congelada com matiz mais fria/azulada;
+- região corrompida com ambiente violeta;
+- deserto com tons quentes e saturação própria.
+
+Isso não significa travar a área em uma hora do dia. A área fornece parâmetros de ambiente que modulam o ciclo diurno.
+
+Conceitualmente:
+
+```text
+Global/Area Day Cycle
+      +
+Area Lighting Profile
+      ↓
+Sun direction/intensity
+Ambient color
+Fog color
+Exposure
+Color grading
+Sky parameters
+```
+
+Perfis de iluminação devem ser dados do mapa/área e, futuramente, modificáveis por mods.
+
+Não implementar centenas de luzes dinâmicas reais no renderer inicial.
 
 ## Sombras
 
@@ -282,15 +306,17 @@ A política de shaders de mods será definida separadamente.
 
 ## Post-processing
 
-Inicialmente leve.
+Inicialmente leve, mas preparado para a identidade forte de cada área.
 
-Possíveis efeitos:
+Baseline:
 
-- color grading;
+- color grading por área;
 - exposição;
 - bloom simples;
 - fog;
 - vignette opcional.
+
+O color grading é particularmente importante porque cada área poderá ter uma matiz/identidade cromática diferente sem precisar alterar manualmente todos os assets.
 
 Evitar como baseline:
 
@@ -316,6 +342,68 @@ Possíveis caminhos:
 - upscale/pixelização que reduza a necessidade de AA.
 
 A escolha depende de como a identidade pixel-art final será definida.
+
+## VFX e partículas
+
+**Definido:** combates poderão ter muitos efeitos e partículas.
+
+O renderer deve ser projetado para isso desde cedo.
+
+### Estratégia
+
+Nem todo efeito visual deve criar uma luz real.
+
+Separar:
+
+```text
+visual particle
+emissive particle
+dynamic light
+decal/effect
+```
+
+Uma explosão pode ter centenas de partículas emissivas, mas apenas uma ou poucas luzes reais.
+
+### Particle System
+
+O sistema deve suportar:
+
+- emissão em bursts;
+- emissão contínua;
+- lifetime;
+- velocidade/aceleração;
+- escala;
+- rotação;
+- cor ao longo da vida;
+- alpha;
+- emissive;
+- billboard particles;
+- meshes simples quando necessário;
+- additive e alpha blending;
+- atlas/sprite sheets;
+- limites por preset;
+- distance culling;
+- pooling/reutilização.
+
+A primeira versão pode simular partículas na CPU e renderizá-las de forma instanciada/batched.
+
+GPU particles podem ser adicionadas futuramente caso profiling real mostre necessidade.
+
+### Dynamic Light Budget
+
+Luzes de combate devem usar orçamento controlado.
+
+Quando houver efeitos demais, o renderer pode priorizar luzes por:
+
+- distância da câmera;
+- intensidade;
+- tamanho aparente;
+- prioridade do efeito;
+- relevância para o player.
+
+Efeitos visuais continuam aparecendo mesmo quando uma luz secundária for descartada.
+
+Isso permite combate visualmente intenso sem transformar cada partícula em uma light source.
 
 ## Performance
 
@@ -420,10 +508,14 @@ shutdown sem leaks óbvios
 
 ## Decisões ainda necessárias
 
-Antes de fechar a identidade visual do renderer:
+Ainda precisam ser refinados futuramente:
 
-1. Pixel-art será principalmente dos assets ou a imagem final também deverá ser deliberadamente pixelada?
-2. O jogo precisa de ciclo dia/noite e iluminação mudando continuamente, ou a iluminação pode ser majoritariamente definida por área?
-3. Qual o grau desejado de luzes dinâmicas e efeitos visuais durante combate?
+- modelo exato do céu;
+- duração/escala do ciclo dia-noite;
+- transições climáticas;
+- número concreto de dynamic lights por preset;
+- formato dos perfis de iluminação das áreas;
+- formato final dos efeitos/partículas para mods;
+- anti-aliasing definitivo.
 
-Estas decisões afetam pós-processamento, iluminação e sombras, mas não impedem a implementação do renderer base.
+Esses detalhes não bloqueiam o renderer v0.
