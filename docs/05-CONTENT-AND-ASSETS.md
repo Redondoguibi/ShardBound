@@ -119,3 +119,20 @@ Ao iniciar:
 - mod removido → deixa de ser montado.
 
 Isso preserva a ideia de "jogar um mod no compilador e ele virar parte do jogo" sem alterar permanentemente o executável base.
+
+
+## Arquitetura do pipeline
+
+A especificação detalhada da etapa está em [14-ASSET-PIPELINE.md](14-ASSET-PIPELINE.md).
+
+Decisões atuais:
+
+- arquivos de mod são fontes amigáveis para criação;
+- o runtime poderá usar representações compiladas/cacheadas;
+- todo recurso exposto recebe ID estável `namespace:path`;
+- gameplay/mods referenciam IDs, não paths físicos;
+- VFS separa localização física de identidade;
+- cache é incremental e externo aos sources do mod;
+- Asset Manager retorna handles controlados;
+- assets devem poder ser descarregados por área/lifetime;
+- GLB/GLTF e PNG são formatos-fonte principais atuais.
