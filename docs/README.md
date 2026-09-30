@@ -24,6 +24,9 @@ Esta pasta registra a visão atual do projeto. Ela deve ser atualizada conforme 
 
 ## Documentação para modders
 
+O progresso verificável do código e as instruções de build estão em
+[18-IMPLEMENTATION-STATUS.md](18-IMPLEMENTATION-STATUS.md).
+
 Autores externos devem começar em:
 
 - [modding/README.md](modding/README.md) — índice do guia profissional de modding.

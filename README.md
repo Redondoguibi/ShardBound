@@ -62,4 +62,4 @@ Veja [docs/README.md](docs/README.md).
 
 Para criar mods, comece pelo [Guia oficial de modding](docs/modding/README.md).
 
-> Estado atual: planejamento inicial. Muitas decisões técnicas continuam deliberadamente abertas.
+> Estado atual: implementação iniciada. Veja [build e progresso](docs/18-IMPLEMENTATION-STATUS.md).
