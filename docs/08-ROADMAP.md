@@ -37,6 +37,9 @@ Detalhes: [12-WINDOW-INPUT-GAMELOOP.md](12-WINDOW-INPUT-GAMELOOP.md)
 
 ## Etapa 3 — Renderer D3D11
 
+Detalhes: [13-RENDERER-D3D11.md](13-RENDERER-D3D11.md)
+
+- forward renderer;
 - device/context;
 - swap chain;
 - backbuffer;
@@ -47,7 +50,14 @@ Detalhes: [12-WINDOW-INPUT-GAMELOOP.md](12-WINDOW-INPUT-GAMELOOP.md)
 - buffers;
 - primeira geometria;
 - integração com VSync;
-- abstração própria sobre D3D11.
+- abstração própria sobre D3D11;
+- flip-model swap chain;
+- render scale;
+- frustum/distance culling;
+- instancing;
+- material system mínimo;
+- iluminação e sombras básicas;
+- métricas de performance.
 
 **Resultado:** primeira cena/gráfico desenhado pela engine.
 
