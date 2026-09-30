@@ -115,3 +115,10 @@ Isso reduz diferenças artificiais entre conteúdo oficial e conteúdo de mods.
 ## Critério de conclusão
 
 O loader v0 está pronto quando um diretório em `mods/` é descoberto, validado, montado, tem seus assets registrados e aparece nos logs sem precisar recompilar o executável base.
+
+
+## Guia público
+
+Autores de mods devem começar por [modding/README.md](modding/README.md).
+
+A documentação pública traduz este contrato técnico em workflow prático de criação, teste e distribuição.
