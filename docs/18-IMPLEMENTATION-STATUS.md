@@ -88,10 +88,12 @@ Decisões de implementação v0: interpretação de AST; booleanos estritos em
 condições; imports relativos à raiz do mod; funções e definições de imports são
 publicadas no módulo, variáveis locais do arquivo ficam privadas; defaults são
 avaliados no escopo de definição a cada chamada; múltiplos retornos viram List.
-Recursão limitada a 64 chamadas e budget de 100.000 passos por execução/evento
+Recursão limitada a 64 chamadas, imports a 64 níveis e budget de 100.000 passos por execução/evento
 produzem diagnóstico em vez de travar indefinidamente. Não há API estável de ABI
 C++ nativa. Os testes cobrem o contrato e erros de tipos, constantes, imports
 circulares, símbolos desconhecidos, escopo e conflitos de patch.
+Executáveis reservam 8 MiB de stack para acomodar esses limites também nos
+frames maiores do MSVC Debug; a reserva não é um heap/allocator público.
 
 ## Etapas 9–10 — bridge e primeiro mod funcional
 
@@ -117,6 +119,19 @@ O controlador definitivo, rig/animação, áudio espacial, HUD, equipamentos e r
 finais de combate continuam pendentes. Os testes cobrem colisão, movimento,
 inventário, dano, áudio offline e integração real com scripts/render.
 
+## Etapa 12 — implementação parcial
+
+Hooks/eventos e patch/override de definições existem na linguagem v0. A CLI
+[modcheck](20-MODCHECK-CLI.md) valida manifests, sintaxe e imports sem executar
+mods. Componentes arbitrários de mods, ABI/DLLs nativas e saves compatíveis ainda
+não estão implementados: seus contratos continuam abertos em 09-OPEN-DECISIONS.
+
+## Etapa 13 — ainda não iniciada
+
+O sandbox técnico não é o hub ou o jogo final. Progressão, áreas oficiais,
+combate final e identidade artística dependem do desenho de conteúdo e dos
+contratos de mundo/save ainda abertos. Nenhum formato final foi inventado aqui.
+
 ## Build e execução
 
 Requisitos: Visual Studio 2022 com C++ x64 e Windows SDK, CMake >= 3.25, Ninja,
@@ -138,6 +153,11 @@ ctest --preset debug
 
 Builds, dependências locais e caches são ignorados pelo Git. Bibliotecas serão
 adicionadas somente na etapa em que forem utilizadas.
+
+Validação em 2026-10-01: builds MSVC Debug/Release concluídos; 15/15 testes CTest
+aprovados em cada configuração. Incluem pixels na GPU, scripts/mods, Jolt,
+PCM offline, gameplay e CLI. Input de interação foi sintetizado; gamepad físico
+e qualidade audível no dispositivo não foram avaliados manualmente.
 
 ## Limites do planejamento
 

@@ -5,7 +5,10 @@
 using namespace game::script;
 void require(bool ok,const char* message) { if(!ok) throw std::runtime_error(message); }
 template<class F> void rejects(F action,const std::string& code) {
-    try { action(); } catch(const game::DiagnosticError& e) { require(e.diagnostic.code==code,"Wrong diagnostic"); return; }
+    try { action(); } catch(const game::DiagnosticError& e) {
+        if(e.diagnostic.code!=code) throw std::runtime_error("Expected "+code+", got "+e.what());
+        return;
+    }
     throw std::runtime_error("Expected diagnostic: "+code);
 }
 int main() {
@@ -63,6 +66,9 @@ on_tick(value):
         rejects([&] { runtime.execute("unknown","x = Firee\n"); },"SCRIPT102");
         rejects([&] { parse("func f(a = 1, b):\n    return b\n","bad.sl"); },"SCRIPT202");
         rejects([&] { parse("if true:\n \tx = 1\n","bad.sl"); },"SCRIPT101");
+        std::string nested; for(int i=0;i<129;++i) nested+="entity Nested {\n";
+        for(int i=0;i<129;++i) nested+="}\n";
+        rejects([&] { parse(nested,"nested.sl"); },"SCRIPT201");
         runtime.execute("core","@Entities\nenemy player:\n    .health = 100\n    .speed = 1\n");
         runtime.execute("patch_a","@Core/Entities\nmodify player {\n    .health = 150\n}\n");
         runtime.execute("patch_b","@Core/Entities\nmodify player {\n    .speed = 2\n}\n");
@@ -72,6 +78,12 @@ on_tick(value):
         { std::ofstream out("user/script-tests/a.sl"); out<<"import \"b.sl\"\n"; }
         { std::ofstream out("user/script-tests/b.sl"); out<<"import \"a.sl\"\n"; }
         rejects([&] { runtime.load("cycle","user/script-tests","a.sl"); },"SCRIPT309");
+        for(int i=0;i<65;++i) {
+            std::ofstream output("user/script-tests/deep"+std::to_string(i)+".sl");
+            if(i<64) output<<"import \"deep"<<i+1<<".sl\"\n"; else output<<"x = 1\n";
+        }
+        rejects([&] { runtime.load("deep","user/script-tests","deep0.sl"); },"SCRIPT321");
+        rejects([&] { runtime.execute("recursion","func recurse():\n    return recurse()\nrecurse()\n"); },"SCRIPT311");
         { std::ofstream out("user/script-tests/library.sl"); out<<"private_value = 4\nfunc exported():\n    return private_value\n"; }
         { std::ofstream out("user/script-tests/main.sl"); out<<"import \"library.sl\"\n@Globals\nanswer = exported()\n"; }
         runtime.load("imports","user/script-tests","main.sl");

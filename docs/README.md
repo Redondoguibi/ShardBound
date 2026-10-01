@@ -23,6 +23,7 @@ Esta pasta registra a visão atual do projeto. Ela deve ser atualizada conforme 
 - [17-ART-DIRECTION-MODELING.md](17-ART-DIRECTION-MODELING.md) — direção de modelagem, cuboids, player, rig e regras visuais.
 - [18-LANGUAGE-V0-SPEC.md](18-LANGUAGE-V0-SPEC.md) — especificação normativa e implementável da linguagem v0.
 - [19-GAMEPLAY-V0-API.md](19-GAMEPLAY-V0-API.md) — APIs executáveis de gameplay e sandbox.
+- [20-MODCHECK-CLI.md](20-MODCHECK-CLI.md) — validação de manifests, sintaxe e imports.
 
 ## Documentação para modders
 

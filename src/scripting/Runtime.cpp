@@ -33,6 +33,7 @@ struct Runtime::Impl {
     std::map<std::string,int> imports;
     std::map<std::string,std::vector<Value>> events;
     unsigned calls=0;
+    unsigned importDepth=0;
     size_t budget=100000;
     ~Impl() { for(auto& weak:scopes) if(auto env=weak.lock()) env->bindings.clear(); }
     std::shared_ptr<Environment> scope(std::shared_ptr<Environment> parent) {
@@ -102,6 +103,8 @@ struct Runtime::Impl {
         const auto key=ctx.mod+":"+path.string();
         if(imports[key]==1) fail({path.string()},"SCRIPT309","Circular import");
         if(imports[key]==2) return;
+        if(importDepth>=64) fail({path.string()},"SCRIPT321","Import nesting limit exceeded");
+        ++importDepth; struct ImportDepth { unsigned& count; ~ImportDepth() { --count; } } depth{importDepth};
         imports[key]=1;
         try {
             std::ifstream input(path); std::ostringstream source; source<<input.rdbuf(); if(!input) throw std::runtime_error("Cannot read script");

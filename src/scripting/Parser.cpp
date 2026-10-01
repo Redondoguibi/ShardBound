@@ -20,12 +20,13 @@ class Parser {
         expect("<dedent>"); --depth_; return result;
     }
     Block structured() {
+        if(++depth_>128) fail(peek().at,"SCRIPT201","Block nesting limit exceeded");
         expect("{"); expect("<newline>");
         const bool indented=accept("<indent>"); Block result;
         while(!is("}") && !is("<end>") && !(indented && is("<dedent>"))) {
             if(accept("<newline>")) continue; result.push_back(statement(true));
         }
-        if(indented) expect("<dedent>"); expect("}"); newline(); return result;
+        if(indented) expect("<dedent>"); expect("}"); newline(); --depth_; return result;
     }
     NodePtr function(bool event=false) {
         const auto token=event ? peek() : expect("func");
