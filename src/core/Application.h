@@ -6,6 +6,8 @@
 #include "assets/AssetManager.h"
 #include "ecs/World.h"
 #include "scripting/Runtime.h"
+#include "game/PlayerController.h"
+#include "audio/AudioSystem.h"
 namespace game {
 class Application {
 public:
@@ -23,9 +25,13 @@ private:
     RenderConfig renderConfig_;
     std::unique_ptr<Renderer> renderer_;
     std::filesystem::path root_;
+    std::filesystem::path modsDirectory_ = "mods";
     VirtualFileSystem vfs_;
     std::unique_ptr<AssetManager> assets_;
     std::unique_ptr<World> world_;
+    std::unique_ptr<PhysicsSystem> physics_;
+    std::unique_ptr<PlayerController> player_;
+    std::unique_ptr<AudioSystem> audio_;
     std::unique_ptr<script::Runtime> scripting_;
     bool initialized_ = false;
 };

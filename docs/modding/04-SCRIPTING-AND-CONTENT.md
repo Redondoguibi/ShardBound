@@ -4,7 +4,10 @@
 
 A linguagem própria ainda está sendo implementada. Este documento registra a sintaxe definida até agora para que autores possam estruturar conteúdo.
 
-A especificação interna completa está em [../04-LANGUAGE.md](../04-LANGUAGE.md).
+A especificação normativa está em [../18-LANGUAGE-V0-SPEC.md](../18-LANGUAGE-V0-SPEC.md).
+As assinaturas executáveis de gameplay e seus limites estão em
+[../19-GAMEPLAY-V0-API.md](../19-GAMEPLAY-V0-API.md). Exemplos conceituais abaixo
+não substituem esses contratos; por exemplo, o runtime atual usa `damage(target, 10)`.
 
 ## Entidades
 
@@ -123,7 +126,8 @@ Attributes:
 }
 ```
 
-A semântica exata de `from` ainda será congelada.
+A semântica de `from` está definida na especificação normativa v0: cópia profunda
+com merge recursivo das estruturas e substituição de escalares/listas.
 
 ## Modificando o core
 

@@ -50,6 +50,9 @@ void* World::component(EntityId id,size_t kind,bool required) {
     case 1: result=impl_->registry.try_get<NameComponent>(raw); break;
     case 2: result=impl_->registry.try_get<ModelComponent>(raw); break;
     case 3: result=impl_->registry.try_get<ActiveComponent>(raw); break;
+    case 4: result=impl_->registry.try_get<HealthComponent>(raw); break;
+    case 5: result=impl_->registry.try_get<InventoryComponent>(raw); break;
+    case 6: result=impl_->registry.try_get<InteractableComponent>(raw); break;
     }
     if (!result && required) throw DiagnosticError({"ECS102","Required component missing on #"+std::to_string(id.value)});
     return result;
@@ -61,6 +64,9 @@ void World::removeComponent(EntityId id,size_t kind) {
     case 1: impl_->registry.remove<NameComponent>(raw); break;
     case 2: impl_->registry.remove<ModelComponent>(raw); break;
     case 3: impl_->registry.remove<ActiveComponent>(raw); break;
+    case 4: impl_->registry.remove<HealthComponent>(raw); break;
+    case 5: impl_->registry.remove<InventoryComponent>(raw); break;
+    case 6: impl_->registry.remove<InteractableComponent>(raw); break;
     }
 }
 void World::setParent(EntityId child,EntityId parentId) {

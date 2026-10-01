@@ -27,6 +27,7 @@ TextureHandle AssetManager::texture(const AssetId& id) {
     }
 }
 void AssetManager::unmount(const std::string& nameSpace) {
+    std::erase_if(sounds_,[&](const auto& pair) { return pair.second.id.nameSpace() == nameSpace; });
     std::erase_if(models_,[&](const auto& pair) { return pair.second.id.nameSpace() == nameSpace; });
     std::erase_if(loadedModels_,[&](const auto& pair) { return AssetId(pair.first).nameSpace() == nameSpace; });
     std::erase_if(textures_,[&](const auto& pair) { return pair.second.id.nameSpace() == nameSpace; });
@@ -36,6 +37,15 @@ void AssetManager::unmount(const std::string& nameSpace) {
 void AssetManager::registerModel(ModelSource source) {
     const auto id=source.id.str();
     if (!models_.emplace(id,std::move(source)).second) throw DiagnosticError({"ASSET305","Duplicate model registration",{},{},id});
+}
+void AssetManager::registerSound(SoundSource source) {
+    const auto id=source.id.str(); (void)vfs_.resolve(source.id.nameSpace(),source.source);
+    if(!sounds_.emplace(id,std::move(source)).second) throw DiagnosticError({"ASSET307","Duplicate sound registration",{},{},id});
+}
+SoundSource AssetManager::sound(const AssetId& id) const {
+    const auto found=sounds_.find(id.str());
+    if(found==sounds_.end()) throw DiagnosticError({"ASSET308","Sound not registered",{},id.nameSpace(),id.str()});
+    auto result=found->second; result.source=vfs_.resolve(id.nameSpace(),result.source); return result;
 }
 ModelHandle AssetManager::model(const AssetId& id) {
     if (auto result=loadedModels_[id.str()].lock()) return result;

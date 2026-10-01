@@ -24,7 +24,11 @@ LoadReport ModLoader::load(const std::filesystem::path& directory,PreparationPro
                         const auto path=entry.at("source").get<std::string>();
                         (void)vfs_.resolve(mod.id,path);
                         if (type=="models") {
+                            if(entry.contains("import") && (!entry["import"].is_object() || !entry["import"].empty())) throw std::runtime_error("Model import settings are not supported yet");
                             assets_.registerModel({assetId,path}); (void)assets_.model(assetId);
+                        } else if(type=="sounds") {
+                            if(entry.contains("import")) throw std::runtime_error("Sound import settings are not supported yet");
+                            assets_.registerSound({assetId,path,entry.value("streaming",false)});
                         } else if (type=="textures") {
                             bool srgb=true,nearest=true;
                             if (entry.contains("import")) {
@@ -42,7 +46,8 @@ LoadReport ModLoader::load(const std::filesystem::path& directory,PreparationPro
             }
             if (progress) progress(mod.id,total,total);
             LOG_INFO("MODS","Loaded asset registry: "+mod.id);
-        } catch (const std::exception& e) { report.diagnostics.push_back({"MOD201",e.what(),(mod.root/"assets.json").string(),mod.id}); }
+        } catch (const PreparationCancelled&) { throw; }
+        catch (const std::exception& e) { report.diagnostics.push_back({"MOD201",e.what(),(mod.root/"assets.json").string(),mod.id}); }
     }
     for (const auto& d:report.diagnostics) LOG_WARN("MODS",d.code+" ["+d.mod+"] "+d.message);
     return report;

@@ -69,4 +69,8 @@ void PhysicsWorld::step(float delta) {
     if(!std::isfinite(delta) || delta<=0 || delta>0.25f) throw DiagnosticError({"PHYS105","Invalid physics timestep"});
     if(impl_->physics.Update(delta,int(std::ceil(delta*60)),&impl_->allocator,&impl_->jobs)!=JPH::EPhysicsUpdateError::None) throw DiagnosticError({"PHYS106","Physics update capacity exceeded"});
 }
+void PhysicsWorld::setPosition(BodyId id,Vec3 p) {
+    if(!finite(p)) throw DiagnosticError({"PHYS104","Non-finite position"});
+    impl_->physics.GetBodyInterface().SetPosition(impl_->require(id),JPH::RVec3(p.x,p.y,p.z),JPH::EActivation::Activate);
+}
 }

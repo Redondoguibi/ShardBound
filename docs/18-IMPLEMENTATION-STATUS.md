@@ -21,7 +21,7 @@ simulação/render e aguarda 50 ms por iteração.
 GameLoop separa poll/fixed/update/render: fixed update de 60 Hz, delta limitado
 a 250 ms para evitar recuperação ilimitada após travamentos, interpolação e
 frame limiter (`--fps 0|30|60|120|144|...`). `--hidden` atende testes de startup.
-VSync será conectado ao present na etapa 3. Shutdown destrói a janela e SDL.
+VSync está conectado ao present. Shutdown destrói a janela e SDL.
 
 ## Etapa 3 — renderer v0
 
@@ -73,7 +73,7 @@ excluem ambos os pacotes; ciclos impedem inicialização de scripts envolvidos.
 explicitamente no VFS/AssetManager, validado e cacheado. Falhas são isoladas por
 asset. Replaces implícitos e import settings não implementados são rejeitados.
 Uma tela dedicada Preparing Mods exibe pacote/progresso; logs preservam detalhes
-dos erros. Scripts serão conectados nas etapas 8–9.
+dos erros. Scripts estão conectados nas etapas 8–9.
 
 ## Etapa 8 — linguagem v0
 
@@ -93,8 +93,6 @@ produzem diagnóstico em vez de travar indefinidamente. Não há API estável de
 C++ nativa. Os testes cobrem o contrato e erros de tipos, constantes, imports
 circulares, símbolos desconhecidos, escopo e conflitos de patch.
 
-## Build e execução
-
 ## Etapas 9–10 — bridge e primeiro mod funcional
 
 `spawn(definition, vec3(x,y,z))`, `get_entity(name)`, `destroy(entity)` e `log`
@@ -106,6 +104,18 @@ O pacote `mods/example` declara GLB próprio e entidade, importa `.sl`, cria o
 modelo no startup e o move por script. O runtime não contém spawn hardcoded
 deste mod. O teste bridge verifica o ciclo até pixels reais, movimento, destruição
 e uso de referência inválida. Remover a pasta do build e reiniciar remove o mod.
+
+## Etapa 11 — gameplay v0
+
+Adaptadores próprios de Jolt/miniaudio, sistemas separados de física/ECS,
+vida/dano/cura, inventário por ID, seleção de interação e controle provisório do
+player com câmera. API de scripts e pacote de demonstração em `examples/gameplay`.
+Modelo estático original com seis partes nas proporções de referência documentadas.
+Veja contratos, execução e limites em [19-GAMEPLAY-V0-API.md](19-GAMEPLAY-V0-API.md).
+
+O controlador definitivo, rig/animação, áudio espacial, HUD, equipamentos e regras
+finais de combate continuam pendentes. Os testes cobrem colisão, movimento,
+inventário, dano, áudio offline e integração real com scripts/render.
 
 ## Build e execução
 

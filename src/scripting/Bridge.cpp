@@ -60,6 +60,13 @@ const Value* field(const Value& value,const std::string& key) {
     return nullptr;
 }
 }
+script::Value entityValue(World& world,EntityId id) { return entity(world,id); }
+EntityId requireEntity(const script::Value& value,World& world,const script::Location& at) {
+    auto host=std::get_if<std::shared_ptr<script::HostObject>>(&value.data);
+    auto ref=host ? std::dynamic_pointer_cast<EntityRef>(*host) : nullptr;
+    if(!ref || &ref->world!=&world || !world.alive(ref->id)) script::fail(at,"BRIDGE103","Expected live entity");
+    return ref->id;
+}
 void bindRuntimeApi(script::Runtime& scripting,World& world,AssetManager& assets) {
     using namespace script;
     scripting.bind("vec3",native([](const auto& args,const auto& at) { arity(args,3,at); return vector({number(args[0],at),number(args[1],at),number(args[2],at)}); }));

@@ -15,6 +15,7 @@ AudioSystem::AudioSystem(bool offline) : impl_(std::make_unique<Impl>()) {
     impl_->initialized=true; impl_->offline=offline;
 }
 AudioSystem::~AudioSystem()=default;
+bool AudioSystem::offline() const { return impl_->offline; }
 void AudioSystem::play(const std::filesystem::path& file,bool streaming) {
     auto sound=std::make_unique<Impl::Sound>();
     if(ma_sound_init_from_file_w(&impl_->engine,file.c_str(),streaming ? MA_SOUND_FLAG_STREAM : MA_SOUND_FLAG_DECODE,nullptr,nullptr,&sound->value)!=MA_SUCCESS)

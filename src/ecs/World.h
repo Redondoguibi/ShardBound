@@ -7,12 +7,18 @@ struct TransformComponent { Transform local; };
 struct NameComponent { std::string name; };
 struct ModelComponent { AssetId definition; ModelHandle model; };
 struct ActiveComponent { bool value = true; };
-using Component = std::variant<TransformComponent,NameComponent,ModelComponent,ActiveComponent>;
+struct HealthComponent { float current = 100, maximum = 100; };
+struct InventoryComponent { std::map<std::string,std::uint32_t> items; };
+struct InteractableComponent { bool enabled = true; };
+using Component = std::variant<TransformComponent,NameComponent,ModelComponent,ActiveComponent,HealthComponent,InventoryComponent,InteractableComponent>;
 template<class T> constexpr size_t componentIndex() {
     if constexpr (std::is_same_v<T,TransformComponent>) return 0;
     else if constexpr (std::is_same_v<T,NameComponent>) return 1;
     else if constexpr (std::is_same_v<T,ModelComponent>) return 2;
     else if constexpr (std::is_same_v<T,ActiveComponent>) return 3;
+    else if constexpr (std::is_same_v<T,HealthComponent>) return 4;
+    else if constexpr (std::is_same_v<T,InventoryComponent>) return 5;
+    else if constexpr (std::is_same_v<T,InteractableComponent>) return 6;
     else static_assert(sizeof(T)==0,"Unregistered component type");
 }
 class World {

@@ -1,0 +1,8 @@
+{
+  "models": {
+    "sandbox:player": {"source": "player.glb"}
+  },
+  "sounds": {
+    "sandbox:hit": {"source": "hit.wav"}
+  }
+}

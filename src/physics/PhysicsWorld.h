@@ -13,6 +13,7 @@ public:
     Vec3 position(BodyId id) const;
     Vec3 velocity(BodyId id) const;
     void setVelocity(BodyId id,Vec3 velocity);
+    void setPosition(BodyId id,Vec3 position);
     void step(float delta);
 private:
     struct Impl;
