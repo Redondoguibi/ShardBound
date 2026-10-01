@@ -5,6 +5,7 @@
 #include <map>
 namespace game {
 struct World::Impl {
+    struct Custom { std::map<std::string,CustomComponent> values; };
     entt::registry registry;
     std::map<EntityId,entt::entity> entities;
     std::map<EntityId,EntityId> parents;
@@ -85,5 +86,20 @@ Matrix World::worldMatrix(EntityId id) {
         if (has<TransformComponent>(current)) result=multiply(result,transformMatrix(get<TransformComponent>(current).local));
     }
     return result;
+}
+void World::setCustom(EntityId entity,const AssetId& type,CustomComponent value) {
+    const auto raw=impl_->require(entity);
+    if(!value.version) throw DiagnosticError({"ECS104","Component version must be positive"});
+    (void)encodeData(value.data);
+    impl_->registry.get_or_emplace<Impl::Custom>(raw).values.insert_or_assign(type.str(),std::move(value));
+}
+const std::map<std::string,CustomComponent>& World::custom(EntityId entity) const {
+    const auto raw=impl_->require(entity); const auto* value=impl_->registry.try_get<Impl::Custom>(raw);
+    static const std::map<std::string,CustomComponent> empty;
+    return value ? value->values : empty;
+}
+bool World::removeCustom(EntityId entity,const AssetId& type) {
+    const auto raw=impl_->require(entity); auto* value=impl_->registry.try_get<Impl::Custom>(raw);
+    return value && value->values.erase(type.str())!=0;
 }
 }

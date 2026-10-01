@@ -38,13 +38,25 @@ void Registry::patch(const std::string& category,const std::string& id,const Val
     };
     const auto prefix=category+"/"+id; flatten(changes,prefix);
     for(const auto& [path,value]:fields) {
-        for(const auto& [written,write]:writes_) {
+        for(const auto& [written,writers]:writes_) for(const auto& write:writers) {
             const bool overlap=path==written || path.starts_with(written+"/") || written.starts_with(path+"/");
             if(overlap && write.mod!=mod && !depends(mod,write.mod) && (path!=written || !equal(value,write.value))) fail(at,"SCRIPT403","Conflicting modify by "+mod+" and "+write.mod+": "+path);
         }
     }
     auto updated=merge(definition.data,changes);
-    for(const auto& [path,value]:fields) writes_.insert_or_assign(path,Write{mod,clone(value)});
+    for(const auto& [path,value]:fields) {
+        auto& writers=writes_[path]; std::erase_if(writers,[&](const auto& write) { return write.mod==mod; });
+        writers.push_back(Write{mod,clone(value)});
+    }
     definitions_.at(prefix).data=std::move(updated);
+}
+void Registry::replace(const std::string& category,const std::string& id,Value value,const std::string& mod,const Location& at) {
+    (void)get(category,id,at); const auto prefix=category+"/"+id;
+    if(!std::holds_alternative<std::shared_ptr<Object>>(value.data)) fail(at,"SCRIPT404","Replacement must be an object");
+    for(const auto& [path,writers]:writes_) if(path==prefix || path.starts_with(prefix+"/"))
+        for(const auto& write:writers) if(write.mod!=mod && !depends(mod,write.mod)) fail(at,"SCRIPT403","Conflicting replacement by "+mod+" and "+write.mod);
+    auto copied=clone(value);
+    writes_[prefix].push_back({mod,clone(copied)});
+    definitions_.at(prefix).data=std::move(copied);
 }
 }

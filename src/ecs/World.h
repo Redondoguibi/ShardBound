@@ -1,6 +1,7 @@
 #pragma once
 #include "assets/AssetManager.h"
 #include <variant>
+#include "core/Data.h"
 namespace game {
 struct EntityId { std::uint64_t value = 0; auto operator<=>(const EntityId&) const = default; explicit operator bool() const { return value!=0; } };
 struct TransformComponent { Transform local; };
@@ -10,6 +11,7 @@ struct ActiveComponent { bool value = true; };
 struct HealthComponent { float current = 100, maximum = 100; };
 struct InventoryComponent { std::map<std::string,std::uint32_t> items; };
 struct InteractableComponent { bool enabled = true; };
+struct CustomComponent { unsigned version=1; Data data; };
 using Component = std::variant<TransformComponent,NameComponent,ModelComponent,ActiveComponent,HealthComponent,InventoryComponent,InteractableComponent>;
 template<class T> constexpr size_t componentIndex() {
     if constexpr (std::is_same_v<T,TransformComponent>) return 0;
@@ -37,6 +39,9 @@ public:
     void setParent(EntityId child,EntityId parent);
     EntityId parent(EntityId child) const;
     Matrix worldMatrix(EntityId id);
+    void setCustom(EntityId entity,const AssetId& type,CustomComponent value);
+    const std::map<std::string,CustomComponent>& custom(EntityId entity) const;
+    bool removeCustom(EntityId entity,const AssetId& type);
 private:
     void put(EntityId id,Component value);
     void* component(EntityId id,size_t kind,bool required);

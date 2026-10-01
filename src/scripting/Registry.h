@@ -10,10 +10,11 @@ public:
     void patch(const std::string& category,const std::string& id,const Value& changes,const std::string& mod,const Location& at);
     void dependencies(std::string mod,std::vector<std::string> ids);
     static Value merge(const Value& base,const Value& changes);
+    void replace(const std::string& category,const std::string& id,Value value,const std::string& mod,const Location& at);
 private:
     std::map<std::string,Definition> definitions_;
     struct Write { std::string mod; Value value; };
-    std::map<std::string,Write> writes_;
+    std::map<std::string,std::vector<Write>> writes_;
     std::map<std::string,std::vector<std::string>> dependencies_;
     bool depends(const std::string& mod,const std::string& dependency) const;
 };

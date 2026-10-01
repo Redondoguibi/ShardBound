@@ -20,6 +20,11 @@ struct Environment {
 };
 struct Context { std::string mod,category; std::filesystem::path root; std::shared_ptr<Environment> globals; };
 struct Returned { Value value; };
+struct ActiveMod {
+    std::string& target; std::string old;
+    ActiveMod(std::string& target,const std::string& mod) : target(target),old(target) { target=mod; }
+    ~ActiveMod() { target=std::move(old); }
+};
 std::string reference(const Value& value,const Location& at) {
     if(auto symbol=std::get_if<Symbol>(&value.data)) return symbol->name;
     return value.string(at);
@@ -31,7 +36,11 @@ struct Runtime::Impl {
     std::map<std::string,Context> contexts;
     std::vector<std::weak_ptr<Environment>> scopes;
     std::map<std::string,int> imports;
-    std::map<std::string,std::vector<Value>> events;
+    struct Handler { std::uint64_t token; std::string owner; Value function; };
+    std::map<std::string,std::vector<Handler>> events,hooks;
+    std::uint64_t nextToken=1;
+    std::string activeMod;
+    unsigned dispatchDepth=0;
     unsigned calls=0;
     unsigned importDepth=0;
     size_t budget=100000;
@@ -114,6 +123,7 @@ struct Runtime::Impl {
         } catch(...) { imports.erase(key); throw; }
     }
     void execute(const Block& nodes,std::shared_ptr<Environment> env,Context& ctx) {
+        ActiveMod active(activeMod,ctx.mod);
         for(const auto& n:nodes) {
             tick(n->at);
             switch(n->kind) {
@@ -132,6 +142,7 @@ struct Runtime::Impl {
             case Kind::Function: {
                 auto closure=env; Context captured=ctx; captured.category.clear();
                 auto function=native([this,n,closure,captured](const std::vector<Value>& args,const Location& at) mutable {
+                    ActiveMod active(activeMod,captured.mod);
                     if(calls>=64) fail(at,"SCRIPT311","Call depth limit exceeded");
                     if(args.size()>n->parameters.size()) fail(at,"SCRIPT312","Too many arguments for "+n->text);
                     auto parent=closure;
@@ -151,7 +162,7 @@ struct Runtime::Impl {
                 if(n->extra!="event") destination->bindings[n->text]={function,true};
                 if(n->extra=="event") {
                     if(ctx.category!="Events") fail(n->at,"SCRIPT315","Event handlers require @Events");
-                    events[n->text].push_back(function);
+                    events[n->text].push_back({nextToken++,ctx.mod,function});
                 }
                 break;
             }
@@ -208,14 +219,42 @@ Value Runtime::global(const std::string& mod,const std::string& name) const {
     auto binding=it->second.globals->find(name); if(!binding) throw std::runtime_error("Unknown script global: "+name); return binding->value;
 }
 std::vector<Diagnostic> Runtime::emit(const std::string& event,const std::vector<Value>& args) {
-    std::vector<Diagnostic> diagnostics; impl_->budget=100000;
+    std::vector<Diagnostic> diagnostics;
+    if(impl_->dispatchDepth>=64) return {{"SCRIPT322","Event recursion limit exceeded"}};
+    if(!impl_->dispatchDepth && !impl_->calls) impl_->budget=100000;
+    ++impl_->dispatchDepth; struct Depth { unsigned& value; ~Depth() { --value; } } guard{impl_->dispatchDepth};
     const auto handlers=impl_->events[event];
     for(const auto& handler:handlers) {
-        try { std::get<std::shared_ptr<Callable>>(handler.data)->call(args,{}); }
-        catch(const DiagnosticError& e) { diagnostics.push_back(e.diagnostic); }
-        catch(const std::exception& e) { diagnostics.push_back({"SCRIPT320",e.what()}); }
+        try { ActiveMod active(impl_->activeMod,handler.owner); invoke(handler.function,args); }
+        catch(const DiagnosticError& e) { auto d=e.diagnostic; d.mod=handler.owner; diagnostics.push_back(std::move(d)); }
+        catch(const std::exception& e) { diagnostics.push_back({"SCRIPT320",e.what(),{},handler.owner}); }
     }
     return diagnostics;
 }
 Registry& Runtime::registry() { return impl_->registry; }
+std::string Runtime::currentMod() const { return impl_->activeMod; }
+std::uint64_t Runtime::subscribe(std::string event,Value handler,bool hook,std::string owner) {
+    if(!std::holds_alternative<std::shared_ptr<Callable>>(handler.data)) fail({},"SCRIPT323","Handler must be a function");
+    if(owner.empty()) owner=impl_->activeMod;
+    auto token=impl_->nextToken++; (hook ? impl_->hooks : impl_->events)[std::move(event)].push_back({token,std::move(owner),std::move(handler)}); return token;
+}
+bool Runtime::unsubscribe(std::uint64_t token) {
+    bool removed=false;
+    for(auto* table:{&impl_->events,&impl_->hooks}) for(auto& [name,handlers]:*table) {
+        (void)name; removed|=std::erase_if(handlers,[&](const auto& h) { return h.token==token; })!=0;
+    }
+    return removed;
+}
+Value Runtime::invoke(const Value& function,const std::vector<Value>& args) {
+    if(!std::holds_alternative<std::shared_ptr<Callable>>(function.data)) fail({},"SCRIPT323","Expected function");
+    if(impl_->dispatchDepth>=64) fail({},"SCRIPT322","Dispatch recursion limit exceeded");
+    if(!impl_->dispatchDepth && !impl_->calls) impl_->budget=100000;
+    ++impl_->dispatchDepth; struct Depth { unsigned& value; ~Depth() { --value; } } guard{impl_->dispatchDepth};
+    return std::get<std::shared_ptr<Callable>>(function.data)->call(args,{});
+}
+Value Runtime::filter(const std::string& hook,Value value) {
+    const auto handlers=impl_->hooks[hook];
+    for(const auto& handler:handlers) { ActiveMod active(impl_->activeMod,handler.owner); value=invoke(handler.function,{value}); }
+    return value;
+}
 }
