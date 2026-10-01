@@ -209,7 +209,8 @@ package
 
 ## 15. C++ nativo
 
-Extensões nativas são previstas, mas serão uma camada avançada.
+Extensões nativas estão disponíveis pela ABI C v1 e pelo SDK documentado em
+[../21-EXTENSIBILITY-V1.md](../21-EXTENSIBILITY-V1.md).
 
 Não use C++ se a linguagem/API pública já resolve a necessidade. Código nativo aumenta:
 

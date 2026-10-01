@@ -26,3 +26,15 @@ Esta ferramenta não valida semântica de execução, existência de funções/s
 tipos dinâmicos, assets.json, decodificação de assets, render ou gameplay. O texto
 PASS significa aprovação apenas nos checks acima. O pipeline completo continua
 sendo exercitado pelo runtime e pelos testes de integração.
+
+## Extensões da etapa 12
+
+Manifests com `native` têm existência/contenção do caminho da DLL verificadas;
+a CLI nunca carrega a DLL. Para o exemplo compilado, use
+`./build/debug/modcheck.exe ./build/debug/examples/native --json`.
+
+`modcheck --save FILE [--json]` inspeciona o envelope e a versão do save, imprimindo
+JSON com formato, versão, mods e contagem de entidades. Não executa código,
+migrações nem restore; portanto `valid_envelope` não garante que todos os recursos
+necessários estejam disponíveis. Formato e contratos em
+[21-EXTENSIBILITY-V1.md](21-EXTENSIBILITY-V1.md).

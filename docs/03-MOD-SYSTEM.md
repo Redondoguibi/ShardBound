@@ -75,11 +75,15 @@ discover
 
 Ao retirar um mod e reiniciar, seu código e assets deixam de ser carregados.
 
-Saves que referenciem conteúdo removido exigirão política específica, ainda não definida.
+Saves v1 preservam registros de conteúdo removido como dados órfãos, sem executar
+esse conteúdo. Reinstalar o mod permite recuperá-lo no próximo load. Política em
+[21-EXTENSIBILITY-V1.md](21-EXTENSIBILITY-V1.md).
 
 ## C++ em mods
 
-Será possível em princípio, mas extensões nativas devem ser tratadas separadamente porque possuem riscos maiores de estabilidade e segurança.
+Implementado pela ABI C v1 para DLLs Windows x64, com SDK próprio e opção
+`--allow-native`. Extensões nativas executam no processo do jogo; contratos e
+lifecycle estão em [21-EXTENSIBILITY-V1.md](21-EXTENSIBILITY-V1.md).
 
 
 ## Registro de assets

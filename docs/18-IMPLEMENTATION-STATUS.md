@@ -89,8 +89,8 @@ condições; imports relativos à raiz do mod; funções e definições de impor
 publicadas no módulo, variáveis locais do arquivo ficam privadas; defaults são
 avaliados no escopo de definição a cada chamada; múltiplos retornos viram List.
 Recursão limitada a 64 chamadas, imports a 64 níveis e budget de 100.000 passos por execução/evento
-produzem diagnóstico em vez de travar indefinidamente. Não há API estável de ABI
-C++ nativa. Os testes cobrem o contrato e erros de tipos, constantes, imports
+produzem diagnóstico em vez de travar indefinidamente. A etapa 12 fornece ABI C
+versionada; estruturas internas C++ não são públicas. Os testes cobrem tipos, constantes, imports
 circulares, símbolos desconhecidos, escopo e conflitos de patch.
 Executáveis reservam 8 MiB de stack para acomodar esses limites também nos
 frames maiores do MSVC Debug; a reserva não é um heap/allocator público.
@@ -119,18 +119,20 @@ O controlador definitivo, rig/animação, áudio espacial, HUD, equipamentos e r
 finais de combate continuam pendentes. Os testes cobrem colisão, movimento,
 inventário, dano, áudio offline e integração real com scripts/render.
 
-## Etapa 12 — implementação parcial
+## Etapa 12 — extensibilidade v1 implementada
 
-Hooks/eventos e patch/override de definições existem na linguagem v0. A CLI
-[modcheck](20-MODCHECK-CLI.md) valida manifests, sintaxe e imports sem executar
-mods. Componentes arbitrários de mods, ABI/DLLs nativas e saves compatíveis ainda
-não estão implementados: seus contratos continuam abertos em 09-OPEN-DECISIONS.
+Hooks/eventos com inscrições removíveis, hook real de dano, patch e replace explícito
+com conflitos; componentes de dados versionados e migrações; saves do mundo com
+GUIDs, física/player, estado por mod, backup e preservação de órfãos; SDK C ABI v1
+com DLL real e lifecycle; CLI com inspeção de saves e manifests nativos.
+Contratos, APIs, exemplos e limites: [21-EXTENSIBILITY-V1.md](21-EXTENSIBILITY-V1.md).
 
 ## Etapa 13 — ainda não iniciada
 
 O sandbox técnico não é o hub ou o jogo final. Progressão, áreas oficiais,
 combate final e identidade artística dependem do desenho de conteúdo e dos
-contratos de mundo/save ainda abertos. Nenhum formato final foi inventado aqui.
+contratos de mundo/áreas ainda abertos. Save v1 persiste o runtime atual; não
+define o formato de mapas ou as regras finais de progressão.
 
 ## Build e execução
 
@@ -154,9 +156,9 @@ ctest --preset debug
 Builds, dependências locais e caches são ignorados pelo Git. Bibliotecas serão
 adicionadas somente na etapa em que forem utilizadas.
 
-Validação em 2026-10-01: builds MSVC Debug/Release concluídos; 15/15 testes CTest
+Validação em 2026-10-01: builds MSVC Debug/Release concluídos; 21/21 testes CTest
 aprovados em cada configuração. Incluem pixels na GPU, scripts/mods, Jolt,
-PCM offline, gameplay e CLI. Input de interação foi sintetizado; gamepad físico
+PCM offline, gameplay, componentes/migrações, saves/órfãos, DLLs reais e CLI. Input de interação foi sintetizado; gamepad físico
 e qualidade audível no dispositivo não foram avaliados manualmente.
 
 ## Limites do planejamento
@@ -164,5 +166,5 @@ e qualidade audível no dispositivo não foram avaliados manualmente.
 A especificação normativa da linguagem v0 foi publicada em
 [18-LANGUAGE-V0-SPEC.md](18-LANGUAGE-V0-SPEC.md) e incorporada do remoto durante
 a implementação. Ela substitui as dúvidas anteriores de gramática/tipagem.
-Saves, ABI nativa, cenas e gameplay final ainda precisam de especificações
-adicionais antes de serem considerados implementados.
+Saves e ABI nativa têm agora contratos v1 em 21-EXTENSIBILITY-V1. Cenas, formato
+de mapas e gameplay final continuam pendentes; a etapa 12 não os substitui.

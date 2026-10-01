@@ -13,6 +13,7 @@ A documentação em `docs/` explica como o jogo é construído internamente. Est
 3. [03-ASSETS-AND-MODELS.md](03-ASSETS-AND-MODELS.md) — GLB/GLTF, texturas embutidas, modelos cúbicos, player, materiais, animações e sub-recursos.
 4. [04-SCRIPTING-AND-CONTENT.md](04-SCRIPTING-AND-CONTENT.md) — linguagem própria, entidades, itens, eventos, imports e alterações do core.
 5. [05-PROFESSIONAL-MOD-PRACTICES.md](05-PROFESSIONAL-MOD-PRACTICES.md) — compatibilidade, organização, diagnósticos, performance, versionamento e distribuição.
+6. [../21-EXTENSIBILITY-V1.md](../21-EXTENSIBILITY-V1.md) — APIs implementadas de componentes customizados, hooks, saves e SDK C++.
 
 ## Filosofia do ecossistema
 

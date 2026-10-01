@@ -70,7 +70,7 @@ Ainda em aberto:
 - lifecycle;
 - serialização;
 - systems/schedulers;
-- componentes definidos por mods;
+- componentes nativos arbitrários além dos componentes de dados v1 da etapa 12;
 - fronteira entre ECS e objetos tradicionais.
 
 ## Linguagem
@@ -128,12 +128,13 @@ A Etapa 8 possui especificação implementável em [18-LANGUAGE-V0-SPEC.md](18-L
 
 ## C++ nativo
 
-- DLLs?
-- ABI estável?
-- SDK?
-- permissões especiais?
-- avisos ao usuário?
-- compatibilidade entre versões?
+Definido na etapa 12: DLL Windows x64, ABI C versionada, SDK próprio,
+habilitação explícita por `--allow-native`, callbacks na thread do runtime,
+negociação de versão/tamanho e unload em ordem reversa. Contrato em
+[21-EXTENSIBILITY-V1.md](21-EXTENSIBILITY-V1.md).
+
+Ainda abertos: assinatura/distribuição, isolamento fora do processo, hot reload,
+permissões granulares e novas versões da ABI.
 
 ## Assets
 
@@ -165,13 +166,12 @@ Ainda em aberto:
 
 ## Save
 
-- IDs de conteúdo;
-- mod removido;
-- mod atualizado;
-- migrações;
-- dados órfãos;
-- rollback;
-- versionamento de save.
+Definido na etapa 12: formato v1, IDs de conteúdo e GUIDs de entidades, estado
+por mod, preservação de órfãos, migrações versionadas de componentes, backup
+anterior e restauração transacional. Veja [21-EXTENSIBILITY-V1.md](21-EXTENSIBILITY-V1.md).
+
+Ainda abertos: futuros formatos de mundo/área, save distribuído/cloud, migrações
+entre versões futuras do formato e UI de gerenciamento/recuperação.
 
 ## Ferramentas
 

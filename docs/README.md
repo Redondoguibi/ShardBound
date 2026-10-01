@@ -24,6 +24,7 @@ Esta pasta registra a visão atual do projeto. Ela deve ser atualizada conforme 
 - [18-LANGUAGE-V0-SPEC.md](18-LANGUAGE-V0-SPEC.md) — especificação normativa e implementável da linguagem v0.
 - [19-GAMEPLAY-V0-API.md](19-GAMEPLAY-V0-API.md) — APIs executáveis de gameplay e sandbox.
 - [20-MODCHECK-CLI.md](20-MODCHECK-CLI.md) — validação de manifests, sintaxe e imports.
+- [21-EXTENSIBILITY-V1.md](21-EXTENSIBILITY-V1.md) — etapa 12: componentes, hooks, overrides, saves e SDK nativo.
 
 ## Documentação para modders
 
