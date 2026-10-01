@@ -57,6 +57,7 @@ ModelHandle AssetManager::model(const AssetId& id) {
     auto result=std::make_shared<ModelResource>();
     for (const auto& part:data.parts) {
         RenderItem item; item.mesh=renderer_.createMesh(part.vertices,part.indices); item.world=part.transform; item.material.color=part.color;
+        item.material.alphaMode=part.alphaMode; item.material.alphaCutoff=part.alphaCutoff; item.material.doubleSided=part.doubleSided;
         if (!part.texture.pixels.empty()) item.material.texture=renderer_.createTexture(part.texture.width,part.texture.height,part.texture.pixels);
         result->parts.push_back(std::move(item));
     }

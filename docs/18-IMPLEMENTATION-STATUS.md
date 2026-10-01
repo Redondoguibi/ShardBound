@@ -47,7 +47,8 @@ pixels embutidos. O cache não altera sources. nlohmann-json é dependência pri
 para serialização/validação, não integra a API de gameplay.
 
 Escopo do importador atual: triângulos estáticos, POSITION/NORMAL, TEXCOORD_0 para
-texturas, material opaco. Rejeita skins/animações e arquivos externos, com erro
+texturas, materiais OPAQUE/MASK e faces duplas (estendidos no primeiro marco da
+etapa 13). Rejeita BLEND, skins/animações e arquivos externos, com erro
 claro. GLTF com data URI e GLB com bufferView são aceitos. Suporte completo a
 animações, sub-recursos públicos e dependências de arquivos externos fica pendente.
 O teste importa o cubo original gerado por `tools/generate-demo-model.py`, valida
@@ -127,7 +128,7 @@ GUIDs, física/player, estado por mod, backup e preservação de órfãos; SDK C
 com DLL real e lifecycle; CLI com inspeção de saves e manifests nativos.
 Contratos, APIs, exemplos e limites: [21-EXTENSIBILITY-V1.md](21-EXTENSIBILITY-V1.md).
 
-## Etapa 13 — planejamento registrado; implementação ainda não iniciada
+## Etapa 13 — primeiro marco: assets e materiais
 
 O sandbox técnico não é o hub ou o jogo final. Progressão, áreas oficiais,
 combate final e identidade artística dependem do desenho de conteúdo e dos
@@ -138,7 +139,19 @@ Decisões do autor e pesquisa pública de MCD II estão em
 [22-GAME-DIRECTION-AND-REFERENCES.md](22-GAME-DIRECTION-AND-REFERENCES.md).
 Hub, floresta em mundo aberto, waystones, itens e morte possuem direção
 documentada; contratos técnicos e parâmetros ainda abertos estão explicitados.
-Essa preparação não adiciona sistemas executáveis ao runtime.
+
+O primeiro marco integra os GLBs do autor: `core:sword`, `core:tree` e
+`core:waystone`, com registro próprio no módulo de assets e carga sob demanda.
+Importador/cache/shader preservam `alphaMode`, `alphaCutoff`, alfa da cor-base
+e `doubleSided`. Alpha-test descarta cor/profundidade; faces duplas invertem
+normais no verso, e transforms espelhados corrigem o culling. O cache de
+modelos foi versionado para evitar reutilizar materiais compilados pelo v1.
+
+A [galeria executável](../examples/asset-gallery/README.md) cria os três objetos
+por script, sem spawn especial na Application. Execute
+`./build/debug/game.exe --mods examples/asset-gallery`. Escalas de apresentação
+e câmera fixa servem à conferência dos assets. Controlador definitivo, salto,
+hub/floresta, viagem rápida, combate e itens continuam como próximos marcos.
 
 ## Build e execução
 
@@ -162,8 +175,9 @@ ctest --preset debug
 Builds, dependências locais e caches são ignorados pelo Git. Bibliotecas serão
 adicionadas somente na etapa em que forem utilizadas.
 
-Validação em 2026-10-01: builds MSVC Debug/Release concluídos; 21/21 testes CTest
-aprovados em cada configuração. Incluem pixels na GPU, scripts/mods, Jolt,
+Validação em 2026-10-01: builds MSVC Debug/Release concluídos; 23/23 testes CTest
+aprovados em cada configuração. Incluem pixels na GPU (recorte alfa, profundidade
+e faces duplas), galeria dos três assets por script, scripts/mods, Jolt,
 PCM offline, gameplay, componentes/migrações, saves/órfãos, DLLs reais e CLI. Input de interação foi sintetizado; gamepad físico
 e qualidade audível no dispositivo não foram avaliados manualmente.
 

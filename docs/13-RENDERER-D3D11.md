@@ -519,3 +519,22 @@ Ainda precisam ser refinados futuramente:
 - anti-aliasing definitivo.
 
 Esses detalhes não bloqueiam o renderer v0.
+
+## Extensão implementada no primeiro marco da Etapa 13
+
+`Material` expõe `alphaMode` (Opaque/Mask), `alphaCutoff` (default 0.5),
+`doubleSided` (default false), `color`, `texture` e `unlit`.
+No modo Mask, o pixel é descartado quando
+`texture.alpha * color.alpha < alphaCutoff`; igualdade passa. No modo Opaque,
+o alfa não recorta nem mistura a superfície. BLEND continua fora deste marco.
+
+O renderer usa back-face culling para materiais de uma face, sem culling para
+faces duplas, e inverte a normal do verso antes da iluminação. Transforms
+com determinante negativo invertem a convenção de frente para preservar a
+visibilidade. Normais usam matriz inversa transposta para escala não uniforme;
+transforms singulares usam a matriz de mundo como fallback.
+
+O passe de tela recompõe o estado de rasterização independentemente do último
+material desenhado. Lit/unlit usa parâmetro separado do alfa da cor-base.
+Testes de GPU verificam recorte/profundidade, limite de cutoff, alfa da cor,
+OPAQUE, culling, faces duplas, iluminação do verso e transform espelhado.

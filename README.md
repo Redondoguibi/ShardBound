@@ -63,3 +63,6 @@ Veja [docs/README.md](docs/README.md).
 Para criar mods, comece pelo [Guia oficial de modding](docs/modding/README.md).
 
 > Estado atual: implementação iniciada. Veja [build e progresso](docs/18-IMPLEMENTATION-STATUS.md).
+
+Primeiro marco da Etapa 13: [galeria de espada, árvore e waystone](examples/asset-gallery/README.md).
+Após o build, execute `./build/debug/game.exe --mods examples/asset-gallery`.

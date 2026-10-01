@@ -1,5 +1,18 @@
 # Etapa 4 — Asset Manager e Asset Pipeline
 
+## Extensão executável da Etapa 13
+
+O importador estático aceita `OPAQUE` e `MASK`, preserva `alphaCutoff` e
+`doubleSided`, e rejeita `BLEND` com diagnóstico. Os campos persistem no cache
+de modelos v2 e chegam ao material do renderer. A mudança da fingerprint
+invalida o cache v1 de modelos opacos; os arquivos-fonte não são alterados.
+
+Modelos oficiais registrados explicitamente: `core:cube`, `core:sword`,
+`core:tree` e `core:waystone`. A galeria em `examples/asset-gallery` demonstra
+uso via scripts. Rig/animação, arquivos externos e sub-recursos públicos
+continuam fora do importador atual; seções posteriores descrevem também a
+direção de longo prazo.
+
 Este documento formaliza a arquitetura inicial de assets do projeto.
 
 ## Objetivo

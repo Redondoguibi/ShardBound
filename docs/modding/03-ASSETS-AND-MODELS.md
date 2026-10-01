@@ -161,6 +161,11 @@ Boas práticas:
 
 Comece simples.
 
+**Suporte executável atual:** GLB/GLTF estático autocontido com materiais
+`OPAQUE` e `MASK`. O importador preserva `alphaCutoff` e `doubleSided`, e o
+shader aplica recorte também ao alfa de `baseColorFactor`. `BLEND` e animação
+continuam não suportados. Veja a [galeria de assets](../../examples/asset-gallery/README.md).
+
 Tipos esperados:
 
 - lit;

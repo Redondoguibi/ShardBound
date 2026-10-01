@@ -25,7 +25,7 @@ struct Renderer::Impl {
     ComPtr<ID3D11PixelShader> pixelShader, screenPixel;
     ComPtr<ID3D11InputLayout> layout;
     ComPtr<ID3D11Buffer> constants;
-    ComPtr<ID3D11RasterizerState> raster;
+    ComPtr<ID3D11RasterizerState> raster, rasterDoubleMirrored, rasterBack, rasterMirrored;
     ComPtr<ID3D11SamplerState> screenSampler;
     TextureHandle white;
     RenderConfig config;
@@ -104,10 +104,17 @@ Renderer::Renderer(void* nativeWindow, int width, int height, const std::filesys
     vs = compile("screenVertex", "vs_5_0"); ps = compile("screenPixel", "ps_5_0");
     check(p.device->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, &p.screenVertex), "screen vertex shader");
     check(p.device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, &p.screenPixel), "screen pixel shader");
-    D3D11_BUFFER_DESC cb{}; cb.ByteWidth = 144; cb.Usage = D3D11_USAGE_DEFAULT; cb.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    D3D11_BUFFER_DESC cb{}; cb.ByteWidth = 160; cb.Usage = D3D11_USAGE_DEFAULT; cb.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     check(p.device->CreateBuffer(&cb, nullptr, &p.constants), "constant buffer");
     D3D11_RASTERIZER_DESC raster{}; raster.FillMode = D3D11_FILL_SOLID; raster.CullMode = D3D11_CULL_NONE; raster.DepthClipEnable = TRUE;
+    raster.FrontCounterClockwise = FALSE;
     check(p.device->CreateRasterizerState(&raster, &p.raster), "raster state");
+    raster.FrontCounterClockwise = TRUE;
+    check(p.device->CreateRasterizerState(&raster, &p.rasterDoubleMirrored), "mirrored double-sided raster state");
+    raster.CullMode = D3D11_CULL_BACK; raster.FrontCounterClockwise = FALSE;
+    check(p.device->CreateRasterizerState(&raster, &p.rasterBack), "back-face raster state");
+    raster.FrontCounterClockwise = TRUE;
+    check(p.device->CreateRasterizerState(&raster, &p.rasterMirrored), "mirrored raster state");
     D3D11_SAMPLER_DESC sampler{}; sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sampler.AddressU = sampler.AddressV = sampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP; sampler.MaxLOD = D3D11_FLOAT32_MAX;
     check(p.device->CreateSamplerState(&sampler, &p.screenSampler), "screen sampler");
@@ -164,14 +171,20 @@ void Renderer::render(const Camera& camera, std::span<const RenderItem> items) {
     p.context->VSSetConstantBuffers(0,1,p.constants.GetAddressOf()); p.context->PSSetConstantBuffers(0,1,p.constants.GetAddressOf());
     const auto view = XMMatrixLookAtLH(XMVectorSet(camera.eye.x,camera.eye.y,camera.eye.z,1), XMVectorSet(camera.target.x,camera.target.y,camera.target.z,1), XMVectorSet(0,1,0,0));
     const auto projection = XMMatrixPerspectiveFovLH(camera.fov,float(p.renderWidth)/float(p.renderHeight),camera.nearPlane,camera.farPlane);
-    struct Constants { XMFLOAT4X4 mvp, world; Color color; } constants;
+    struct Constants { XMFLOAT4X4 mvp, normalMatrix; Color color; XMFLOAT4 material; } constants;
+    static_assert(sizeof(Constants)==160);
     for (const auto& item : items) {
         if (!item.mesh) continue;
         XMFLOAT4X4 world; std::copy_n(item.world.values.begin(),16,&world._11);
         const auto matrix = XMLoadFloat4x4(&world);
+        const auto determinant=XMVectorGetX(XMMatrixDeterminant(matrix));
+        p.context->RSSetState(item.material.doubleSided ? (determinant<0 ? p.rasterDoubleMirrored.Get() : p.raster.Get()) :
+            (determinant<0 ? p.rasterMirrored.Get() : p.rasterBack.Get()));
         XMStoreFloat4x4(&constants.mvp,XMMatrixTranspose(matrix * view * projection));
-        XMStoreFloat4x4(&constants.world,XMMatrixTranspose(matrix)); constants.color = item.material.color;
-        constants.color.a = item.material.unlit ? 0.0f : 1.0f;
+        const auto normals=std::abs(determinant)>1e-12f ? XMMatrixTranspose(XMMatrixInverse(nullptr,matrix)) : matrix;
+        XMStoreFloat4x4(&constants.normalMatrix,XMMatrixTranspose(normals)); constants.color = item.material.color;
+        constants.material={item.material.alphaCutoff,item.material.alphaMode==AlphaMode::Mask ? 1.0f : 0.0f,
+            item.material.unlit ? 1.0f : 0.0f,item.material.doubleSided ? 1.0f : 0.0f};
         p.context->UpdateSubresource(p.constants.Get(),0,nullptr,&constants,0,0);
         UINT stride = sizeof(Vertex), offset = 0;
         p.context->IASetVertexBuffers(0,1,item.mesh->vertices.GetAddressOf(),&stride,&offset);
@@ -181,6 +194,7 @@ void Renderer::render(const Camera& camera, std::span<const RenderItem> items) {
         p.context->DrawIndexed(item.mesh->count,0,0); ++p.stats.draws; p.stats.triangles += item.mesh->count/3;
     }
     p.context->OMSetRenderTargets(1,p.back.GetAddressOf(),nullptr);
+    p.context->RSSetState(p.raster.Get());
     viewport.Width = float(p.width); viewport.Height = float(p.height); p.context->RSSetViewports(1,&viewport);
     p.context->IASetInputLayout(nullptr); p.context->VSSetShader(p.screenVertex.Get(),nullptr,0); p.context->PSSetShader(p.screenPixel.Get(),nullptr,0);
     p.context->PSSetShaderResources(0,1,p.targetView.GetAddressOf()); p.context->PSSetSamplers(0,1,p.screenSampler.GetAddressOf());

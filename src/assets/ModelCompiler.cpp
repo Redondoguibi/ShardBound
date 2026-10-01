@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <fstream>
 #include <functional>
+#include <cmath>
 #include <numeric>
 namespace game {
 namespace {
@@ -32,6 +33,8 @@ TextureData image(const fastgltf::Asset& asset,size_t index) {
     return decodeTexture(reinterpret_cast<const std::uint8_t*>(data.data()),data.size());
 }
 void validatePart(const ModelPartData& p) {
+    if ((p.alphaMode!=AlphaMode::Opaque && p.alphaMode!=AlphaMode::Mask) || !std::isfinite(p.alphaCutoff) || p.alphaCutoff<0)
+        throw DiagnosticError({"ASSET404","Invalid model alpha mode/cutoff"});
     if (p.vertices.empty() || p.vertices.size() > 10000000 || p.indices.empty() || p.indices.size()%3 || p.indices.size()>30000000)
         throw DiagnosticError({"ASSET404","Invalid model geometry size"});
     for (auto i : p.indices) if (i>=p.vertices.size()) throw DiagnosticError({"ASSET404","Index outside model vertices"});
@@ -44,7 +47,8 @@ Json encode(const ModelData& model) {
         std::vector<float> vertices;
         for (const auto& v:part.vertices) vertices.insert(vertices.end(),{v.position.x,v.position.y,v.position.z,v.normal.x,v.normal.y,v.normal.z,v.uv.x,v.uv.y});
         result.push_back({{"name",part.name},{"vertices",vertices},{"indices",part.indices},{"transform",part.transform.values},
-            {"color",{part.color.r,part.color.g,part.color.b,part.color.a}},{"width",part.texture.width},{"height",part.texture.height},{"pixels",Json::binary(part.texture.pixels)}});
+            {"color",{part.color.r,part.color.g,part.color.b,part.color.a}},{"width",part.texture.width},{"height",part.texture.height},{"pixels",Json::binary(part.texture.pixels)},
+            {"alphaMode",static_cast<int>(part.alphaMode)},{"alphaCutoff",part.alphaCutoff},{"doubleSided",part.doubleSided}});
     }
     return result;
 }
@@ -59,13 +63,15 @@ ModelData decode(const Json& data) {
         part.indices=p.at("indices").get<std::vector<std::uint32_t>>(); part.transform.values=p.at("transform").get<std::array<float,16>>();
         auto color=p.at("color").get<std::array<float,4>>(); part.color={color[0],color[1],color[2],color[3]};
         part.texture.width=p.at("width"); part.texture.height=p.at("height"); part.texture.pixels=p.at("pixels").get_binary();
+        part.alphaMode=static_cast<AlphaMode>(p.at("alphaMode").get<int>());
+        part.alphaCutoff=p.at("alphaCutoff"); part.doubleSided=p.at("doubleSided");
         validatePart(part); result.parts.push_back(std::move(part));
     }
     result.cacheHit=true; return result;
 }
 }
 ModelData compileModel(const std::filesystem::path& source,const std::filesystem::path& cache) {
-    const auto key=fingerprint(source,"static-model-v1-fastgltf-0.9-embedded");
+    const auto key=fingerprint(source,"static-model-v2-fastgltf-0.9-mask-double-sided");
     const auto target=cache/(key+".model");
     if (std::filesystem::is_regular_file(target) && std::filesystem::file_size(target)<256*1024*1024) {
         try { std::ifstream input(target,std::ios::binary); return decode(Json::from_cbor(input)); } catch (const std::exception&) {}
@@ -115,7 +121,9 @@ ModelData compileModel(const std::filesystem::path& source,const std::filesystem
             fastgltf::iterateAccessor<std::uint32_t>(asset,indices,[&](auto i) { part.indices.push_back(i); });
             if (primitive.materialIndex) {
                 const auto& material=asset.materials.at(*primitive.materialIndex);
-                if (material.alphaMode!=fastgltf::AlphaMode::Opaque) fail(source,"Transparent/cutout materials not yet supported");
+                if (material.alphaMode==fastgltf::AlphaMode::Blend) fail(source,"Alpha BLEND materials are not yet supported; use OPAQUE or MASK");
+                part.alphaMode=material.alphaMode==fastgltf::AlphaMode::Mask ? AlphaMode::Mask : AlphaMode::Opaque;
+                part.alphaCutoff=material.alphaCutoff; part.doubleSided=material.doubleSided;
                 auto c=material.pbrData.baseColorFactor; part.color={c[0],c[1],c[2],c[3]};
                 if (material.pbrData.baseColorTexture) {
                     const auto& texture=asset.textures.at(material.pbrData.baseColorTexture->textureIndex);

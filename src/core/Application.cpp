@@ -1,5 +1,6 @@
 #include "core/Application.h"
 #include "core/Log.h"
+#include "assets/CoreAssets.h"
 #include "ecs/RenderSystem.h"
 #include "mods/ModLoader.h"
 #include "game/PreparationScreen.h"
@@ -48,7 +49,7 @@ bool Application::initialize() {
     renderer_ = std::make_unique<Renderer>(window_->nativeHandle(),window_->width(),window_->height(),root_ / "assets/core/shaders/forward.hlsl", renderConfig_);
     vfs_.mount("core",root_ / "assets/core");
     assets_ = std::make_unique<AssetManager>(vfs_,*renderer_,root_ / "user/cache");
-    assets_->registerModel({AssetId("core:cube"),"models/cube.glb"});
+    registerCoreModels(*assets_);
     world_ = std::make_unique<World>();
     physics_=std::make_unique<PhysicsSystem>(*world_);
     player_=std::make_unique<PlayerController>(*world_,*physics_);

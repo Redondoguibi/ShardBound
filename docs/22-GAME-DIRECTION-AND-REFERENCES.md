@@ -1,7 +1,8 @@
 # Etapa 13 — direção do jogo e pesquisa de referência
 
 Decisões do autor e pesquisa pública consolidadas em 2026-10-01. Este documento
-prepara a etapa 13; não afirma que os sistemas abaixo já estejam implementados.
+registra a direção da etapa 13; o primeiro marco de assets/materiais está
+implementado, mas os demais sistemas abaixo continuam como planejamento.
 O estado executável permanece em [18-IMPLEMENTATION-STATUS.md](18-IMPLEMENTATION-STATUS.md).
 
 ## Prioridade das decisões
@@ -159,9 +160,10 @@ Brief de protótipo, não congelamento da escala/rig oficiais. Prioridade:
    volumes opacos na primeira versão em vez de folhas com recorte alpha.
 
 Entregar o arquivo editável da ferramenta usada e uma exportação GLB com
-texturas embutidas, UVs e normais, geometria triangulada e materiais opacos.
-Manter os modelos estáticos, sem skeleton/skin/clips: o importador atual
-rejeita animações e materiais transparentes/cutout. As duas aparências da
+texturas embutidas, UVs e normais, geometria triangulada e materiais OPAQUE ou
+MASK (recorte implementado no primeiro marco). Manter os modelos estáticos,
+sem skeleton/skin/clips: o importador ainda rejeita animações e BLEND.
+As duas aparências da
 waystone podem ser fornecidas como duas exportações GLB para o protótipo;
 a troca de aparência ainda precisará de integração no gameplay.
 
@@ -173,7 +175,8 @@ em quantidade. Personagens, armaduras e animações aguardam o contrato de rig.
 
 ### Recebimento do primeiro lote
 
-Inspeção dos arquivos fornecidos em `assets/core/models`:
+Inspeção dos arquivos fornecidos em `assets/core/models`, antes da extensão
+de materiais do primeiro marco:
 
 | Arquivo | Conteúdo encontrado | Integração |
 | --- | --- | --- |
@@ -201,3 +204,16 @@ final do jogo. Ele atende este projeto estático de meshes; rejeita formatos,
 hierarquias ou rotações que ainda não suporta, antes de gravar a saída.
 O antigo `waystone.gltf` vazio permanece apenas como arquivo local do autor;
 o recurso utilizável é `waystone.glb`.
+
+## Primeiro marco executável — assets e materiais
+
+O importador, o cache v2 e o renderer agora suportam MASK e faces duplas.
+Espada, árvore e waystone ficam disponíveis pelos IDs públicos `core:sword`,
+`core:tree` e `core:waystone`. A cena em
+[examples/asset-gallery](../examples/asset-gallery/README.md) cria os três
+objetos por script e os exibe com escalas provisórias de apresentação.
+
+Esse marco não implementa ainda movimento definitivo, salto, hub/floresta,
+waystones funcionais ou combate. O autor não precisa produzir mais assets
+para o próximo avanço técnico; os arquivos editáveis da espada e árvore
+continuam úteis para ajustes futuros.

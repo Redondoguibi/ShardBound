@@ -9,6 +9,9 @@ struct ModelPartData {
     Matrix transform;
     Color color;
     TextureData texture;
+    AlphaMode alphaMode = AlphaMode::Opaque;
+    float alphaCutoff = 0.5f;
+    bool doubleSided = false;
 };
 struct ModelData { std::vector<ModelPartData> parts; bool cacheHit = false; };
 ModelData compileModel(const std::filesystem::path& source,const std::filesystem::path& cache);

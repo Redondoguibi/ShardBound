@@ -11,7 +11,15 @@ struct MeshResource;
 struct TextureResource;
 using MeshHandle = std::shared_ptr<const MeshResource>;
 using TextureHandle = std::shared_ptr<const TextureResource>;
-struct Material { Color color{}; TextureHandle texture; bool unlit = false; };
+enum class AlphaMode { Opaque, Mask };
+struct Material {
+    Color color{};
+    TextureHandle texture;
+    bool unlit = false;
+    AlphaMode alphaMode = AlphaMode::Opaque;
+    float alphaCutoff = 0.5f;
+    bool doubleSided = false;
+};
 struct RenderItem { MeshHandle mesh; Material material; Matrix world; };
 struct Camera { Vec3 eye{4,3,-6}, target{}; float nearPlane = 0.1f, farPlane = 200, fov = 0.8f; };
 struct RenderConfig { bool vsync = true; float scale = 1; };
