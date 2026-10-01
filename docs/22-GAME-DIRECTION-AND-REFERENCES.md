@@ -170,3 +170,24 @@ Guardar PNGs/fontes editáveis para revisão. Não embutir iluminação final.
 Escala relativa e pivôs devem ser consistentes e ajustáveis nos arquivos-fonte;
 dimensões definitivas serão alinhadas ao template oficial antes da produção
 em quantidade. Personagens, armaduras e animações aguardam o contrato de rig.
+
+### Recebimento do primeiro lote
+
+Inspeção dos arquivos fornecidos em `assets/core/models`:
+
+| Arquivo | Conteúdo encontrado | Integração |
+| --- | --- | --- |
+| `sword.glb` | 1 mesh, 20 triângulos, textura PNG embutida 32×32, UVs e normais, sem skin/animação. | Material `MASK` e `doubleSided`; ainda não compatível com o importador opaco v0. |
+| `tree.glb` | 47 meshes, 564 triângulos, duas texturas PNG embutidas 64×64, UVs e normais, sem skin/animação. | Materiais `MASK` e `doubleSided`; ainda não compatíveis com o importador opaco v0. |
+| `waystone.gltf` | 184 bytes; uma cena com um nó/grupo, sem meshes, buffers, materiais ou imagens. | Exportação sem geometria; solicitar o projeto editável do Blockbench para recuperar o modelo. |
+
+As texturas dos dois GLBs contêm pixels totalmente transparentes. A inspeção
+não determina se todas essas regiões são usadas pelas UVs; não alterar os
+materiais para opacos sem avaliar o resultado. O suporte a alpha-test já faz
+parte da direção de materiais, mas ainda precisa ser implementado e validado
+antes da integração visual destes assets. Também avaliar faces duplas.
+
+Os GLBs originais foram preservados. Esta conferência de estrutura e texturas
+não equivale a validação no renderer, registro público dos assets ou aprovação
+da escala/pivôs. A waystone precisa do arquivo-fonte com geometria; mudar a
+extensão ou empacotar o glTF vazio em GLB não recuperaria o modelo.
