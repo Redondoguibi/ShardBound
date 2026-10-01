@@ -159,6 +159,7 @@ Ainda em aberto:
 Direção de gameplay definida: hub/aldeia segura, primeira região de floresta,
 mundo aberto, waystones ativadas por proximidade e viagem pelo mapa a partir
 de qualquer lugar, bloqueada até completar 6 segundos sem causar/receber dano.
+Viagem gratuita e instantânea; ativações persistem após morte e save/load.
 Veja [22-GAME-DIRECTION-AND-REFERENCES.md](22-GAME-DIRECTION-AND-REFERENCES.md).
 
 Contratos técnicos ainda abertos:
@@ -175,13 +176,15 @@ Contratos técnicos ainda abertos:
 
 Definido pelo autor: referência principal MCD II, conteúdo centrado em mods,
 fontes/UI próprias, espada de ferro inicial, padrões de ataque por arma,
-crítico relacionado ao salto, níveis numéricos/raridades e retorno ao hub
-com perda de 15% do ouro ao morrer. Sem lore, campanha, fim ou sequência
+movimento somente WASD no PC, crítico durante a queda de 1,7x,
+níveis numéricos/raridades e retorno ao hub com perda de 15% do ouro ao morrer,
+arredondada para baixo. Renascer restaura toda a vida e mantém itens/equipamentos.
+Sem lore, campanha, fim ou sequência
 obrigatória de progressão definidos.
 
-Ainda abertos: controles concretos/câmera, condição e multiplicador do crítico,
-slots/raridades/fórmulas, balanceamento, arredondamento da perda de ouro,
-raio/custo da viagem, conservação das descobertas após morte, escala e rig.
+Ainda abertos: outros bindings/câmera, detalhes técnicos de detecção do acerto
+durante a queda, slots/raridades/demais fórmulas, balanceamento,
+raio de ativação, casos especiais de dano, escala e rig.
 Pesquisa de referência não resolve automaticamente esses contratos.
 
 ## Save

@@ -38,14 +38,14 @@ conforme [17-ART-DIRECTION-MODELING.md](17-ART-DIRECTION-MODELING.md).
 - Waystones encontradas durante exploração são ativadas por proximidade,
   sem exigir interação explícita.
 - O mapa permite viajar para waystones já ativadas a partir de qualquer lugar.
+- Ativações são preservadas após morrer e ao salvar/carregar o jogo.
+- Viagem rápida é gratuita e instantânea, quando permitida.
 - Viagem rápida fica bloqueada durante combate: exige **6 segundos sem
   causar ou receber dano**. Um novo dano causado ou recebido reinicia a janela.
 - O sistema de minecarts de MCD II é uma referência de experiência, não uma
   exigência de representar as waystones como veículos ou trilhos.
 
-Raio de ativação, custo, duração da viagem, conservação das ativações após
-morte e casos de dano especial ainda não foram explicitamente fechados.
-Não impor silenciosamente custos ou perdas de descobertas.
+Raio de ativação e casos de dano especial ainda precisam de contrato técnico.
 
 ### Combate, itens e morte
 
@@ -53,16 +53,18 @@ Não impor silenciosamente custos ou perdas de descobertas.
 - Diversidade de armas e itens, com estatísticas e atributos diferentes.
 - Itens possuem níveis numéricos e raridade.
 - Padrões de ataques corpo a corpo variam conforme a arma equipada.
-- Há crítico relacionado a pular e atacar; janela, condição e multiplicador
-  ainda precisam de contrato concreto.
-- Câmera e controles devem seguir a referência MCD II; bindings e parâmetros
-  exatos ainda precisam ser verificados antes de congelar a especificação.
+- Ataques durante a queda são críticos, com multiplicador de **1,7x**.
+- Movimento no PC é **somente WASD**, conforme decisão do autor que refina
+  a referência anterior. Não implementar movimento por clique.
+- Câmera segue a referência MCD II; parâmetros e outros bindings ainda
+  precisam de contrato concreto.
 - Ao morrer, o jogador retorna ao hub e perde **15% do ouro**.
+- A perda é arredondada para baixo: `floor(ouro * 0.15)`, descontada uma vez
+  por morte. O jogador renasce com toda a vida, mantendo itens e equipamentos.
 - Ouro é a moeda definida para ShardBound.
 - O fim do jogo não será produzido agora.
 
-Arredondamento da perda de ouro, estado restaurado ao renascer, slots finais,
-raridades, fórmulas, loot e balanceamento continuam abertos. Não copiar uma
+Slots finais, raridades, demais fórmulas, loot e balanceamento continuam abertos. Não copiar uma
 campanha ou curva obrigatória de progressão como efeito colateral da referência.
 
 ## Pesquisa: evidência e limites
@@ -80,7 +82,7 @@ quadro a quadro dos trailers ou medição de tempos de animação/câmera.
 | [Trailer de gameplay — Minecraft.net, 2026-08-20](https://www.minecraft.net/en-us/article/minecraft-dungeons-ii-gameplay-trailer) | Material oficial para futura comparação visual e de animações. | Trailer identificado; não tratado como medição de jogabilidade. |
 | [Página oficial do jogo](https://www.minecraft.net/en-us/about-dungeons-ii) | Visão geral e links para materiais oficiais. | Copiar toda a lista de funcionalidades ampliaria o escopo além do roadmap atual. |
 
-### Controles no PC: investigação ainda necessária
+### Controles no PC: pesquisa e decisão própria
 
 [Relatos diretos de jogadores no Steam](https://steamcommunity.com/app/1912410/discussions/0/581683736959055311/)
 descrevem movimento/ataque por clique e ausência de WASD no lançamento. São
@@ -88,17 +90,18 @@ evidência de usuários, não uma tabela oficial de bindings ou teste realizado
 nesta pesquisa. Guias de terceiros encontrados se contradizem sobre WASD e
 botões; não são base suficiente para congelar o contrato.
 
-O sandbox atual usa WASD, mas seu controlador provisório não define a escolha
-final da etapa 13. Verificar movimento por clique, navegação ao destino,
-seleção de alvos, separação entre mover/atacar/interagir, controles de gamepad
-e regras de remapeamento antes de publicar a especificação definitiva.
+Após a pesquisa, o autor escolheu somente WASD para movimento no PC.
+Essa decisão prevalece sobre a referência. O controlador do sandbox continua
+provisório: seleção de alvos, separação entre atacar/interagir, controles de
+gamepad e remapeamento ainda precisam de especificação.
 
 ### Ataque aéreo e crítico
 
 A documentação oficial confirma ataque durante salto. Ela não estabelece
 que todo ataque aéreo seja um crítico garantido, nem o multiplicador ou a
-fase do salto em que o acerto ocorre. O requisito de crítico de ShardBound
-permanece válido, mas precisa ser refinado com evidência ou decisão do autor.
+fase do salto em que o acerto ocorre. O autor definiu para ShardBound crítico
+durante a queda com multiplicador de 1,7x; trata-se de decisão própria,
+não de uma fórmula confirmada para MCD II.
 Não presumir regras do Minecraft convencional ou do primeiro Dungeons.
 
 ## Proposta de execução modular
@@ -106,13 +109,13 @@ Não presumir regras do Minecraft convencional ou do primeiro Dungeons.
 Os marcos abaixo são proposta técnica, não decisões criativas adicionais.
 
 1. **Contratos e movimento:** especificar mundo/áreas, câmera, controlador,
-   salto, navegação/seleção e rig. Completar as capacidades necessárias de
+   salto, movimento WASD/seleção e rig. Completar as capacidades necessárias de
    física e animação nas APIs próprias existentes.
 2. **Exploração:** um hub e um trecho de floresta conectados, com circulação
    livre. Waystones, mapa e bloqueio de viagem por dano; sem conclusão de
    missão obrigatória para entrar ou sair da floresta.
 3. **Combate:** espada de ferro, um inimigo inicial e ataques legíveis com
-   colisão, animação, som e VFX; definir ataque aéreo/crítico. Separar padrão
+   colisão, animação, som e VFX; implementar crítico de queda de 1,7x. Separar padrão
    de ataque, equipamento e regras de dano para permitir alteração por mods.
 4. **Itens:** definir instâncias de itens, níveis, raridades, atributos e
    equipamento sem fixar campanha, curva de XP ou catálogo grande de conteúdo.
@@ -142,3 +145,28 @@ mods devem preservar referências e estados conforme os contratos publicados.
 O primeiro marco jogável será pequeno, mas deverá demonstrar liberdade de
 exploração e extensibilidade. A Etapa 13 completa não será declarada concluída
 apenas por existir esse marco ou por passarem os testes do sandbox.
+
+## Primeiro lote sugerido de assets do autor
+
+Brief de protótipo, não congelamento da escala/rig oficiais. Prioridade:
+
+1. **Espada de ferro:** lâmina, guarda e cabo legíveis, geometria simples,
+   textura pixel art própria e origem no ponto de empunhadura.
+2. **Waystone:** marco de pedra reconhecível na floresta e no hub; origem no
+   centro da base. Preparar duas aparências de textura (inativa/ativa), sem
+   depender de transparência, emissive ou partículas para distingui-las.
+3. **Uma árvore:** tronco e copa blocados, origem no centro da base; usar
+   volumes opacos na primeira versão em vez de folhas com recorte alpha.
+
+Entregar o arquivo editável da ferramenta usada e uma exportação GLB com
+texturas embutidas, UVs e normais, geometria triangulada e materiais opacos.
+Manter os modelos estáticos, sem skeleton/skin/clips: o importador atual
+rejeita animações e materiais transparentes/cutout. As duas aparências da
+waystone podem ser fornecidas como duas exportações GLB para o protótipo;
+a troca de aparência ainda precisará de integração no gameplay.
+
+Texturas de 32×32 ou 64×64 são sugestões iniciais, não limites obrigatórios.
+Guardar PNGs/fontes editáveis para revisão. Não embutir iluminação final.
+Escala relativa e pivôs devem ser consistentes e ajustáveis nos arquivos-fonte;
+dimensões definitivas serão alinhadas ao template oficial antes da produção
+em quantidade. Personagens, armaduras e animações aguardam o contrato de rig.
