@@ -127,12 +127,18 @@ GUIDs, física/player, estado por mod, backup e preservação de órfãos; SDK C
 com DLL real e lifecycle; CLI com inspeção de saves e manifests nativos.
 Contratos, APIs, exemplos e limites: [21-EXTENSIBILITY-V1.md](21-EXTENSIBILITY-V1.md).
 
-## Etapa 13 — ainda não iniciada
+## Etapa 13 — planejamento registrado; implementação ainda não iniciada
 
 O sandbox técnico não é o hub ou o jogo final. Progressão, áreas oficiais,
 combate final e identidade artística dependem do desenho de conteúdo e dos
 contratos de mundo/áreas ainda abertos. Save v1 persiste o runtime atual; não
 define o formato de mapas ou as regras finais de progressão.
+
+Decisões do autor e pesquisa pública de MCD II estão em
+[22-GAME-DIRECTION-AND-REFERENCES.md](22-GAME-DIRECTION-AND-REFERENCES.md).
+Hub, floresta em mundo aberto, waystones, itens e morte possuem direção
+documentada; contratos técnicos e parâmetros ainda abertos estão explicitados.
+Essa preparação não adiciona sistemas executáveis ao runtime.
 
 ## Build e execução
 

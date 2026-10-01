@@ -156,6 +156,13 @@ Ainda em aberto:
 
 ## Mundo
 
+Direção de gameplay definida: hub/aldeia segura, primeira região de floresta,
+mundo aberto, waystones ativadas por proximidade e viagem pelo mapa a partir
+de qualquer lugar, bloqueada até completar 6 segundos sem causar/receber dano.
+Veja [22-GAME-DIRECTION-AND-REFERENCES.md](22-GAME-DIRECTION-AND-REFERENCES.md).
+
+Contratos técnicos ainda abertos:
+
 - cenas;
 - transição entre áreas;
 - streaming;
@@ -163,6 +170,19 @@ Ainda em aberto:
 - geração procedural;
 - persistência;
 - formato de scene/map.
+
+## Jogo e conteúdo oficial
+
+Definido pelo autor: referência principal MCD II, conteúdo centrado em mods,
+fontes/UI próprias, espada de ferro inicial, padrões de ataque por arma,
+crítico relacionado ao salto, níveis numéricos/raridades e retorno ao hub
+com perda de 15% do ouro ao morrer. Sem lore, campanha, fim ou sequência
+obrigatória de progressão definidos.
+
+Ainda abertos: controles concretos/câmera, condição e multiplicador do crítico,
+slots/raridades/fórmulas, balanceamento, arredondamento da perda de ouro,
+raio/custo da viagem, conservação das descobertas após morte, escala e rig.
+Pesquisa de referência não resolve automaticamente esses contratos.
 
 ## Save
 

@@ -198,3 +198,9 @@ Somente depois da plataforma estar funcional:
 - áreas oficiais.
 
 A arquitetura nasce antes do conteúdo.
+
+A direção atual da etapa 13 está em
+[22-GAME-DIRECTION-AND-REFERENCES.md](22-GAME-DIRECTION-AND-REFERENCES.md):
+hub seguro, floresta em mundo aberto, waystones e sistemas de combate/itens
+extensíveis. Progressão aqui significa suporte a evolução configurável;
+não há campanha, lore ou sequência obrigatória de progressão definida.
