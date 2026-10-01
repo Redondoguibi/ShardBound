@@ -189,5 +189,15 @@ antes da integração visual destes assets. Também avaliar faces duplas.
 
 Os GLBs originais foram preservados. Esta conferência de estrutura e texturas
 não equivale a validação no renderer, registro público dos assets ou aprovação
-da escala/pivôs. A waystone precisa do arquivo-fonte com geometria; mudar a
-extensão ou empacotar o glTF vazio em GLB não recuperaria o modelo.
+da escala/pivôs.
+
+O autor forneceu depois `waystone.bbmodel` e `waystone.png`. A conversão
+reproduzível com `python tools/export-waystone.py` gerou `waystone.glb`:
+8 meshes, 288 triângulos e PNG 256×256 embutido. O GLB passou pelo
+Khronos glTF Validator 2.0.0-dev.3.10 sem erros ou avisos. Uma importação
+independente confirmou as oito partes; o autor confirmou o visual da waystone.
+O script mantém coordenadas/pivôs em unidades de autoria, sem congelar a escala
+final do jogo. Ele atende este projeto estático de meshes; rejeita formatos,
+hierarquias ou rotações que ainda não suporta, antes de gravar a saída.
+O antigo `waystone.gltf` vazio permanece apenas como arquivo local do autor;
+o recurso utilizável é `waystone.glb`.
