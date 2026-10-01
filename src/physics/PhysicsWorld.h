@@ -15,6 +15,7 @@ public:
     void setVelocity(BodyId id,Vec3 velocity);
     void setPosition(BodyId id,Vec3 position);
     void step(float delta);
+    void swapState(PhysicsWorld& other) noexcept;
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

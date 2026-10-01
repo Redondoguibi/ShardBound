@@ -11,7 +11,7 @@ struct Version {
 };
 struct Dependency { std::string id, operation; Version version; bool optional = false; bool accepts(Version candidate) const; };
 struct ModManifest {
-    std::string id,name,entry;
+    std::string id,name,entry,native;
     Version version;
     std::filesystem::path root;
     std::vector<Dependency> dependencies;

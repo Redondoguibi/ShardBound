@@ -10,13 +10,15 @@ void PhysicsSystem::attachBox(EntityId entity,Vec3 halfExtent,bool dynamic) {
     if(world_.parent(entity)) throw DiagnosticError({"GAME104","Physical entities must be roots"});
     const auto position=world_.get<TransformComponent>(entity).local.position;
     auto body=physics_.box(position,halfExtent,dynamic);
-    detach(entity); bodies_.emplace(entity,Entry{body,position});
+    detach(entity); bodies_.emplace(entity,Entry{body,position,{halfExtent,dynamic}});
 }
 void PhysicsSystem::detach(EntityId entity) {
     const auto found=bodies_.find(entity);
     if(found!=bodies_.end()) { physics_.destroy(found->second.body); bodies_.erase(found); }
 }
 bool PhysicsSystem::contains(EntityId entity) const { return world_.alive(entity) && bodies_.contains(entity); }
+PhysicsSystem::Box PhysicsSystem::description(EntityId entity) const { return require(entity).description; }
+void PhysicsSystem::swapState(PhysicsSystem& other) noexcept { physics_.swapState(other.physics_); bodies_.swap(other.bodies_); }
 Vec3 PhysicsSystem::velocity(EntityId entity) const { return physics_.velocity(require(entity).body); }
 void PhysicsSystem::setVelocity(EntityId entity,Vec3 velocity) { physics_.setVelocity(require(entity).body,velocity); }
 void PhysicsSystem::step(float delta) {

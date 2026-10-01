@@ -82,6 +82,8 @@ void bindRuntimeApi(script::Runtime& scripting,World& world,AssetManager& assets
         }
         auto created=world.create(id);
         try {
+            world.get<IdentityComponent>(created).definition=id;
+            world.get<IdentityComponent>(created).owner=AssetId(id).nameSpace();
             world.add(created,TransformComponent{{position}});
             if(model) world.add(created,ModelComponent{AssetId(modelId),model});
         } catch(...) { world.destroy(created); throw; }

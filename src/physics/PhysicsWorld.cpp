@@ -46,6 +46,7 @@ struct PhysicsWorld::Impl {
 };
 PhysicsWorld::PhysicsWorld() { static Library library; (void)library; impl_=std::make_unique<Impl>(); }
 PhysicsWorld::~PhysicsWorld()=default;
+void PhysicsWorld::swapState(PhysicsWorld& other) noexcept { impl_.swap(other.impl_); }
 BodyId PhysicsWorld::box(Vec3 p,Vec3 half,bool dynamic) {
     if(!finite(p) || !finite(half) || half.x<=0 || half.y<=0 || half.z<=0) throw DiagnosticError({"PHYS102","Invalid box dimensions/position"});
     JPH::BoxShapeSettings shapeSettings(JPH::Vec3(half.x,half.y,half.z));

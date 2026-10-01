@@ -8,6 +8,8 @@
 #include "scripting/Runtime.h"
 #include "game/PlayerController.h"
 #include "audio/AudioSystem.h"
+#include "scripting/ExtensionBridge.h"
+#include "extensions/NativeMods.h"
 namespace game {
 class Application {
 public:
@@ -33,6 +35,11 @@ private:
     std::unique_ptr<PlayerController> player_;
     std::unique_ptr<AudioSystem> audio_;
     std::unique_ptr<script::Runtime> scripting_;
+    std::unique_ptr<Components> components_;
+    std::unique_ptr<SaveGame> saves_;
+    std::unique_ptr<ExtensionBridge> extensions_;
+    std::unique_ptr<NativeMods> native_;
+    bool allowNative_=false;
     bool initialized_ = false;
 };
 }

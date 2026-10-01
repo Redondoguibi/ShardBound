@@ -3,6 +3,7 @@
 #include <entt/entity/registry.hpp>
 #include <atomic>
 #include <map>
+#include <objbase.h>
 namespace game {
 struct World::Impl {
     struct Custom { std::map<std::string,CustomComponent> values; };
@@ -23,6 +24,10 @@ EntityId World::create(std::string name) {
     auto raw=impl_->registry.create(); impl_->entities.emplace(id,raw);
     impl_->registry.emplace<NameComponent>(raw,std::move(name));
     impl_->registry.emplace<ActiveComponent>(raw);
+    GUID guid; if(FAILED(CoCreateGuid(&guid))) { destroy(id); throw DiagnosticError({"ECS105","Cannot allocate persistent identity"}); }
+    wchar_t text[40]{}; StringFromGUID2(guid,text,40); std::wstring wide(text);
+    std::string key; for(auto ch:wide) key.push_back(static_cast<char>(ch));
+    impl_->registry.emplace<IdentityComponent>(raw,std::move(key),std::string{});
     return id;
 }
 bool World::alive(EntityId id) const { return impl_->entities.contains(id); }
@@ -40,6 +45,13 @@ EntityId World::find(std::string_view name) const {
     return {};
 }
 std::vector<EntityId> World::entities() const { std::vector<EntityId> ids; for (const auto& [id,raw]:impl_->entities) { (void)raw; ids.push_back(id); } return ids; }
+EntityId World::findPersistent(std::string_view key) const {
+    for(const auto& [id,raw]:impl_->entities) {
+        const auto* identity=impl_->registry.try_get<IdentityComponent>(raw);
+        if(identity && identity->persistent==key) return id;
+    }
+    return {};
+}
 void World::put(EntityId id,Component value) {
     const auto raw=impl_->require(id);
     std::visit([&](auto&& item) { using T=std::decay_t<decltype(item)>; impl_->registry.emplace_or_replace<T>(raw,std::move(item)); },std::move(value));
@@ -54,6 +66,7 @@ void* World::component(EntityId id,size_t kind,bool required) {
     case 4: result=impl_->registry.try_get<HealthComponent>(raw); break;
     case 5: result=impl_->registry.try_get<InventoryComponent>(raw); break;
     case 6: result=impl_->registry.try_get<InteractableComponent>(raw); break;
+    case 7: result=impl_->registry.try_get<IdentityComponent>(raw); break;
     }
     if (!result && required) throw DiagnosticError({"ECS102","Required component missing on #"+std::to_string(id.value)});
     return result;
@@ -68,6 +81,7 @@ void World::removeComponent(EntityId id,size_t kind) {
     case 4: impl_->registry.remove<HealthComponent>(raw); break;
     case 5: impl_->registry.remove<InventoryComponent>(raw); break;
     case 6: impl_->registry.remove<InteractableComponent>(raw); break;
+    case 7: impl_->registry.remove<IdentityComponent>(raw); break;
     }
 }
 void World::setParent(EntityId child,EntityId parentId) {
@@ -102,4 +116,5 @@ bool World::removeCustom(EntityId entity,const AssetId& type) {
     const auto raw=impl_->require(entity); auto* value=impl_->registry.try_get<Impl::Custom>(raw);
     return value && value->values.erase(type.str())!=0;
 }
+void World::swapState(World& other) noexcept { impl_.swap(other.impl_); }
 }

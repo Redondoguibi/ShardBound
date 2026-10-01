@@ -40,6 +40,12 @@ ModManifest readManifest(const std::filesystem::path& root) {
         if (!validNamespace(mod.id) || mod.id=="core" || mod.name.empty()) throw std::runtime_error("Invalid/reserved mod ID or empty name");
         if (json.at("api").get<std::string>()!="0.1") throw std::runtime_error("Unsupported runtime API (expected 0.1)");
         mod.entry=json.value("entry",std::string{});
+        mod.native=json.value("native",std::string{});
+        if(!mod.native.empty()) {
+            const std::filesystem::path native(mod.native);
+            if(native.is_absolute() || native.has_root_name() || mod.native.find(':')!=std::string::npos || native.extension()!=L".dll") throw std::runtime_error("Native entry must be a relative .dll path");
+            for(const auto& part:native) if(part==L"..") throw std::runtime_error("Native entry cannot traverse directories");
+        }
         if (!mod.entry.empty()) (void)VirtualFileSystem::contained(root,mod.entry);
         for (auto key:{"dependencies","optional_dependencies"}) {
             if (!json.contains(key)) continue;

@@ -5,6 +5,7 @@ namespace game {
 // Owns bodies; World must outlive this system. Physical entities are roots.
 class PhysicsSystem {
 public:
+    struct Box { Vec3 halfExtent; bool dynamic; };
     explicit PhysicsSystem(World& world) : world_(world) {}
     void attachBox(EntityId entity,Vec3 halfExtent,bool dynamic);
     void detach(EntityId entity);
@@ -12,8 +13,10 @@ public:
     Vec3 velocity(EntityId entity) const;
     void setVelocity(EntityId entity,Vec3 velocity);
     void step(float delta);
+    Box description(EntityId entity) const;
+    void swapState(PhysicsSystem& other) noexcept;
 private:
-    struct Entry { BodyId body; Vec3 lastPosition; };
+    struct Entry { BodyId body; Vec3 lastPosition; Box description; };
     const Entry& require(EntityId entity) const;
     World& world_;
     PhysicsWorld physics_;

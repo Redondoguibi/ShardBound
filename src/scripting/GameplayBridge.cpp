@@ -2,6 +2,7 @@
 #include "game/HealthSystem.h"
 #include "game/InventorySystem.h"
 #include "game/InteractionSystem.h"
+#include "core/Log.h"
 #include <cmath>
 #include <limits>
 namespace game {
@@ -47,7 +48,12 @@ void bindGameplayApi(script::Runtime& runtime,World& world,PhysicsSystem& physic
         arity(a,1,at); return Value(double(world.get<HealthComponent>(requireEntity(a[0],world,at)).current));
     }));
     runtime.bind("damage",native([&](const auto& a,const auto& at) {
-        arity(a,2,at); return Value(double(damage(world,requireEntity(a[0],world,at),number(a[1],at))));
+        arity(a,2,at); auto context=object(); context.setMember("target",a[0],at); context.setMember("amount",a[1],at);
+        context=runtime.filter("core:damage",context);
+        const auto target=context.member("target",at); const auto amount=number(context.member("amount",at),at);
+        const auto applied=damage(world,requireEntity(target,world,at),amount);
+        for(const auto& error:runtime.emit("on_damage",{target,Value(double(applied))})) LOG_ERROR("SCRIPT",DiagnosticError(error).what());
+        return Value(double(applied));
     }));
     runtime.bind("heal",native([&](const auto& a,const auto& at) {
         arity(a,2,at); return Value(double(heal(world,requireEntity(a[0],world,at),number(a[1],at))));

@@ -1,4 +1,5 @@
 #include "scripting/Value.h"
+#include <set>
 namespace game::script {
 double Value::number(const Location& at) const { if(auto p=std::get_if<double>(&data)) return *p; fail(at,"SCRIPT301","Expected Number"); }
 bool Value::boolean(const Location& at) const { if(auto p=std::get_if<bool>(&data)) return *p; fail(at,"SCRIPT301","Expected Boolean"); }
@@ -12,7 +13,19 @@ Value Value::member(const std::string& key,const Location& at) const {
 }
 void Value::setMember(const std::string& key,Value value,const Location& at) {
     if(auto p=std::get_if<std::shared_ptr<HostObject>>(&data)) { (*p)->set(key,std::move(value),at); return; }
-    if(auto p=std::get_if<std::shared_ptr<Object>>(&data)) { (*p)->fields.insert_or_assign(key,std::move(value)); return; }
+    if(auto p=std::get_if<std::shared_ptr<Object>>(&data)) {
+        std::vector<Value> pending{value}; std::set<const void*> seen;
+        while(!pending.empty()) {
+            auto current=std::move(pending.back()); pending.pop_back();
+            if(auto object=std::get_if<std::shared_ptr<Object>>(&current.data)) {
+                if(object->get()==p->get()) fail(at,"SCRIPT324","Object assignment would create a cycle");
+                if(seen.insert(object->get()).second) for(const auto& [name,child]:(*object)->fields) { (void)name; pending.push_back(child); }
+            } else if(auto sequence=std::get_if<std::shared_ptr<List>>(&current.data)) {
+                if(seen.insert(sequence->get()).second) for(const auto& child:(*sequence)->values) pending.push_back(child);
+            }
+        }
+        (*p)->fields.insert_or_assign(key,std::move(value)); return;
+    }
     fail(at,"SCRIPT301","Member assignment requires Object or EntityRef");
 }
 Value native(std::function<Value(const std::vector<Value>&,const Location&)> call) { return Value(std::make_shared<Callable>(std::move(call))); }

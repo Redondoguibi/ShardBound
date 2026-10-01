@@ -7,6 +7,7 @@
     "name": {"type":"string","minLength":1},
     "version": {"type":"string","pattern":"^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"},
     "api": {"const":"0.1"}, "entry": {"type":"string"},
+    "native": {"type":"string","description":"Relative path to an optional Windows x64 DLL; requires --allow-native"},
     "dependencies": {"type":"array","items":{"type":"string","pattern":"^[a-z0-9_-]+( (>=|<=|==|>|<) [0-9]+\\.[0-9]+(\\.[0-9]+)?)?$"}},
     "optional_dependencies": {"$ref":"#/properties/dependencies"}
   }

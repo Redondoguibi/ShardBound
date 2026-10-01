@@ -11,8 +11,9 @@ struct ActiveComponent { bool value = true; };
 struct HealthComponent { float current = 100, maximum = 100; };
 struct InventoryComponent { std::map<std::string,std::uint32_t> items; };
 struct InteractableComponent { bool enabled = true; };
+struct IdentityComponent { std::string persistent,definition,owner="core"; };
 struct CustomComponent { unsigned version=1; Data data; };
-using Component = std::variant<TransformComponent,NameComponent,ModelComponent,ActiveComponent,HealthComponent,InventoryComponent,InteractableComponent>;
+using Component = std::variant<TransformComponent,NameComponent,ModelComponent,ActiveComponent,HealthComponent,InventoryComponent,InteractableComponent,IdentityComponent>;
 template<class T> constexpr size_t componentIndex() {
     if constexpr (std::is_same_v<T,TransformComponent>) return 0;
     else if constexpr (std::is_same_v<T,NameComponent>) return 1;
@@ -21,6 +22,7 @@ template<class T> constexpr size_t componentIndex() {
     else if constexpr (std::is_same_v<T,HealthComponent>) return 4;
     else if constexpr (std::is_same_v<T,InventoryComponent>) return 5;
     else if constexpr (std::is_same_v<T,InteractableComponent>) return 6;
+    else if constexpr (std::is_same_v<T,IdentityComponent>) return 7;
     else static_assert(sizeof(T)==0,"Unregistered component type");
 }
 class World {
@@ -31,6 +33,7 @@ public:
     bool alive(EntityId id) const;
     void destroy(EntityId id);
     EntityId find(std::string_view name) const;
+    EntityId findPersistent(std::string_view key) const;
     std::vector<EntityId> entities() const;
     template<class T> void add(EntityId id,T value) { put(id,Component(std::move(value))); }
     template<class T> T& get(EntityId id) { return *static_cast<T*>(component(id,componentIndex<T>(),true)); }
@@ -42,6 +45,7 @@ public:
     void setCustom(EntityId entity,const AssetId& type,CustomComponent value);
     const std::map<std::string,CustomComponent>& custom(EntityId entity) const;
     bool removeCustom(EntityId entity,const AssetId& type);
+    void swapState(World& other) noexcept;
 private:
     void put(EntityId id,Component value);
     void* component(EntityId id,size_t kind,bool required);
