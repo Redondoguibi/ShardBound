@@ -1,0 +1,82 @@
+#include "scripting/Runtime.h"
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
+using namespace game::script;
+void require(bool ok,const char* message) { if(!ok) throw std::runtime_error(message); }
+template<class F> void rejects(F action,const std::string& code) {
+    try { action(); } catch(const game::DiagnosticError& e) { require(e.diagnostic.code==code,"Wrong diagnostic"); return; }
+    throw std::runtime_error("Expected diagnostic: "+code);
+}
+int main() {
+    try {
+        Runtime runtime; runtime.registerSymbol("Fire");
+        runtime.bind("stub",native([](const auto& args,const auto&) { return args.at(0); }));
+        runtime.execute("test",R"SL(
+? language v0 executable contract
+/? multiline comment
+ignored ?/
+func multiply(value, factor = 2):
+    return value * factor
+func pair():
+    return 1, 2
+@Globals
+.LIMIT = 4
+total = 0
+for value in [1, 2, 3]:
+    total = total + multiply(value)
+if total == 12 and not false:
+    total = stub(total + LIMIT)
+else:
+    total = 0
+@Globals
+result = total
+pair_result = pair()
+@Entities
+enemy Zombie {
+    Attributes:
+        .health = 30
+        .speed = 1.0
+    AIs:
+        .Melee
+}
+enemy FireZombie from Zombie {
+    Attributes:
+        .health = 50
+        .element = Fire
+}
+@Events
+on_tick(value):
+    total = total + value
+)SL","contract.sl");
+        require(runtime.global("test","result").number()==16,"Functions/loops/defaults/precedence failed");
+        const auto& zombie=runtime.registry().get("Entities","test:Zombie");
+        const auto& fire=runtime.registry().get("Entities","test:FireZombie");
+        require(zombie.data.member("Attributes",{}).member("health",{}).number()==30,"from mutated base");
+        require(fire.data.member("Attributes",{}).member("speed",{}).number()==1,"from lost inherited property");
+        require(runtime.emit("on_tick",{Value(3.0)}).empty(),"Event failed");
+        require(runtime.global("test","total").number()==19,"Event did not update module global");
+        require(std::get<std::shared_ptr<List>>(runtime.global("test","pair_result").data)->values.size()==2,"Multiple returns failed");
+        rejects([&] { runtime.execute("test","@Globals\nLIMIT = 5\n"); },"SCRIPT303");
+        rejects([&] { runtime.execute("types","@Globals\nx = \"10\" + 5\n"); },"SCRIPT301");
+        rejects([&] { runtime.execute("scope","if true:\n    hidden = 1\n@Globals\nx = hidden\n"); },"SCRIPT102");
+        rejects([&] { runtime.execute("unknown","x = Firee\n"); },"SCRIPT102");
+        rejects([&] { parse("func f(a = 1, b):\n    return b\n","bad.sl"); },"SCRIPT202");
+        rejects([&] { parse("if true:\n \tx = 1\n","bad.sl"); },"SCRIPT101");
+        runtime.execute("core","@Entities\nenemy player:\n    .health = 100\n    .speed = 1\n");
+        runtime.execute("patch_a","@Core/Entities\nmodify player {\n    .health = 150\n}\n");
+        runtime.execute("patch_b","@Core/Entities\nmodify player {\n    .speed = 2\n}\n");
+        rejects([&] { runtime.execute("patch_c","@Core/Entities\nmodify player {\n    .health = 200\n}\n"); },"SCRIPT403");
+        require(runtime.registry().get("Entities","core:player").data.member("health",{}).number()==150,"Failed patch changed target");
+        std::filesystem::create_directories("user/script-tests");
+        { std::ofstream out("user/script-tests/a.sl"); out<<"import \"b.sl\"\n"; }
+        { std::ofstream out("user/script-tests/b.sl"); out<<"import \"a.sl\"\n"; }
+        rejects([&] { runtime.load("cycle","user/script-tests","a.sl"); },"SCRIPT309");
+        { std::ofstream out("user/script-tests/library.sl"); out<<"private_value = 4\nfunc exported():\n    return private_value\n"; }
+        { std::ofstream out("user/script-tests/main.sl"); out<<"import \"library.sl\"\n@Globals\nanswer = exported()\n"; }
+        runtime.load("imports","user/script-tests","main.sl");
+        require(runtime.global("imports","answer").number()==4,"Import closure failed");
+        rejects([&] { runtime.execute("imports","x = private_value\n"); },"SCRIPT102");
+        std::cout<<"Language v0 contract passed\n"; return 0;
+    } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
+}

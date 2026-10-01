@@ -61,8 +61,6 @@ parent/child impede ciclos, compõe transforms e desanexa filhos ao destruir pai
 (preservando transform local). RenderSystem coleta modelos ativos. O runtime
 agora desenha uma entidade com GLB importado, sem tipos EnTT no gameplay.
 
-## Build e execução
-
 ## Etapas 6–7 — manifest e loader
 
 Discovery ordenado, manifest `api: 0.1`, namespaces reservados/duplicados,
@@ -76,6 +74,38 @@ explicitamente no VFS/AssetManager, validado e cacheado. Falhas são isoladas po
 asset. Replaces implícitos e import settings não implementados são rejeitados.
 Uma tela dedicada Preparing Mods exibe pacote/progresso; logs preservam detalhes
 dos erros. Scripts serão conectados nas etapas 8–9.
+
+## Etapa 8 — linguagem v0
+
+Lexer com localização/indentação, parser/AST, interpretador, escopos lexicais,
+variáveis, @Globals/constantes, funções/defaults/retornos múltiplos, listas,
+if/else/for, operadores, símbolos registrados, categorias extensíveis e eventos.
+`from` copia e mescla sem alterar a base; `modify` preserva outros campos e
+diagnostica writes incompatíveis de mods não relacionados. Patches com dependência
+explícita podem seguir a ordem intencional.
+
+Decisões de implementação v0: interpretação de AST; booleanos estritos em
+condições; imports relativos à raiz do mod; funções e definições de imports são
+publicadas no módulo, variáveis locais do arquivo ficam privadas; defaults são
+avaliados no escopo de definição a cada chamada; múltiplos retornos viram List.
+Recursão limitada a 64 chamadas e budget de 100.000 passos por execução/evento
+produzem diagnóstico em vez de travar indefinidamente. Não há API estável de ABI
+C++ nativa. Os testes cobrem o contrato e erros de tipos, constantes, imports
+circulares, símbolos desconhecidos, escopo e conflitos de patch.
+
+## Build e execução
+
+## Etapas 9–10 — bridge e primeiro mod funcional
+
+`spawn(definition, vec3(x,y,z))`, `get_entity(name)`, `destroy(entity)` e `log`
+operam através das APIs próprias. EntityRef expõe `position`, `name`, `active`;
+posição permite leitura/escrita de x/y/z. Referências destruídas produzem erros
+controlados. `on_start`, `on_update(delta)` e `on_fixed_update(delta)` são hooks v0.
+
+O pacote `mods/example` declara GLB próprio e entidade, importa `.sl`, cria o
+modelo no startup e o move por script. O runtime não contém spawn hardcoded
+deste mod. O teste bridge verifica o ciclo até pixels reais, movimento, destruição
+e uso de referência inválida. Remover a pasta do build e reiniciar remove o mod.
 
 ## Build e execução
 

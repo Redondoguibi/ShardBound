@@ -5,6 +5,7 @@
 #include "renderer/Renderer.h"
 #include "assets/AssetManager.h"
 #include "ecs/World.h"
+#include "scripting/Runtime.h"
 namespace game {
 class Application {
 public:
@@ -25,6 +26,7 @@ private:
     VirtualFileSystem vfs_;
     std::unique_ptr<AssetManager> assets_;
     std::unique_ptr<World> world_;
+    std::unique_ptr<script::Runtime> scripting_;
     bool initialized_ = false;
 };
 }

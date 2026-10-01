@@ -3,6 +3,7 @@
 #include "ecs/RenderSystem.h"
 #include "mods/ModLoader.h"
 #include "game/PreparationScreen.h"
+#include "scripting/Bridge.h"
 #include <charconv>
 #include <exception>
 #include <string_view>
@@ -46,18 +47,25 @@ bool Application::initialize() {
     assets_ = std::make_unique<AssetManager>(vfs_,*renderer_,root_ / "user/cache");
     assets_->registerModel({AssetId("core:cube"),"models/cube.glb"});
     world_ = std::make_unique<World>();
-    auto cube=world_->create("cube");
-    world_->add(cube,TransformComponent{});
-    world_->add(cube,ModelComponent{AssetId("core:cube"),assets_->model(AssetId("core:cube"))});
+    scripting_=std::make_unique<script::Runtime>();
+    bindRuntimeApi(*scripting_,*world_,*assets_);
     PreparationScreen preparation(*renderer_);
     ModLoader loader(vfs_,*assets_);
-    loader.load(root_/"mods",[&](std::string_view mod,size_t done,size_t total) {
+    const auto report=loader.load(root_/"mods",[&](std::string_view mod,size_t done,size_t total) {
         for (const auto& event:window_->pollEvents()) {
             if (event.type==EventType::Closed) throw std::runtime_error("Startup cancelled");
             if (event.type==EventType::Resized) renderer_->resize(event.width,event.height);
         }
         if (!window_->minimized()) preparation.show(mod,done,total);
     });
+    for(const auto& mod:report.mods) {
+        if(mod.entry.empty() || mod.dependencyCycle) continue;
+        try {
+            std::vector<std::string> dependencies; for(const auto& dep:mod.dependencies) dependencies.push_back(dep.id);
+            scripting_->load(mod.id,mod.root,mod.entry,dependencies);
+        } catch(const std::exception& error) { LOG_ERROR("SCRIPT",mod.id+": "+error.what()); }
+    }
+    for(const auto& diagnostic:scripting_->emit("on_start")) LOG_ERROR("SCRIPT",diagnostic.code+" "+diagnostic.message);
     initialized_ = true;
     LOG_INFO("CORE", "Runtime initialized");
     return true;
@@ -76,6 +84,12 @@ void Application::run() {
         if (input_.pressed("Quit")) loop_.stop();
     };
     callbacks.suspended = [&] { return window_->minimized(); };
+    callbacks.fixedUpdate=[&](double delta) {
+        for(const auto& d:scripting_->emit("on_fixed_update",{script::Value(delta)})) LOG_ERROR("SCRIPT",d.code+" "+d.message);
+    };
+    callbacks.update=[&](double delta) {
+        for(const auto& d:scripting_->emit("on_update",{script::Value(delta)})) LOG_ERROR("SCRIPT",d.code+" "+d.message);
+    };
     callbacks.render = [&](double) {
         const auto items=collectRenderItems(*world_);
         renderer_->render({},items); renderer_->present();
@@ -84,6 +98,7 @@ void Application::run() {
 }
 void Application::shutdown() noexcept {
     loop_.stop();
+    scripting_.reset();
     world_.reset();
     assets_.reset();
     vfs_.unmount("core");

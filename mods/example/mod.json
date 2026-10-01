@@ -1,1 +1,1 @@
-{"id":"example","name":"Original Cube Example","version":"1.0.0","api":"0.1","dependencies":[],"optional_dependencies":[]}
+{"id":"example","name":"Original Cube Example","version":"1.0.0","api":"0.1","entry":"scripts/main.sl","dependencies":[],"optional_dependencies":[]}
