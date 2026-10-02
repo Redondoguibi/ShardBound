@@ -170,18 +170,24 @@ export function createController(g) {
         return {id:key,name:item.name,description:item.description,available:!!g.Condition(item.condition),automated:!!spec,selection_mode:spec?.mode,parameters:spec?Object.fromEntries(Object.entries(spec.schema.shape).map(([k,v])=>[k,{default:v.safeParse(undefined).data}])):undefined};
       })};
     },
-    mtools_run(a) {
+    async mtools_run(a) {
       requireProject(a);
       const spec=mtools[a.action], params=spec.schema.parse(a.parameters);
+      const actionParams={...params};
+      for(const key of spec.adapterKeys??[])delete actionParams[key];
       const action=g.BarItems[`@mesh_tools/${a.action}`];
       if (!action || !summary().mtools) throw new Error('Install and enable the supplied MTools plugin first.');
       if (summary().mtools!=='2.1.0') throw new Error('This adapter was validated for MTools 2.1.0. Review the adapter before using a different version.');
       if (!spec.generator) {
         if (!g.Mesh.selected.length) throw new Error('Select meshes first.');
-        if (g.BarItems.selection_mode.value!==spec.mode) throw new Error(`Use selection mode ${spec.mode} first.`);
-        if (spec.mode==='face' && g.Mesh.selected.some(m=>!m.getSelectedFaces().length)) throw new Error('Select faces in each selected mesh.');
-        if (spec.mode==='vertex' && g.Mesh.selected.some(m=>!m.getSelectedVertices().length)) throw new Error('Select vertices first.');
-        // MTools 2.1.0 smooth reads every neighbor from its selected-vertex cache.
+        const currentMode=g.BarItems.selection_mode.value;
+        const allowedModes=Array.isArray(spec.mode)?spec.mode:[spec.mode];
+        if (!allowedModes.includes(currentMode)) throw new Error(`Use selection mode ${allowedModes.join(' or ')} first.`);
+        if (currentMode==='face' && g.Mesh.selected.some(m=>!m.getSelectedFaces().length)) throw new Error('Select faces in each selected mesh.');
+        if (currentMode==='vertex' && g.Mesh.selected.some(m=>!m.getSelectedVertices().length)) throw new Error('Select vertices first.');
+        if (currentMode==='edge' && g.Mesh.selected.some(m=>!m.getSelectedEdges().length)) throw new Error('Select edges first.');
+        if (a.action==='scatter' && g.Mesh.selected.length<2) throw new Error('MTools Scatter requires at least two selected meshes; the last selected mesh is the target surface.');
+        if (a.action==='boolean' && g.Mesh.selected.length!==2) throw new Error('MTools Boolean requires exactly two selected meshes.');
         if (a.action==='laplacian_smooth') for (const m of g.Mesh.selected) {
           const selected=new Set(m.getSelectedVertices());
           for (const v of selected) {
@@ -192,32 +198,38 @@ export function createController(g) {
       }
       if (!g.Condition(action.condition)) throw new Error('MTools action is unavailable for the current selection.');
       const undo=g.Undo, history=undo.history.slice(), index=undo.index;
-      const aspects={elements:g.Outliner.elements.slice(),groups:g.Group.all.slice(),outliner:true,selection:true};
+      const aspects={elements:g.Outliner.elements.slice(),groups:g.Group.all.slice(),outliner:true,selection:true,textures:g.Texture.all.slice()};
       const before=new g.UndoSystem.save(aspects), selectionBefore=new g.UndoSystem.selectionSave();
-      const oldAmend=undo.amendEdit, oldShow=g.Dialog.prototype.show;
+      const oldAmend=undo.amendEdit, oldShow=g.Dialog.prototype.show, oldMessageBox=g.Blockbench.showMessageBox;
       let amendment,dialog;
       undo.amendEdit=function(form,callback){amendment={form,callback};};
       if (spec.dialog) g.Dialog.prototype.show=function(...args){ if (dialog) throw new Error('Unexpected additional dialog.'); dialog=this; return oldShow.apply(this,args); };
+      if (spec.autoConfirmMessage) g.Blockbench.showMessageBox=function(options,callback){
+        if(typeof callback==='function'){callback(0,{dont_show_again:false});return;}
+        return oldMessageBox.apply(this,arguments);
+      };
       try {
-        action.click.call(action);
+        await action.click.call(action);
         if (spec.dialog) {
           if (!dialog) throw new Error('Expected MTools parameters dialog was not opened.');
-          dialog.setFormValues(params); dialog.confirm();
+          dialog.setFormValues(actionParams); dialog.confirm();
           if (g.Dialog.open===dialog) throw new Error('MTools did not accept the dialog parameters.');
         } else if (spec.amend) {
           if (!amendment || undo.index===index) throw new Error('MTools did not create an amendable operation.');
-          for (const k of Object.keys(params)) if (!Object.hasOwn(amendment.form,k)) throw new Error(`MTools parameter changed: ${k}`);
-          undo.undo(null,true); amendment.callback(params);
+          for (const k of Object.keys(actionParams)) if (!Object.hasOwn(amendment.form,k)) throw new Error(`MTools parameter changed: ${k}`);
+          undo.undo(null,true); amendment.callback(actionParams);
         }
         validateGeometry(); refresh();
         return {action:a.action,parameters:params,selection:g.Mesh.selected.map(m=>m.uuid),elements:g.Outliner.elements.map(e=>({id:e.uuid,name:e.name,type:e.type}))};
       } catch (error) {
         if (dialog && g.Dialog.open===dialog) dialog.hide();
         if (undo.current_save) undo.cancelEdit(true);
-        undo.loadSave(before,new g.UndoSystem.save({...aspects,elements:g.Outliner.elements.slice(),groups:g.Group.all.slice()}));
+        undo.loadSave(before,new g.UndoSystem.save({...aspects,elements:g.Outliner.elements.slice(),groups:g.Group.all.slice(),textures:g.Texture.all.slice()}));
         selectionBefore.load(new g.UndoSystem.selectionSave());
         undo.history=history; undo.index=index; refresh(); throw error;
-      } finally { undo.amendEdit=oldAmend; g.Dialog.prototype.show=oldShow; }
+      } finally {
+        undo.amendEdit=oldAmend; g.Dialog.prototype.show=oldShow; g.Blockbench.showMessageBox=oldMessageBox;
+      }
     },
     async put_texture(a) {
       requireProject(a);
