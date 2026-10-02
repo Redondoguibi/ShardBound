@@ -324,6 +324,24 @@ try {
     await writeFile(path.join(work, 'test.' + format), result.content);
     console.log('PASS export ' + format);
   }
+  const glb = await call('export_project', { format: 'glb' });
+  assert.equal(glb.binary, true);
+  const glbBytes = Buffer.from(glb.content_base64, 'base64');
+  assert.equal(glbBytes.toString('ascii', 0, 4), 'glTF');
+  assert.equal(glbBytes.readUInt32LE(8), glbBytes.length);
+  await writeFile(path.join(work, 'test.glb'), glbBytes);
+  console.log('PASS export glb');
+  const saved = await call('save_project', { path: 'assets/test.bbmodel' });
+  const originalProject = project.project_id;
+  project = await daemon.call('__open_project_data', {
+    path: path.join(work, 'roundtrip.bbmodel'),
+    content: saved.content,
+  });
+  assert.notEqual(project.project_id, originalProject);
+  const roundtrip = await call('read_project', { geometry: true });
+  assert.ok(roundtrip.elements.some((e) => e.type === 'mesh'));
+  assert.ok(roundtrip.textures.length > 0);
+  console.log('PASS save/open project roundtrip');
   const image = await call('capture_view', { width: 640, height: 480 });
   await writeFile(
     path.join(work, 'preview.png'),

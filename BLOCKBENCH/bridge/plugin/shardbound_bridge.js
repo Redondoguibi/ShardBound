@@ -4050,15 +4050,40 @@
   var number = external_exports.number().finite().min(-1e6).max(1e6);
   var vec3 = external_exports.tuple([number, number, number]);
   var vec2 = external_exports.tuple([number, number]);
+  var uvRect = external_exports.tuple([number, number, number, number]);
   var key = external_exports.string().min(1).max(100).regex(/^[a-zA-Z0-9_-]+$/).refine((v) => !["__proto__", "constructor", "prototype"].includes(v));
   var id = external_exports.string().min(1).max(100);
   var name = external_exports.string().min(1).max(160);
+  var projectPath = external_exports.string().min(1).max(240).refine((v) => {
+    if (v.includes("\\") || v.startsWith("/") || /^[a-zA-Z]:/.test(v))
+      return false;
+    const parts = v.split("/");
+    return parts.every((part) => part && part !== "." && part !== "..");
+  }, "Use a relative project path with forward slashes and without . or .. segments.");
+  var assetPath = projectPath.refine(
+    (v) => v === "assets" || v.startsWith("assets/"),
+    "Path must stay inside assets/."
+  );
   var face = external_exports.object({
     vertices: external_exports.array(key).min(3).max(4),
     uv: external_exports.record(key, vec2).optional(),
     texture: id.nullable().optional()
   }).strict();
   var mesh = { vertices: external_exports.record(key, vec3), faces: external_exports.record(key, face) };
+  var cubeFace = external_exports.object({
+    uv: uvRect.optional(),
+    texture: id.nullable().optional(),
+    rotation: external_exports.union([external_exports.literal(0), external_exports.literal(90), external_exports.literal(180), external_exports.literal(270)]).optional(),
+    enabled: external_exports.boolean().optional()
+  }).strict();
+  var cubeFaces = external_exports.object({
+    north: cubeFace.optional(),
+    south: cubeFace.optional(),
+    east: cubeFace.optional(),
+    west: cubeFace.optional(),
+    up: cubeFace.optional(),
+    down: cubeFace.optional()
+  }).strict();
   var common = {
     name,
     parent: id.optional(),
@@ -4067,7 +4092,18 @@
   };
   var element = external_exports.discriminatedUnion("type", [
     external_exports.object({ type: external_exports.literal("group"), ...common }).strict(),
-    external_exports.object({ type: external_exports.literal("cube"), ...common, from: vec3, to: vec3 }).strict(),
+    external_exports.object({
+      type: external_exports.literal("cube"),
+      ...common,
+      from: vec3,
+      to: vec3,
+      faces: cubeFaces.optional(),
+      box_uv: external_exports.boolean().optional(),
+      uv_offset: vec2.optional(),
+      inflate: number.optional(),
+      shade: external_exports.boolean().optional(),
+      mirror_uv: external_exports.boolean().optional()
+    }).strict(),
     external_exports.object({ type: external_exports.literal("mesh"), ...common, ...mesh }).strict()
   ]);
   var guard = {
@@ -4147,6 +4183,40 @@
         count: bounded(1, 50, 1).refine(Number.isInteger)
       }).strict()
     },
+    scatter: {
+      mode: "object",
+      amend: true,
+      autoConfirmMessage: true,
+      schema: external_exports.object({
+        density: bounded(0, 256, 3).refine(Number.isInteger),
+        min_distance: bounded(0, 1e4, 0),
+        scale: bounded(0, 100, 100),
+        min_scale: bounded(0, 100, 100),
+        scale_factor: bounded(0, 100, 50),
+        rotation: bounded(0, 180, 0),
+        rotation_factor: bounded(0, 100, 0)
+      }).strict()
+    },
+    boolean: {
+      mode: "object",
+      amend: true,
+      autoConfirmMessage: true,
+      experimental: true,
+      adapterKeys: ["acknowledge_experimental"],
+      schema: external_exports.object({
+        operation: external_exports.enum([
+          "addition",
+          "intersection",
+          "subtraction",
+          "reverse_subtraction",
+          "difference",
+          "hollow_intersection",
+          "hollow_subtraction"
+        ]).default("addition"),
+        hideMeshes: external_exports.boolean().default(true),
+        acknowledge_experimental: external_exports.literal(true)
+      }).strict()
+    },
     polyhedron: {
       generator: true,
       dialog: true,
@@ -4167,6 +4237,59 @@
         p: bounded(1, 32, 2).refine(Number.isInteger),
         q: bounded(1, 32, 3).refine(Number.isInteger)
       }).strict()
+    },
+    textmesh: {
+      generator: true,
+      dialog: true,
+      schema: external_exports.object({
+        text: external_exports.string().min(1).max(1e3).default("Hello, World!"),
+        size: bounded(0, 1e3, 8),
+        height: bounded(0, 1e3, 2),
+        curveSegments: bounded(1, 32, 1).refine(Number.isInteger),
+        bevelThickness: bounded(0, 1e3, 0),
+        bevelSize: bounded(0, 1e3, 8),
+        bevelOffset: bounded(0, 1e3, 0),
+        bevelSegments: bounded(0, 32, 1).refine(Number.isInteger)
+      }).strict()
+    },
+    terrain_action: {
+      generator: true,
+      dialog: true,
+      schema: external_exports.object({
+        style: external_exports.enum(["Earth", "EarthMountains", "Grass", "Desert", "Ice", "Mask"]).default("Earth"),
+        terrain: external_exports.enum(["open_terrain", "valley", "mesa", "river"]).default("open_terrain"),
+        width: bounded(1, 255, 32).refine(Number.isInteger),
+        height: bounded(1, 255, 32).refine(Number.isInteger),
+        size: bounded(16, 4096, 16),
+        suggested: external_exports.literal(false).default(false),
+        multiplier: bounded(-1e3, 1e3, 5),
+        falloff: external_exports.boolean().default(false),
+        time: bounded(0, 1e6, 0),
+        scale: bounded(0, 1e4, 25),
+        octaves: bounded(0, 32, 2).refine(Number.isInteger),
+        persistance: bounded(0, 1, 0.4),
+        lacunarity: bounded(0, 100, 3),
+        min: bounded(0, 0.9, 0.1),
+        turbpower: bounded(0, 100, 1.3)
+      }).strict()
+    },
+    xyzmathsurfacefunction: {
+      generator: true,
+      dialog: true,
+      schema: external_exports.object({
+        x: external_exports.string().min(1).max(500).default("u"),
+        y: external_exports.string().min(1).max(500).default("0"),
+        z: external_exports.string().min(1).max(500).default("v"),
+        scale: bounded(-1e3, 1e3, 1),
+        uRange: external_exports.tuple([number, number]).default([0, 6.283185307179586]),
+        uDivs: bounded(2, 128, 32).refine(Number.isInteger),
+        uWrap: external_exports.boolean().default(true),
+        vRange: external_exports.tuple([number, number]).default([0, 6.283185307179586]),
+        vDivs: bounded(2, 128, 16).refine(Number.isInteger),
+        vWrap: external_exports.boolean().default(true),
+        vClose: external_exports.boolean().default(true),
+        variables: external_exports.string().max(2e3).default("")
+      }).strict()
     }
   };
   var tools = {
@@ -4177,7 +4300,7 @@
     },
     read_project: {
       read: true,
-      description: "Inspect the active Generic Model. Returns UUIDs, hierarchy, selection, textures and revision; request geometry for mesh vertices/faces/UVs. Paginated.",
+      description: "Inspect the active Generic Model. Returns UUIDs, hierarchy, selection, textures and revision; request geometry for mesh vertices/faces/UVs and cube face UVs/textures. Paginated.",
       schema: external_exports.object({
         geometry: external_exports.boolean().default(false),
         offset: external_exports.number().int().min(0).default(0),
@@ -4193,11 +4316,11 @@
       }).strict()
     },
     create_elements: {
-      description: "Create groups, cubes or meshes in one undo step. Parent is an existing group UUID. Mesh vertices/faces use caller-chosen keys; faces are triangles or quads.",
+      description: "Create groups, cubes or meshes in one undo step. Cubes support per-face UV, texture UUID, 0/90/180/270 UV rotation, enabled state and box UV settings. Parent is an existing group UUID.",
       schema: external_exports.object({ ...guard, elements: external_exports.array(element).min(1).max(100) }).strict()
     },
     update_elements: {
-      description: "Update name, pivot/origin, rotation, visibility or cube bounds. Mesh vertex coordinates stay local to the origin. One undo step.",
+      description: "Update name, pivot/origin, rotation, visibility, cube bounds and cube UV/face data. Mesh vertex coordinates stay local to the origin. One undo step.",
       schema: external_exports.object({
         ...guard,
         updates: external_exports.array(
@@ -4208,7 +4331,13 @@
             rotation: vec3.optional(),
             visibility: external_exports.boolean().optional(),
             from: vec3.optional(),
-            to: vec3.optional()
+            to: vec3.optional(),
+            faces: cubeFaces.optional(),
+            box_uv: external_exports.boolean().optional(),
+            uv_offset: vec2.optional(),
+            inflate: number.optional(),
+            shade: external_exports.boolean().optional(),
+            mirror_uv: external_exports.boolean().optional()
           }).strict()
         ).min(1).max(100)
       }).strict()
@@ -4269,12 +4398,17 @@
         action: external_exports.enum(Object.keys(mtools)),
         parameters: external_exports.record(
           external_exports.string(),
-          external_exports.union([number, external_exports.string().max(100), external_exports.boolean()])
+          external_exports.union([
+            number,
+            external_exports.string().max(2e3),
+            external_exports.boolean(),
+            external_exports.array(number).min(2).max(4)
+          ])
         ).default({})
       }).strict()
     },
     put_texture: {
-      description: "Create or replace a texture with a PNG data URL, or a solid color. Returns texture UUID for mesh faces. Replacement preserves UUID and supports Undo.",
+      description: "Create or replace a texture with a PNG data URL, or a solid color. Returns texture UUID for cube or mesh faces. Replacement preserves UUID and supports Undo.",
       schema: external_exports.object({
         ...guard,
         id: id.optional(),
@@ -4290,14 +4424,43 @@
       description: "Read a project texture as a PNG image.",
       schema: external_exports.object({ id }).strict()
     },
+    list_model_files: {
+      read: true,
+      description: "List editable/exported model files inside the project assets directory. Paths are project-relative and cannot escape assets/.",
+      schema: external_exports.object({
+        directory: assetPath.default("assets/core/models"),
+        recursive: external_exports.boolean().default(false),
+        extensions: external_exports.array(external_exports.enum(["bbmodel", "gltf", "glb"])).min(1).max(3).default(["bbmodel", "gltf", "glb"])
+      }).strict()
+    },
+    open_project_file: {
+      description: "Open an editable .bbmodel from the project assets directory in a new Blockbench project tab. Existing tabs stay open.",
+      schema: external_exports.object({
+        path: assetPath.refine(
+          (v) => v.toLowerCase().endsWith(".bbmodel"),
+          "Only .bbmodel editable sources can be opened."
+        )
+      }).strict()
+    },
+    save_project: {
+      description: "Save the current editable project as an embedded-texture .bbmodel under assets/. Existing files are overwritten only when overwrite=true.",
+      schema: external_exports.object({
+        ...guard,
+        path: assetPath.refine(
+          (v) => v.toLowerCase().endsWith(".bbmodel"),
+          "Save path must end in .bbmodel."
+        ),
+        overwrite: external_exports.boolean().default(true)
+      }).strict()
+    },
     export_project: {
-      read: false,
-      destructive: false,
-      description: "Export the current project to the bridge outputs directory. bbmodel preserves the editable project; obj exports geometry; gltf embeds resources. Creates a NEW file on every call and never overwrites. Returns an absolute local path.",
+      description: "Export the current project as bbmodel, OBJ, embedded-texture glTF, or binary embedded-texture GLB. With path, writes safely under assets/; otherwise writes a unique file in bridge outputs.",
       schema: external_exports.object({
         project_id: id,
-        format: external_exports.enum(["bbmodel", "obj", "gltf"]).default("bbmodel"),
-        filename: external_exports.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/).default("model")
+        format: external_exports.enum(["bbmodel", "obj", "gltf", "glb"]).default("bbmodel"),
+        filename: external_exports.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/).default("model"),
+        path: assetPath.optional(),
+        overwrite: external_exports.boolean().default(false)
       }).strict()
     }
   };
@@ -5670,6 +5833,7 @@
         next: g.Undo.history[g.Undo.index]?.action
       } : null
     });
+    const textureId = (value) => value === false || value == null ? null : value;
     const describe = (e, geometry = false) => {
       const data = {
         id: e.uuid,
@@ -5694,7 +5858,7 @@
           data.faces = Object.fromEntries(
             Object.entries(e.faces).map(([k, f]) => [
               k,
-              { vertices: f.vertices, uv: f.uv, texture: f.texture }
+              { vertices: f.vertices, uv: f.uv, texture: textureId(f.texture) }
             ])
           );
         }
@@ -5702,16 +5866,38 @@
       if (e instanceof g.Cube) {
         data.from = e.from;
         data.to = e.to;
-        if (geometry) data.faces = e.faces;
+        data.box_uv = !!e.box_uv;
+        data.uv_offset = e.uv_offset;
+        data.inflate = e.inflate;
+        data.shade = e.shade;
+        data.mirror_uv = e.mirror_uv;
+        if (geometry)
+          data.faces = Object.fromEntries(
+            Object.entries(e.faces).map(([direction, f]) => [
+              direction,
+              {
+                uv: f.uv,
+                texture: textureId(f.texture),
+                rotation: f.rotation,
+                enabled: f.enabled
+              }
+            ])
+          );
       }
       if (e instanceof g.Group) data.children = e.children.map((c) => c.uuid);
       return data;
     };
     const validateTextures = (faces) => {
-      for (const f of Object.values(faces))
-        if (f.texture && !g.Texture.all.some((t) => t.uuid === f.texture))
+      for (const f of Object.values(faces || {}))
+        if (f?.texture && !g.Texture.all.some((t) => t.uuid === f.texture))
           throw new Error(`Texture not found: ${f.texture}`);
     };
+    const normalizeCubeFaces = (faces) => Object.fromEntries(
+      Object.entries(faces || {}).map(([direction, face2]) => [
+        direction,
+        { ...face2, ...face2.texture === null ? { texture: false } : {} }
+      ])
+    );
     const validateGeometry = () => {
       for (const m of g.Mesh.all)
         for (const v of Object.values(m.vertices))
@@ -5719,6 +5905,19 @@
             throw new Error(
               "MTools produced invalid vertex coordinates; operation reverted."
             );
+    };
+    const toBase64 = (data) => {
+      const bytes = data instanceof Uint8Array ? data : new Uint8Array(
+        data.buffer ?? data,
+        data.byteOffset ?? 0,
+        data.byteLength ?? void 0
+      );
+      let binary = "";
+      for (let i = 0; i < bytes.length; i += 32768)
+        binary += String.fromCharCode(
+          ...bytes.subarray(i, Math.min(i + 32768, bytes.length))
+        );
+      return btoa(binary);
     };
     const handlers = {
       status: summary,
@@ -5763,19 +5962,25 @@
             validateMesh(e);
             validateTextures(e.faces);
           }
-          if (e.type === "cube" && e.from.some((n, i) => n > e.to[i]))
-            throw new Error("Cube from must be <= to.");
+          if (e.type === "cube") {
+            if (e.from.some((n, i) => n > e.to[i]))
+              throw new Error("Cube from must be <= to.");
+            validateTextures(e.faces);
+          }
         }
         const elements = [], groups = [];
         return transaction("Bridge: Create elements", elements, groups, () => {
           const created = a.elements.map((e, i) => {
-            const { type, parent, ...data } = e;
-            const node = new { group: g.Group, cube: g.Cube, mesh: g.Mesh }[type](
-              data
-            );
+            const { type, parent, faces, ...data } = e;
+            const ctor = { group: g.Group, cube: g.Cube, mesh: g.Mesh }[type];
+            const payload = type === "cube" ? {
+              ...data,
+              ...faces ? { faces: normalizeCubeFaces(faces) } : {}
+            } : type === "mesh" ? { ...data, faces } : data;
+            const node = new ctor(payload);
             (type === "group" ? groups : elements).push(node);
             node.addTo(parents[i]).init();
-            return describe(node);
+            return describe(node, type === "cube");
           });
           return { created };
         });
@@ -5785,17 +5990,29 @@
         const nodes = a.updates.map((u) => find(u.id));
         a.updates.forEach((u, i) => {
           const n = nodes[i];
-          if ((u.from || u.to) && !(n instanceof g.Cube))
-            throw new Error("from/to are only valid for cubes.");
+          const cubeOnly = u.from || u.to || u.faces || u.box_uv !== void 0 || u.uv_offset || u.inflate !== void 0 || u.shade !== void 0 || u.mirror_uv !== void 0;
+          if (cubeOnly && !(n instanceof g.Cube))
+            throw new Error(
+              "Cube bounds/UV/face properties are only valid for cubes."
+            );
           if (n instanceof g.Cube && (u.from ?? n.from).some((v, k) => v > (u.to ?? n.to)[k]))
             throw new Error("Invalid cube bounds.");
+          if (u.faces) validateTextures(u.faces);
         });
         return transaction(
           "Bridge: Update elements",
           nodes.filter((n) => !(n instanceof g.Group)),
           nodes.filter((n) => n instanceof g.Group),
           () => {
-            a.updates.forEach(({ id: id2, ...data }, i) => nodes[i].extend(data));
+            a.updates.forEach(({ id: id2, faces, ...data }, i) => {
+              const node = nodes[i];
+              node.extend(data);
+              if (faces && node instanceof g.Cube)
+                for (const [direction, face2] of Object.entries(
+                  normalizeCubeFaces(faces)
+                ))
+                  node.faces[direction].extend(face2);
+            });
             return { updated: nodes.map((n) => n.uuid) };
           }
         );
@@ -5941,9 +6158,11 @@
           })
         };
       },
-      mtools_run(a) {
+      async mtools_run(a) {
         requireProject(a);
         const spec = mtools[a.action], params = spec.schema.parse(a.parameters);
+        const actionParams = { ...params };
+        for (const key2 of spec.adapterKeys ?? []) delete actionParams[key2];
         const action2 = g.BarItems[`@mesh_tools/${a.action}`];
         if (!action2 || !summary().mtools)
           throw new Error("Install and enable the supplied MTools plugin first.");
@@ -5953,14 +6172,26 @@
           );
         if (!spec.generator) {
           if (!g.Mesh.selected.length) throw new Error("Select meshes first.");
-          if (!(Array.isArray(spec.mode) ? spec.mode : [spec.mode]).includes(
-            g.BarItems.selection_mode.value
-          ))
-            throw new Error(`Use selection mode ${spec.mode} first.`);
-          if (spec.mode === "face" && g.Mesh.selected.some((m) => !m.getSelectedFaces().length))
+          const currentMode = g.BarItems.selection_mode.value;
+          const allowedModes = Array.isArray(spec.mode) ? spec.mode : [spec.mode];
+          if (!allowedModes.includes(currentMode))
+            throw new Error(
+              `Use selection mode ${allowedModes.join(" or ")} first.`
+            );
+          if (currentMode === "face" && g.Mesh.selected.some((m) => !m.getSelectedFaces().length))
             throw new Error("Select faces in each selected mesh.");
-          if (spec.mode === "vertex" && g.Mesh.selected.some((m) => !m.getSelectedVertices().length))
+          if (currentMode === "vertex" && g.Mesh.selected.some((m) => !m.getSelectedVertices().length))
             throw new Error("Select vertices first.");
+          if (currentMode === "edge" && g.Mesh.selected.some((m) => !m.getSelectedEdges().length))
+            throw new Error("Select edges first.");
+          if (a.action === "scatter" && g.Mesh.selected.length < 2)
+            throw new Error(
+              "MTools Scatter requires at least two selected meshes; the last selected mesh is the target surface."
+            );
+          if (a.action === "boolean" && g.Mesh.selected.length !== 2)
+            throw new Error(
+              "MTools Boolean requires exactly two selected meshes."
+            );
           if (a.action === "bridge_edge_loops" && g.Mesh.selected.some(
             (m) => g.BarItems.selection_mode.value === "face" ? m.getSelectedFaces().length < 2 : m.getSelectedEdges().length < 6
           ))
@@ -5990,10 +6221,11 @@
           elements: g.Outliner.elements.slice(),
           groups: g.Group.all.slice(),
           outliner: true,
-          selection: true
+          selection: true,
+          textures: g.Texture.all.slice()
         };
         const before = new g.UndoSystem.save(aspects), selectionBefore = new g.UndoSystem.selectionSave();
-        const oldAmend = undo.amendEdit, oldShow = g.Dialog.prototype.show;
+        const oldAmend = undo.amendEdit, oldShow = g.Dialog.prototype.show, oldMessageBox = g.Blockbench.showMessageBox;
         let amendment, dialog;
         undo.amendEdit = function(form, callback) {
           amendment = { form, callback };
@@ -6004,25 +6236,33 @@
             dialog = this;
             return oldShow.apply(this, args);
           };
+        if (spec.autoConfirmMessage)
+          g.Blockbench.showMessageBox = function(options, callback) {
+            if (typeof callback === "function") {
+              callback(0, { dont_show_again: false });
+              return;
+            }
+            return oldMessageBox.apply(this, arguments);
+          };
         try {
-          action2.click.call(action2);
+          await action2.click.call(action2);
           if (spec.dialog) {
             if (!dialog)
               throw new Error(
                 "Expected MTools parameters dialog was not opened."
               );
-            dialog.setFormValues(params);
+            dialog.setFormValues(actionParams);
             dialog.confirm();
             if (g.Dialog.open === dialog)
               throw new Error("MTools did not accept the dialog parameters.");
           } else if (spec.amend) {
             if (!amendment || undo.index === index)
               throw new Error("MTools did not create an amendable operation.");
-            for (const k of Object.keys(params))
+            for (const k of Object.keys(actionParams))
               if (!Object.hasOwn(amendment.form, k))
                 throw new Error(`MTools parameter changed: ${k}`);
             undo.undo(null, true);
-            amendment.callback(params);
+            amendment.callback(actionParams);
           }
           validateGeometry();
           refresh();
@@ -6044,7 +6284,8 @@
             new g.UndoSystem.save({
               ...aspects,
               elements: g.Outliner.elements.slice(),
-              groups: g.Group.all.slice()
+              groups: g.Group.all.slice(),
+              textures: g.Texture.all.slice()
             })
           );
           selectionBefore.load(new g.UndoSystem.selectionSave());
@@ -6055,6 +6296,7 @@
         } finally {
           undo.amendEdit = oldAmend;
           g.Dialog.prototype.show = oldShow;
+          g.Blockbench.showMessageBox = oldMessageBox;
         }
       },
       async put_texture(a) {
@@ -6106,32 +6348,82 @@
         if (!texture) throw new Error("Texture UUID not found.");
         return { image: `data:image/png;base64,${texture.getBase64()}` };
       },
+      save_project(a) {
+        requireProject(a, false);
+        const content = g.Codecs.project.compile({
+          bitmaps: true,
+          absolute_paths: false
+        });
+        return { format: "bbmodel", content };
+      },
       async export_project(a) {
         requireProject(a, false);
-        const codec = g.Codecs[a.format === "bbmodel" ? "project" : a.format];
+        const codec = g.Codecs[a.format === "bbmodel" ? "project" : a.format === "glb" ? "gltf" : a.format];
         if (!codec) throw new Error(`Codec unavailable: ${a.format}`);
-        let content = await codec.compile({
-          compressed: false,
-          raw: false,
-          bitmaps: true,
-          embed_textures: true,
-          animations: false,
-          encoding: "ascii",
-          armature: false,
-          merge_armature: false
-        });
+        let content;
+        if (a.format === "gltf" || a.format === "glb")
+          content = await codec.compile({
+            encoding: a.format === "glb" ? "binary" : "ascii",
+            embed_textures: true,
+            animations: false,
+            armature: false,
+            merge_armature: false
+          });
+        else if (a.format === "bbmodel")
+          content = await codec.compile({
+            compressed: false,
+            raw: false,
+            bitmaps: true,
+            absolute_paths: false
+          });
+        else content = await codec.compile({ compressed: false, raw: false });
         if (a.format === "obj")
           content = content.replace(/^(?:mtllib|usemtl)\s.*\r?\n/gm, "");
+        if (content instanceof ArrayBuffer || ArrayBuffer.isView(content))
+          return {
+            format: a.format,
+            binary: true,
+            content_base64: toBase64(content)
+          };
         return {
           format: a.format,
+          binary: false,
           content: typeof content === "string" ? content : JSON.stringify(content)
         };
       }
     };
+    const internalHandlers = {
+      __open_project_data(a) {
+        if (g.Dialog.open || g.Project && g.Undo.current_save)
+          throw new Error("Finish the active dialog/edit first.");
+        let model;
+        try {
+          model = JSON.parse(a.content);
+        } catch {
+          throw new Error("Invalid .bbmodel JSON.");
+        }
+        if (!model?.meta) throw new Error("Invalid .bbmodel: missing meta.");
+        if (model.meta.model_format && model.meta.model_format !== "free")
+          throw new Error(
+            `Expected Generic Model (.meta.model_format=free), got ${model.meta.model_format}.`
+          );
+        g.Codecs.project.load(model, { path: a.path, no_file: false });
+        if (g.Format?.id !== "free")
+          throw new Error("Loaded project is not a Generic Model.");
+        changed();
+        return summary();
+      }
+    };
     return {
       async call(name2, args) {
+        if (Object.hasOwn(internalHandlers, name2))
+          return { ...await internalHandlers[name2](args), ...snapshot() };
         if (!Object.hasOwn(tools, name2)) throw new Error("Unknown tool");
         const parsed = tools[name2].schema.parse(args);
+        if (!Object.hasOwn(handlers, name2))
+          throw new Error(
+            `Tool ${name2} is handled by the MCP server and should not reach Blockbench directly.`
+          );
         const result = await handlers[name2](parsed);
         return { ...result, ...snapshot() };
       },
@@ -6261,7 +6553,7 @@
     title: "ShardBound Bridge",
     author: "ShardBound",
     description: "Generic Model + MTools para Codex e ChatGPT via MCP local.",
-    version: "0.1.0",
+    version: "0.2.0",
     min_version: "5.2.0",
     variant: "desktop",
     tags: ["Mesh", "Integration"],

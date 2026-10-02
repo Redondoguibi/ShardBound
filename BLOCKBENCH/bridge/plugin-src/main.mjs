@@ -127,7 +127,7 @@ BBPlugin.register('shardbound_bridge', {
   title: 'ShardBound Bridge',
   author: 'ShardBound',
   description: 'Generic Model + MTools para Codex e ChatGPT via MCP local.',
-  version: '0.1.0',
+  version: '0.2.0',
   min_version: '5.2.0',
   variant: 'desktop',
   tags: ['Mesh', 'Integration'],

@@ -1,7 +1,7 @@
 # ShardBound Blockbench Bridge
 
 Ponte local entre Blockbench Desktop, MCP e assistentes. Suporta **Generic Model**
-(`free`), edição de malhas, grupos, cubos, UVs, texturas, capturas e 14 operações
+(`free`), edição de malhas, grupos, cubos, UVs, texturas, capturas e 19 operações
 adaptadas do MTools 2.1.0. O plugin do Blockbench e o plugin do assistente são
 componentes diferentes: ambos usam o mesmo serviço local.
 
@@ -55,7 +55,8 @@ comum tem um fluxo próprio: veja [CHATGPT-DESKTOP.md](CHATGPT-DESKTOP.md).
 | `undo_redo`                          | Histórico nativo do Blockbench                            |
 | `mtools_list`, `mtools_run`          | Descoberta de ações e execução dos adaptadores            |
 | `put_texture`, `get_texture`         | Criação/substituição e leitura de textura PNG             |
-| `export_project`                     | Novos arquivos `.bbmodel`, `.gltf` e `.obj` em `outputs/` |
+| `list_model_files`, `open_project_file`, `save_project` | Lista, abre e salva fontes em `assets/` |
+| `export_project`                     | `.bbmodel`, `.gltf`, `.glb` e `.obj` em `outputs/` ou `assets/` |
 
 As mutações usam `project_id`; `expected_revision` permite rejeitar uma edição
 baseada em estado antigo. Antes de editar, leia o projeto e use seus UUIDs reais.
@@ -64,22 +65,173 @@ UVs usam pixels da textura. Crie os grupos antes de referenciá-los como pais.
 O `.bbmodel` inclui bitmaps e mantém o projeto editável. O `.gltf` é estático,
 com buffers e imagens embutidos. O `.obj` contém geometria sem materiais.
 Os arquivos recebem nomes únicos; o MCP retorna caminhos locais, não links
-de download públicos. Não há importação arbitrária de arquivos, execução de
-JavaScript fornecido pelo modelo nem API de animações nesta versão.
+de download públicos. A versão 0.2.0 também permite abrir e salvar fontes em `assets/` e exportar `.glb`, conforme a referência abaixo.
 
-## Integração MTools
+## Fluxo seguro de arquivos
 
-Adaptadores testados: `bridge_edge_loops`, `uv_turnaround_projection`,
-`subdivide`, `split_edges`, `triangulate`, `poke`, `tris_to_quad`,
-`laplacian_smooth`, `to_sphere`, `expand_selection`, `shrink_selection`,
-`array_elements`, `polyhedron` e `torusknot`.
+O MCP **não recebe acesso arbitrário ao computador**.
 
-`mtools_list` retorna os parâmetros em JSON Schema. Apenas ações marcadas
-`automated: true` podem ser executadas. Boolean, terrain, text, scatter e demais
-ações sem adaptador continuam disponíveis na interface do próprio MTools.
-Para Laplacian Smooth, selecione um componente conectado completo: o adaptador
-evita uma falha de cache de vizinhos do MTools 2.1.0 com seleção parcial.
-O código original fornecido do MTools não foi alterado.
+Por padrão, operações de arquivo ficam limitadas a:
+
+```
+<repo>/assets/
+```
+
+Caminhos absolutos, `..`, `.` e escapes da raiz permitida são rejeitados.
+
+Ferramentas:
+
+### `list_model_files`
+
+Lista fontes/exports em `assets/`.
+
+Formatos reconhecidos:
+
+- `.bbmodel`
+- `.gltf`
+- `.glb`
+
+### `open_project_file`
+
+Abre uma fonte editável `.bbmodel` em uma nova aba do Blockbench.
+
+Somente Generic Models são aceitos.
+
+### `save_project`
+
+Salva o projeto editável como `.bbmodel` em `assets/`, com texturas embutidas.
+
+### `export_project`
+
+Exporta:
+
+- `bbmodel`
+- `obj`
+- `gltf`
+- `glb`
+
+`gltf` e `glb` usam o codec nativo do Blockbench com texturas embutidas.
+
+Se `path` for informado, o destino deve estar em `assets/`. Sem `path`, um arquivo único é criado em `BLOCKBENCH/bridge/outputs/`.
+
+## Cubes estilo Minecraft
+
+Cubes são uma parte de primeira classe do contrato MCP.
+
+`create_elements` e `update_elements` suportam:
+
+- `from` / `to`;
+- origin/pivot;
+- rotation;
+- inflate;
+- shade;
+- mirror UV;
+- box UV;
+- UV offset;
+- as seis faces;
+- texture UUID por face;
+- UV por face;
+- rotação UV 0/90/180/270;
+- face enabled/disabled.
+
+Exemplo conceitual:
+
+```json
+{
+  "type": "cube",
+  "name": "stone",
+  "from": [0, 0, 0],
+  "to": [16, 16, 16],
+  "faces": {
+    "north": {
+      "uv": [0, 0, 16, 16],
+      "texture": "TEXTURE_UUID",
+      "rotation": 0,
+      "enabled": true
+    }
+  }
+}
+```
+
+Use `put_texture` primeiro para obter o UUID de uma textura criada pelo MCP.
+
+## MTools
+
+Use `mtools_list` para descobrir disponibilidade e parâmetros.
+
+A versão 0.2.0 automatiza 19 ações do MTools:
+
+- Subdivide
+- Split Edges
+- Triangulate
+- Poke
+- Triangles to Quads
+- Laplacian Smooth
+- To Sphere
+- Expand Selection
+- Shrink Selection
+- Array
+- Bridge Edge Loops
+- Cubic Projection
+- Scatter
+- Boolean
+- Polyhedron
+- Torus Knot
+- Text Mesh
+- Terrain
+- XYZ Math Surface
+
+Não automatizadas propositalmente:
+
+- **Project From View** — o próprio MTools marca como deprecated; depende do estado de câmera/viewport.
+- **Terrain Style Editor** — altera configuração persistente do MTools, não é uma operação de modelagem do projeto.
+
+### Boolean
+
+Boolean é experimental no MTools 2.1.0. O MCP exige:
+
+```json
+{
+  "acknowledge_experimental": true
+}
+```
+
+e exatamente dois meshes selecionados.
+
+### Seleção
+
+Use `select_elements` antes de ações que dependem de componentes.
+
+O bridge valida o modo esperado, por exemplo:
+
+- object;
+- vertex;
+- edge;
+- face;
+- edge ou face para Bridge Edge Loops.
+
+## Segurança e consistência
+
+O bridge inclui:
+
+- listener HTTP/WebSocket em loopback para transporte local;
+- pairing token;
+- validação de Host/Origin;
+- OAuth quando `publicUrl` está habilitado;
+- schemas Zod para ferramentas;
+- limites de tamanho;
+- `project_id`;
+- `expected_revision`;
+- fila serial de operações;
+- timeouts;
+- Undo;
+- rollback de operações MTools quando possível;
+- restrição de arquivos a asset roots;
+- rejeição de versão MTools não validada;
+- nenhum recurso de execução arbitrária de JavaScript pelo MCP.
+
+Se uma chamada atingir timeout, **leia o projeto novamente antes de repetir**, porque a operação pode ter terminado dentro do Blockbench depois que o cliente desistiu.
+
 
 ## Serviço e manutenção
 
@@ -115,14 +267,18 @@ Para trocar a porta: pare a ponte, execute `npm run setup -- --port 30124`,
 recarregue o plugin pareado e reinicie a conexão. Se o Blockbench já guardou
 configuração manual, ajuste também o diálogo de conexão do plugin.
 
+`npm run doctor -- --offline` verifica a instalação sem exigir o editor aberto e é usado no CI.
+O setup aceita também `BLOCKBENCH_BRIDGE_PORT` e `BLOCKBENCH_BRIDGE_PUBLIC_URL`.
+Na primeira instalação, escolhe uma porta livre; nas seguintes, preserva a porta e as credenciais.
+
 ## Validação realizada
 
 - Testes automatizados de validação de entrada, autenticação, fluxo OAuth HTTP,
   PKCE, códigos de uso único, refresh, MCP HTTP e serialização.
-- Cliente MCP stdio real: descoberta das 15 ferramentas e consulta de status.
+- Cliente MCP stdio real: descoberta das 18 ferramentas e consulta de status.
 - Blockbench 5.2.1 real em perfil temporário: geometria, topologia, seleção,
   revisões, proteção de aba errada, Undo/Redo, todas as 14 ações MTools adaptadas,
-  texturas, capturas e três formatos de exportação.
+  texturas, capturas e quatro formatos de exportação, além de salvar/reabrir a fonte.
 
 O teste Electron usa perfil descartável em `.local/e2e/`, sem abrir os modelos
 do usuário. Nessa instalação, o Blockbench gera dois erros da tela inicial

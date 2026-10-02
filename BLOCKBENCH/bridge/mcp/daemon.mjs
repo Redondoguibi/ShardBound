@@ -31,6 +31,7 @@ export async function startDaemon(config) {
     httpServer.closeAllConnections();
     await new Promise((resolve) => httpServer.close(resolve));
   };
+  const internalNames = new Set(['__open_project_data']);
   const localAuth = (req, res, next) =>
     equalSecret(req.headers.authorization, `Bearer ${config.token}`)
       ? next()
@@ -63,6 +64,7 @@ export async function startDaemon(config) {
   app.get('/health', localAuth, (req, res) =>
     res.json({
       service: 'shardbound-blockbench',
+      version: '0.2.0',
       connected: !!plugin,
       publicUrl: config.publicUrl || null,
     }),
@@ -98,7 +100,15 @@ export async function startDaemon(config) {
       pending.set(id, { resolve, reject, timer });
       plugin.send(JSON.stringify({ type: 'call', id, name, args, deadline }));
     });
+  const serialize = (fn) => {
+    const next = tail.then(fn);
+    tail = next.catch(() => {});
+    return next;
+  };
   const call = (name, args) => {
+    const deadline = Date.now() + 45000;
+    if (internalNames.has(name))
+      return serialize(() => dispatch(name, args, deadline));
     if (!Object.hasOwn(tools, name))
       return Promise.reject(new Error('Unknown tool'));
     const parsed = tools[name].schema.parse(args);
@@ -108,10 +118,11 @@ export async function startDaemon(config) {
         service: 'shardbound-blockbench',
         message: 'Load the paired Blockbench plugin.',
       });
-    const deadline = Date.now() + 45000;
-    const next = tail.then(() => dispatch(name, parsed, deadline));
-    tail = next.catch(() => {});
-    return next;
+    if (name === 'list_model_files')
+      return Promise.reject(
+        new Error('list_model_files is handled by the MCP server.'),
+      );
+    return serialize(() => dispatch(name, parsed, deadline));
   };
   app.post('/rpc', localAuth, async (req, res) => {
     try {
@@ -176,13 +187,11 @@ export async function startDaemon(config) {
       await transport.handleRequest(req, res, req.body);
     } catch {
       if (!res.headersSent)
-        res
-          .status(500)
-          .json({
-            jsonrpc: '2.0',
-            error: { code: -32603, message: 'MCP request failed' },
-            id: null,
-          });
+        res.status(500).json({
+          jsonrpc: '2.0',
+          error: { code: -32603, message: 'MCP request failed' },
+          id: null,
+        });
     }
   });
   app.all('/mcp', (req, res) => res.status(405).set('Allow', 'POST').end());
@@ -230,7 +239,7 @@ export async function startDaemon(config) {
         clearTimeout(timer);
         authenticated = true;
         plugin = ws;
-        ws.send(JSON.stringify({ type: 'ready' }));
+        ws.send(JSON.stringify({ type: 'ready', version: '0.2.0' }));
         return;
       }
       const request = pending.get(message.id);

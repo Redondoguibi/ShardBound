@@ -2,7 +2,9 @@ import { build } from 'esbuild';
 import { mkdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+
 export const root = fileURLToPath(new URL('../', import.meta.url));
+
 export async function buildPlugin(paired = false) {
   const config = paired
     ? JSON.parse(await readFile(path.join(root, '.local/config.json'), 'utf8'))
@@ -22,9 +24,13 @@ export async function buildPlugin(paired = false) {
     },
     logLevel: 'warning',
   });
+  return path.join(outdir, 'shardbound_bridge.js');
 }
+
 if (
   process.argv[1] &&
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-)
-  await buildPlugin();
+) {
+  const output = await buildPlugin(process.argv.includes('--paired'));
+  console.log(output);
+}

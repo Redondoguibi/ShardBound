@@ -32,7 +32,7 @@ test('HTTP MCP authenticates, lists schemas and serializes calls to paired plugi
       }),
     );
     const list = await client.listTools();
-    assert.equal(list.tools.length, 15);
+    assert.equal(list.tools.length, 18);
     assert.equal(
       list.tools.find((t) => t.name === 'export_project').annotations
         .readOnlyHint,
@@ -67,11 +67,21 @@ test('HTTP MCP authenticates, lists schemas and serializes calls to paired plugi
       );
       inFlight--;
     });
-    const calls = [daemon.call('status', {}), daemon.call('read_project', {})];
+    const calls = [
+      daemon.call('status', {}),
+      daemon.call('read_project', {}),
+      daemon.call('__open_project_data', {
+        path: 'test.bbmodel',
+        content: '{}',
+      }),
+    ];
     const enqueuedAt = Date.now();
     const results = await Promise.all(calls);
     assert.ok(
-      deadlines[1] <= enqueuedAt + 45000,
+      deadlines.every(
+        (deadline) =>
+          Number.isFinite(deadline) && deadline <= enqueuedAt + 45000,
+      ),
       'Queue wait must consume the original request deadline',
     );
     assert.equal(max, 1);

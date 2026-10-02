@@ -1,6 +1,6 @@
 {
   "name": "shardbound-blockbench-bridge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "build:paired": "node scripts/build.mjs --paired",
     "setup": "node scripts/setup.mjs",
     "start": "node mcp/server.mjs",
     "http": "node mcp/server.mjs --http",

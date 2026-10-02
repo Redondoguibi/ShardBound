@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
+import net from 'node:net';
 import { root, validateConfig } from '../mcp/config.mjs';
 import { buildPlugin } from './build.mjs';
 
@@ -23,6 +24,19 @@ try {
 } catch (error) {
   if (error.code !== 'ENOENT') throw error;
 }
+const existing = !!config;
+async function choosePort() {
+  for (let port = 30123; port <= 30163; port++) {
+    const free = await new Promise((resolve) => {
+      const server = net.createServer();
+      server.unref();
+      server.once('error', () => resolve(false));
+      server.listen(port, '127.0.0.1', () => server.close(() => resolve(true)));
+    });
+    if (free) return port;
+  }
+  throw new Error('No free port in 30123-30163. Set --port explicitly.');
+}
 config ??= {
   token: randomBytes(32).toString('base64url'),
   loginSecret: randomBytes(32).toString('base64url'),
@@ -30,9 +44,14 @@ config ??= {
   outputs: path.join(root, 'outputs'),
 };
 config.loginSecret ??= randomBytes(32).toString('base64url');
-if (option('--port')) config.bridgePort = Number(option('--port'));
-if (option('--public-url'))
-  config.publicUrl = new URL(option('--public-url')).href;
+const requestedPort = option('--port') ?? process.env.BLOCKBENCH_BRIDGE_PORT;
+if (requestedPort !== undefined) config.bridgePort = Number(requestedPort);
+else if (!existing) config.bridgePort = await choosePort();
+const publicUrl =
+  option('--public-url') ?? process.env.BLOCKBENCH_BRIDGE_PUBLIC_URL;
+if (publicUrl) config.publicUrl = new URL(publicUrl).href;
+config.projectRoot ??= path.resolve(root, '../..');
+config.assetRoots ??= [path.join(config.projectRoot, 'assets')];
 if (args.includes('--local-only')) delete config.publicUrl;
 validateConfig(config);
 await writeFile(file, JSON.stringify(config, null, 2) + '\n', { mode: 0o600 });
@@ -43,10 +62,9 @@ await writeFile(
 );
 await buildPlugin();
 await buildPlugin(true);
-await writeFile(
-  path.join(dir, 'codex-config.toml'),
-  `[mcp_servers.shardbound_blockbench]\ncommand = ${JSON.stringify(process.execPath.replaceAll('\\', '/'))}\nargs = [${JSON.stringify(path.join(root, 'mcp/server.mjs').replaceAll('\\', '/'))}]\nstartup_timeout_sec = 30\ntool_timeout_sec = 60\n`,
-);
+const codexSnippet = `[mcp_servers.shardbound_blockbench]\ncommand = ${JSON.stringify(process.execPath.replaceAll('\\', '/'))}\nargs = [${JSON.stringify(path.join(root, 'mcp/server.mjs').replaceAll('\\', '/'))}]\nstartup_timeout_sec = 30\ntool_timeout_sec = 60\n`;
+for (const name of ['codex-config.toml', 'codex-mcp.toml'])
+  await writeFile(path.join(dir, name), codexSnippet);
 console.log(
   'Ready. Load this plugin in Blockbench (File > Plugins > Load Plugin from File):\n' +
     path.join(dir, 'shardbound_bridge.js'),

@@ -1,0 +1,40 @@
+name: Blockbench Bridge CI
+
+on:
+  push:
+    paths:
+      - 'BLOCKBENCH/bridge/**'
+      - '.github/workflows/blockbench-bridge.yml'
+  pull_request:
+    paths:
+      - 'BLOCKBENCH/bridge/**'
+      - '.github/workflows/blockbench-bridge.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: BLOCKBENCH/bridge
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: BLOCKBENCH/bridge/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Configure paired bridge
+        run: npm run setup
+      - name: Run diagnostics
+        run: npm run doctor -- --offline
+      - name: Run tests
+        run: npm test
+      - name: Build plugin
+        run: npm run build

@@ -3,6 +3,7 @@ import { z } from 'zod';
 const number = z.number().finite().min(-1e6).max(1e6);
 export const vec3 = z.tuple([number, number, number]);
 const vec2 = z.tuple([number, number]);
+const uvRect = z.tuple([number, number, number, number]);
 const key = z
   .string()
   .min(1)
@@ -11,6 +12,20 @@ const key = z
   .refine((v) => !['__proto__', 'constructor', 'prototype'].includes(v));
 const id = z.string().min(1).max(100);
 const name = z.string().min(1).max(160);
+const projectPath = z
+  .string()
+  .min(1)
+  .max(240)
+  .refine((v) => {
+    if (v.includes('\\') || v.startsWith('/') || /^[a-zA-Z]:/.test(v))
+      return false;
+    const parts = v.split('/');
+    return parts.every((part) => part && part !== '.' && part !== '..');
+  }, 'Use a relative project path with forward slashes and without . or .. segments.');
+const assetPath = projectPath.refine(
+  (v) => v === 'assets' || v.startsWith('assets/'),
+  'Path must stay inside assets/.',
+);
 const face = z
   .object({
     vertices: z.array(key).min(3).max(4),
@@ -19,6 +34,26 @@ const face = z
   })
   .strict();
 const mesh = { vertices: z.record(key, vec3), faces: z.record(key, face) };
+const cubeFace = z
+  .object({
+    uv: uvRect.optional(),
+    texture: id.nullable().optional(),
+    rotation: z
+      .union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)])
+      .optional(),
+    enabled: z.boolean().optional(),
+  })
+  .strict();
+const cubeFaces = z
+  .object({
+    north: cubeFace.optional(),
+    south: cubeFace.optional(),
+    east: cubeFace.optional(),
+    west: cubeFace.optional(),
+    up: cubeFace.optional(),
+    down: cubeFace.optional(),
+  })
+  .strict();
 const common = {
   name,
   parent: id.optional(),
@@ -28,7 +63,18 @@ const common = {
 const element = z.discriminatedUnion('type', [
   z.object({ type: z.literal('group'), ...common }).strict(),
   z
-    .object({ type: z.literal('cube'), ...common, from: vec3, to: vec3 })
+    .object({
+      type: z.literal('cube'),
+      ...common,
+      from: vec3,
+      to: vec3,
+      faces: cubeFaces.optional(),
+      box_uv: z.boolean().optional(),
+      uv_offset: vec2.optional(),
+      inflate: number.optional(),
+      shade: z.boolean().optional(),
+      mirror_uv: z.boolean().optional(),
+    })
     .strict(),
   z.object({ type: z.literal('mesh'), ...common, ...mesh }).strict(),
 ]);
@@ -120,6 +166,46 @@ export const mtools = {
       })
       .strict(),
   },
+  scatter: {
+    mode: 'object',
+    amend: true,
+    autoConfirmMessage: true,
+    schema: z
+      .object({
+        density: bounded(0, 256, 3).refine(Number.isInteger),
+        min_distance: bounded(0, 10000, 0),
+        scale: bounded(0, 100, 100),
+        min_scale: bounded(0, 100, 100),
+        scale_factor: bounded(0, 100, 50),
+        rotation: bounded(0, 180, 0),
+        rotation_factor: bounded(0, 100, 0),
+      })
+      .strict(),
+  },
+  boolean: {
+    mode: 'object',
+    amend: true,
+    autoConfirmMessage: true,
+    experimental: true,
+    adapterKeys: ['acknowledge_experimental'],
+    schema: z
+      .object({
+        operation: z
+          .enum([
+            'addition',
+            'intersection',
+            'subtraction',
+            'reverse_subtraction',
+            'difference',
+            'hollow_intersection',
+            'hollow_subtraction',
+          ])
+          .default('addition'),
+        hideMeshes: z.boolean().default(true),
+        acknowledge_experimental: z.literal(true),
+      })
+      .strict(),
+  },
   polyhedron: {
     generator: true,
     dialog: true,
@@ -147,6 +233,69 @@ export const mtools = {
       })
       .strict(),
   },
+  textmesh: {
+    generator: true,
+    dialog: true,
+    schema: z
+      .object({
+        text: z.string().min(1).max(1000).default('Hello, World!'),
+        size: bounded(0, 1000, 8),
+        height: bounded(0, 1000, 2),
+        curveSegments: bounded(1, 32, 1).refine(Number.isInteger),
+        bevelThickness: bounded(0, 1000, 0),
+        bevelSize: bounded(0, 1000, 8),
+        bevelOffset: bounded(0, 1000, 0),
+        bevelSegments: bounded(0, 32, 1).refine(Number.isInteger),
+      })
+      .strict(),
+  },
+  terrain_action: {
+    generator: true,
+    dialog: true,
+    schema: z
+      .object({
+        style: z
+          .enum(['Earth', 'EarthMountains', 'Grass', 'Desert', 'Ice', 'Mask'])
+          .default('Earth'),
+        terrain: z
+          .enum(['open_terrain', 'valley', 'mesa', 'river'])
+          .default('open_terrain'),
+        width: bounded(1, 255, 32).refine(Number.isInteger),
+        height: bounded(1, 255, 32).refine(Number.isInteger),
+        size: bounded(16, 4096, 16),
+        suggested: z.literal(false).default(false),
+        multiplier: bounded(-1000, 1000, 5),
+        falloff: z.boolean().default(false),
+        time: bounded(0, 1e6, 0),
+        scale: bounded(0, 10000, 25),
+        octaves: bounded(0, 32, 2).refine(Number.isInteger),
+        persistance: bounded(0, 1, 0.4),
+        lacunarity: bounded(0, 100, 3),
+        min: bounded(0, 0.9, 0.1),
+        turbpower: bounded(0, 100, 1.3),
+      })
+      .strict(),
+  },
+  xyzmathsurfacefunction: {
+    generator: true,
+    dialog: true,
+    schema: z
+      .object({
+        x: z.string().min(1).max(500).default('u'),
+        y: z.string().min(1).max(500).default('0'),
+        z: z.string().min(1).max(500).default('v'),
+        scale: bounded(-1000, 1000, 1),
+        uRange: z.tuple([number, number]).default([0, 6.283185307179586]),
+        uDivs: bounded(2, 128, 32).refine(Number.isInteger),
+        uWrap: z.boolean().default(true),
+        vRange: z.tuple([number, number]).default([0, 6.283185307179586]),
+        vDivs: bounded(2, 128, 16).refine(Number.isInteger),
+        vWrap: z.boolean().default(true),
+        vClose: z.boolean().default(true),
+        variables: z.string().max(2000).default(''),
+      })
+      .strict(),
+  },
 };
 export const tools = {
   status: {
@@ -158,7 +307,7 @@ export const tools = {
   read_project: {
     read: true,
     description:
-      'Inspect the active Generic Model. Returns UUIDs, hierarchy, selection, textures and revision; request geometry for mesh vertices/faces/UVs. Paginated.',
+      'Inspect the active Generic Model. Returns UUIDs, hierarchy, selection, textures and revision; request geometry for mesh vertices/faces/UVs and cube face UVs/textures. Paginated.',
     schema: z
       .object({
         geometry: z.boolean().default(false),
@@ -179,14 +328,14 @@ export const tools = {
   },
   create_elements: {
     description:
-      'Create groups, cubes or meshes in one undo step. Parent is an existing group UUID. Mesh vertices/faces use caller-chosen keys; faces are triangles or quads.',
+      'Create groups, cubes or meshes in one undo step. Cubes support per-face UV, texture UUID, 0/90/180/270 UV rotation, enabled state and box UV settings. Parent is an existing group UUID.',
     schema: z
       .object({ ...guard, elements: z.array(element).min(1).max(100) })
       .strict(),
   },
   update_elements: {
     description:
-      'Update name, pivot/origin, rotation, visibility or cube bounds. Mesh vertex coordinates stay local to the origin. One undo step.',
+      'Update name, pivot/origin, rotation, visibility, cube bounds and cube UV/face data. Mesh vertex coordinates stay local to the origin. One undo step.',
     schema: z
       .object({
         ...guard,
@@ -201,6 +350,12 @@ export const tools = {
                 visibility: z.boolean().optional(),
                 from: vec3.optional(),
                 to: vec3.optional(),
+                faces: cubeFaces.optional(),
+                box_uv: z.boolean().optional(),
+                uv_offset: vec2.optional(),
+                inflate: number.optional(),
+                shade: z.boolean().optional(),
+                mirror_uv: z.boolean().optional(),
               })
               .strict(),
           )
@@ -286,7 +441,12 @@ export const tools = {
         parameters: z
           .record(
             z.string(),
-            z.union([number, z.string().max(100), z.boolean()]),
+            z.union([
+              number,
+              z.string().max(2000),
+              z.boolean(),
+              z.array(number).min(2).max(4),
+            ]),
           )
           .default({}),
       })
@@ -294,7 +454,7 @@ export const tools = {
   },
   put_texture: {
     description:
-      'Create or replace a texture with a PNG data URL, or a solid color. Returns texture UUID for mesh faces. Replacement preserves UUID and supports Undo.',
+      'Create or replace a texture with a PNG data URL, or a solid color. Returns texture UUID for cube or mesh faces. Replacement preserves UUID and supports Undo.',
     schema: z
       .object({
         ...guard,
@@ -319,19 +479,61 @@ export const tools = {
     description: 'Read a project texture as a PNG image.',
     schema: z.object({ id }).strict(),
   },
-  export_project: {
-    read: false,
-    destructive: false,
+  list_model_files: {
+    read: true,
     description:
-      'Export the current project to the bridge outputs directory. bbmodel preserves the editable project; obj exports geometry; gltf embeds resources. Creates a NEW file on every call and never overwrites. Returns an absolute local path.',
+      'List editable/exported model files inside the project assets directory. Paths are project-relative and cannot escape assets/.',
+    schema: z
+      .object({
+        directory: assetPath.default('assets/core/models'),
+        recursive: z.boolean().default(false),
+        extensions: z
+          .array(z.enum(['bbmodel', 'gltf', 'glb']))
+          .min(1)
+          .max(3)
+          .default(['bbmodel', 'gltf', 'glb']),
+      })
+      .strict(),
+  },
+  open_project_file: {
+    description:
+      'Open an editable .bbmodel from the project assets directory in a new Blockbench project tab. Existing tabs stay open.',
+    schema: z
+      .object({
+        path: assetPath.refine(
+          (v) => v.toLowerCase().endsWith('.bbmodel'),
+          'Only .bbmodel editable sources can be opened.',
+        ),
+      })
+      .strict(),
+  },
+  save_project: {
+    description:
+      'Save the current editable project as an embedded-texture .bbmodel under assets/. Existing files are overwritten only when overwrite=true.',
+    schema: z
+      .object({
+        ...guard,
+        path: assetPath.refine(
+          (v) => v.toLowerCase().endsWith('.bbmodel'),
+          'Save path must end in .bbmodel.',
+        ),
+        overwrite: z.boolean().default(true),
+      })
+      .strict(),
+  },
+  export_project: {
+    description:
+      'Export the current project as bbmodel, OBJ, embedded-texture glTF, or binary embedded-texture GLB. With path, writes safely under assets/; otherwise writes a unique file in bridge outputs.',
     schema: z
       .object({
         project_id: id,
-        format: z.enum(['bbmodel', 'obj', 'gltf']).default('bbmodel'),
+        format: z.enum(['bbmodel', 'obj', 'gltf', 'glb']).default('bbmodel'),
         filename: z
           .string()
           .regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/)
           .default('model'),
+        path: assetPath.optional(),
+        overwrite: z.boolean().default(false),
       })
       .strict(),
   },
