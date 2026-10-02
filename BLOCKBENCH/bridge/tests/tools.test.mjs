@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { tools, validateMesh } from '../shared/tools.mjs';
+import { mtools, tools, validateMesh } from '../shared/tools.mjs';
 
 test('core MCP tool schemas accept expected minimal inputs', () => {
   assert.deepEqual(tools.status.schema.parse({}), {});
@@ -40,4 +40,27 @@ test('mesh validation accepts a triangle and rejects dangling vertices', () => {
 test('mtools_run rejects unknown actions', () => {
   const base = { project_id: 'project', action: 'not_real', parameters: {} };
   assert.equal(tools.mtools_run.schema.safeParse(base).success, false);
+});
+
+test('MTools adapter covers all modeling actions except deprecated/settings-only actions', () => {
+  assert.equal(Object.keys(mtools).length, 19);
+  assert.equal(Object.hasOwn(mtools, 'uv_project_view'), false);
+  assert.equal(Object.hasOwn(mtools, 'terrainse'), false);
+  for (const name of ['bridge_edge_loops','uv_turnaround_projection','scatter','boolean','textmesh','terrain_action','xyzmathsurfacefunction']) {
+    assert.equal(Object.hasOwn(mtools, name), true, name);
+  }
+});
+
+test('experimental MTools boolean requires explicit acknowledgement', () => {
+  assert.equal(mtools.boolean.schema.safeParse({ operation: 'addition', hideMeshes: true }).success, false);
+  assert.equal(mtools.boolean.schema.safeParse({ operation: 'subtraction', hideMeshes: false, acknowledge_experimental: true }).success, true);
+});
+
+test('XYZ MTools parameters permit bounded vector ranges through MCP', () => {
+  const parsed = tools.mtools_run.schema.parse({
+    project_id: 'project',
+    action: 'xyzmathsurfacefunction',
+    parameters: { uRange: [0, 6.28], vRange: [-1, 1], x: 'u', y: '0', z: 'v' },
+  });
+  assert.deepEqual(parsed.parameters.vRange, [-1, 1]);
 });
