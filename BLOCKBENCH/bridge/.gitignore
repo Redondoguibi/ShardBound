@@ -1,4 +1,6 @@
 node_modules/
 .reference/
 .local/
+plugin/
+outputs/
 *.log

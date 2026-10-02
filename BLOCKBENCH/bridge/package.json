@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "build:paired": "node scripts/build.mjs --paired",
     "setup": "node scripts/setup.mjs",
     "start": "node mcp/server.mjs",
     "http": "node mcp/server.mjs --http",
