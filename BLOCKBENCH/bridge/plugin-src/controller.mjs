@@ -28,22 +28,33 @@ export function createController(g) {
     mtools:g.Plugins.all.find(p=>p.id==='mesh_tools' && p.installed && !p.disabled)?.version ?? null,
     elements:g.Project?g.Outliner.elements.length:0,
     undo:g.Project?{index:g.Undo.index, total:g.Undo.history.length, previous:g.Undo.history[g.Undo.index-1]?.action, next:g.Undo.history[g.Undo.index]?.action}:null });
+  const textureId = value => value === false || value == null ? null : value;
   const describe = (e, geometry = false) => {
     const data = {id:e.uuid,type:e.type,name:e.name,parent:e.parent?.uuid ?? 'root',origin:e.origin,rotation:e.rotation,visibility:e.visibility,selected:e.selected};
     if (e instanceof g.Mesh) {
       data.vertex_count=Object.keys(e.vertices).length; data.face_count=Object.keys(e.faces).length;
       data.selection={vertices:e.getSelectedVertices(),edges:e.getSelectedEdges(),faces:e.getSelectedFaces()};
-      if (geometry) { data.vertices=e.vertices; data.faces=Object.fromEntries(Object.entries(e.faces).map(([k,f])=>[k,{vertices:f.vertices,uv:f.uv,texture:f.texture}])); }
+      if (geometry) { data.vertices=e.vertices; data.faces=Object.fromEntries(Object.entries(e.faces).map(([k,f])=>[k,{vertices:f.vertices,uv:f.uv,texture:textureId(f.texture)}])); }
     }
-    if (e instanceof g.Cube) { data.from=e.from; data.to=e.to; if (geometry) data.faces=e.faces; }
+    if (e instanceof g.Cube) {
+      data.from=e.from; data.to=e.to; data.box_uv=!!e.box_uv; data.uv_offset=e.uv_offset; data.inflate=e.inflate; data.shade=e.shade; data.mirror_uv=e.mirror_uv;
+      if (geometry) data.faces=Object.fromEntries(Object.entries(e.faces).map(([direction,f])=>[direction,{uv:f.uv,texture:textureId(f.texture),rotation:f.rotation,enabled:f.enabled}]));
+    }
     if (e instanceof g.Group) data.children=e.children.map(c=>c.uuid);
     return data;
   };
   const validateTextures = faces => {
-    for (const f of Object.values(faces)) if (f.texture && !g.Texture.all.some(t=>t.uuid===f.texture)) throw new Error(`Texture not found: ${f.texture}`);
+    for (const f of Object.values(faces||{})) if (f?.texture && !g.Texture.all.some(t=>t.uuid===f.texture)) throw new Error(`Texture not found: ${f.texture}`);
   };
+  const normalizeCubeFaces = faces => Object.fromEntries(Object.entries(faces||{}).map(([direction,face])=>[direction,{...face,...(face.texture===null?{texture:false}:{})}]));
   const validateGeometry = () => {
     for (const m of g.Mesh.all) for (const v of Object.values(m.vertices)) if (v.some(n=>!Number.isFinite(n))) throw new Error('MTools produced invalid vertex coordinates; operation reverted.');
+  };
+  const toBase64 = data => {
+    const bytes=data instanceof Uint8Array?data:new Uint8Array(data.buffer??data,data.byteOffset??0,data.byteLength??undefined);
+    let binary='';
+    for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+0x8000,bytes.length)));
+    return btoa(binary);
   };
   const handlers = {
     status: summary,
@@ -67,15 +78,20 @@ export function createController(g) {
       for (const p of parents) if (p!=='root' && !(p instanceof g.Group)) throw new Error('Parent must be a group.');
       for (const e of a.elements) {
         if (e.type==='mesh') { validateMesh(e); validateTextures(e.faces); }
-        if (e.type==='cube' && e.from.some((n,i)=>n>e.to[i])) throw new Error('Cube from must be <= to.');
+        if (e.type==='cube') {
+          if (e.from.some((n,i)=>n>e.to[i])) throw new Error('Cube from must be <= to.');
+          validateTextures(e.faces);
+        }
       }
       const elements=[],groups=[];
       return transaction('Bridge: Create elements',elements,groups,()=>{
         const created=a.elements.map((e,i)=>{
-          const {type,parent,...data}=e;
-          const node=new ({group:g.Group,cube:g.Cube,mesh:g.Mesh}[type])(data);
+          const {type,parent,faces,...data}=e;
+          const ctor={group:g.Group,cube:g.Cube,mesh:g.Mesh}[type];
+          const payload=type==='cube'?{...data,...(faces?{faces:normalizeCubeFaces(faces)}:{})}:type==='mesh'?{...data,faces}:data;
+          const node=new ctor(payload);
           (type==='group'?groups:elements).push(node);
-          node.addTo(parents[i]).init(); return describe(node);
+          node.addTo(parents[i]).init(); return describe(node,type==='cube');
         });
         return {created};
       });
@@ -85,11 +101,17 @@ export function createController(g) {
       const nodes=a.updates.map(u=>find(u.id));
       a.updates.forEach((u,i)=>{
         const n=nodes[i];
-        if ((u.from||u.to) && !(n instanceof g.Cube)) throw new Error('from/to are only valid for cubes.');
+        const cubeOnly=u.from||u.to||u.faces||u.box_uv!==undefined||u.uv_offset||u.inflate!==undefined||u.shade!==undefined||u.mirror_uv!==undefined;
+        if (cubeOnly && !(n instanceof g.Cube)) throw new Error('Cube bounds/UV/face properties are only valid for cubes.');
         if (n instanceof g.Cube && (u.from??n.from).some((v,k)=>v>(u.to??n.to)[k])) throw new Error('Invalid cube bounds.');
+        if (u.faces) validateTextures(u.faces);
       });
       return transaction('Bridge: Update elements',nodes.filter(n=>!(n instanceof g.Group)),nodes.filter(n=>n instanceof g.Group),()=>{
-        a.updates.forEach(({id,...data},i)=>nodes[i].extend(data)); return {updated:nodes.map(n=>n.uuid)};
+        a.updates.forEach(({id,faces,...data},i)=>{
+          const node=nodes[i]; node.extend(data);
+          if (faces && node instanceof g.Cube) for(const [direction,face] of Object.entries(normalizeCubeFaces(faces))) node.faces[direction].extend(face);
+        });
+        return {updated:nodes.map(n=>n.uuid)};
       });
     },
     edit_mesh(a) {
@@ -218,17 +240,41 @@ export function createController(g) {
       if (!texture) throw new Error('Texture UUID not found.');
       return {image:`data:image/png;base64,${texture.getBase64()}`};
     },
+    save_project(a) {
+      requireProject(a,false);
+      const content=g.Codecs.project.compile({bitmaps:true,absolute_paths:false});
+      return {format:'bbmodel',content};
+    },
     async export_project(a) {
-      requireProject(a,false);const codec=g.Codecs[a.format==='bbmodel'?'project':a.format];
+      requireProject(a,false);
+      const codec=g.Codecs[a.format==='bbmodel'?'project':a.format==='glb'?'gltf':a.format];
       if (!codec) throw new Error(`Codec unavailable: ${a.format}`);
-      const content=await codec.compile({compressed:false,raw:false,embed_textures:true});
-      return {format:a.format,content:typeof content==='string'?content:JSON.stringify(content)};
+      let content;
+      if (a.format==='gltf'||a.format==='glb') content=await codec.compile({encoding:a.format==='glb'?'binary':'ascii',embed_textures:true,animations:true});
+      else if (a.format==='bbmodel') content=await codec.compile({compressed:false,raw:false,bitmaps:true,absolute_paths:false});
+      else content=await codec.compile({compressed:false,raw:false});
+      if (content instanceof ArrayBuffer || ArrayBuffer.isView(content)) return {format:a.format,binary:true,content_base64:toBase64(content)};
+      return {format:a.format,binary:false,content:typeof content==='string'?content:JSON.stringify(content)};
     },
   };
+  const internalHandlers = {
+    __open_project_data(a) {
+      if (g.Dialog.open || g.Project && g.Undo.current_save) throw new Error('Finish the active dialog/edit first.');
+      let model; try { model=JSON.parse(a.content); } catch { throw new Error('Invalid .bbmodel JSON.'); }
+      if (!model?.meta) throw new Error('Invalid .bbmodel: missing meta.');
+      if (model.meta.model_format && model.meta.model_format!=='free') throw new Error(`Expected Generic Model (.meta.model_format=free), got ${model.meta.model_format}.`);
+      g.Codecs.project.load(model,{path:a.path,no_file:false});
+      if (g.Format?.id!=='free') throw new Error('Loaded project is not a Generic Model.');
+      changed(); return summary();
+    },
+  };
+  return {  };
   return {
     async call(name,args) {
+      if (Object.hasOwn(internalHandlers,name)) return {...(await internalHandlers[name](args)),...snapshot()};
       if (!Object.hasOwn(tools,name)) throw new Error('Unknown tool');
       const parsed=tools[name].schema.parse(args);
+      if (!Object.hasOwn(handlers,name)) throw new Error(`Tool ${name} is handled by the MCP server and should not reach Blockbench directly.`);
       const result=await handlers[name](parsed);
       return {...result,...snapshot()};
     },
