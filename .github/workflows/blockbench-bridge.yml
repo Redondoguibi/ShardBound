@@ -30,6 +30,10 @@ jobs:
           cache-dependency-path: BLOCKBENCH/bridge/package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Configure paired bridge
+        run: npm run setup
+      - name: Run diagnostics
+        run: npm run doctor
       - name: Run tests
         run: npm test
       - name: Build plugin
