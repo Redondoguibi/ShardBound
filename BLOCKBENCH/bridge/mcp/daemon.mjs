@@ -17,6 +17,7 @@ export async function startDaemon(config) {
   const sockets=new WebSocketServer({noServer:true,maxPayload:16*1024*1024});
   let plugin=null,tail=Promise.resolve(),closed=false;
   const pending=new Map();
+  const internalNames=new Set(['__open_project_data']);
   const localAuth=(req,res,next)=>equalSecret(req.headers.authorization,`Bearer ${config.token}`)?next():res.sendStatus(401);
   app.disable('x-powered-by');
   app.use((req,res,next)=>{
@@ -28,7 +29,7 @@ export async function startDaemon(config) {
     next();
   });
   app.use(express.json({limit:'8mb'}));
-  app.get('/health',localAuth,(req,res)=>res.json({service:'shardbound-blockbench',connected:!!plugin,publicUrl:config.publicUrl||null}));
+  app.get('/health',localAuth,(req,res)=>res.json({service:'shardbound-blockbench',version:'0.2.0',connected:!!plugin,publicUrl:config.publicUrl||null}));
   const dispatch=(name,args)=>new Promise((resolve,reject)=>{
     if(!plugin||plugin.readyState!==WebSocket.OPEN)return reject(new Error('Blockbench disconnected. Load .local/shardbound_bridge.js and keep Blockbench open.'));
     const id=randomUUID();
@@ -36,11 +37,14 @@ export async function startDaemon(config) {
     pending.set(id,{resolve,reject,timer});
     plugin.send(JSON.stringify({type:'call',id,name,args,deadline:Date.now()+45000}));
   });
+  const serialize=fn=>{const next=tail.then(fn);tail=next.catch(()=>{});return next;};
   const call=(name,args)=>{
+    if(internalNames.has(name))return serialize(()=>dispatch(name,args));
     if(!Object.hasOwn(tools,name))return Promise.reject(new Error('Unknown tool'));
     const parsed=tools[name].schema.parse(args);
     if(name==='status'&&!plugin)return Promise.resolve({connected:false,service:'shardbound-blockbench',message:'Load the paired Blockbench plugin.'});
-    const next=tail.then(()=>dispatch(name,parsed));tail=next.catch(()=>{});return next;
+    if(name==='list_model_files')return Promise.reject(new Error('list_model_files is handled by the MCP server.'));
+    return serialize(()=>dispatch(name,parsed));
   };
   app.post('/rpc',localAuth,async(req,res)=>{try{res.json({result:await call(req.body.name,req.body.args)});}catch(error){res.status(400).json({error:error.message});}});
   let auth;
@@ -71,7 +75,7 @@ export async function startDaemon(config) {
       let message;try{message=JSON.parse(bytes.toString());}catch{ws.close(1008);return;}
       if(!authenticated){
         if(message.type!=='hello'||!equalSecret(message.token,config.token)||plugin){ws.close(1008,'Invalid pairing or another Blockbench instance is connected');return;}
-        clearTimeout(timer);authenticated=true;plugin=ws;ws.send(JSON.stringify({type:'ready'}));return;
+        clearTimeout(timer);authenticated=true;plugin=ws;ws.send(JSON.stringify({type:'ready',version:'0.2.0'}));return;
       }
       const request=pending.get(message.id);if(!request)return;
       clearTimeout(request.timer);pending.delete(message.id);
