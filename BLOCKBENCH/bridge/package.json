@@ -12,13 +12,18 @@
     "start": "node mcp/server.mjs",
     "http": "node mcp/server.mjs --http",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs",
-    "doctor": "node scripts/doctor.mjs"
+    "doctor": "node scripts/doctor.mjs",
+    "stop": "node scripts/stop.mjs",
+    "test:blockbench": "node scripts/test-blockbench.mjs",
+    "package": "powershell -NoProfile -File scripts/package.ps1",
+    "package:desktop": "powershell -NoProfile -File scripts/package.ps1 -BindCurrentMachine"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "express": "^5.1.0",
     "ws": "^8.22.0",
-    "zod": "^3.25.0"
+    "zod": "^3.25.0",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@electron/asar": "^3.4.1",

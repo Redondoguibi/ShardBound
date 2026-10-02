@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "shardbound_blockbench": {
+      "command": "node",
+      "args": ["${PLUGIN_ROOT}/mcp/server.mjs"],
+      "cwd": "${PLUGIN_ROOT}"
+    }
+  }
+}
