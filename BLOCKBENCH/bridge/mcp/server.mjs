@@ -6,6 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { loadConfig, root } from './config.mjs';
 import { createMcp } from './server-tools.mjs';
 import { startDaemon } from './daemon.mjs';
+import { auditTransport } from './audit.mjs';
 
 const config = loadConfig(),
   base = `http://127.0.0.1:${config.bridgePort}`;
@@ -71,5 +72,8 @@ if (process.argv.includes('--http')) {
       throw new Error(result.error || `Bridge HTTP ${response.status}`);
     return result.result;
   }, config);
-  await server.connect(new StdioServerTransport());
+  const transport = new StdioServerTransport();
+  const attachAudit = auditTransport(transport, path.join(root, '.local/mcp-audit.jsonl'));
+  await server.connect(transport);
+  attachAudit();
 }
