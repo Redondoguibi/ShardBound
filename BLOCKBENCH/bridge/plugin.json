@@ -1,18 +1,24 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "shardbound-blockbench",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Edit local Blockbench Generic Models and run adapted MTools operations through MCP.",
-  "author": { "name": "ShardBound" },
+  "author": {
+    "name": "ShardBound"
+  },
   "extensions": {
     "com.openai": {
+      "apps": "./.app.json",
       "interface": {
         "displayName": "ShardBound Blockbench",
         "shortDescription": "Modelagem com Blockbench",
         "longDescription": "Conecta ao Blockbench desktop para inspecionar e editar Generic Models, executar ações adaptadas do MTools, consultar texturas e exportar modelos.",
         "developerName": "ShardBound",
         "category": "Developer Tools",
-        "capabilities": ["Read", "Write"],
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
         "defaultPrompt": "Inspecione meu Generic Model no Blockbench e mostre uma captura antes de editar."
       }
     }

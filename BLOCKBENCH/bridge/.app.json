@@ -1,0 +1,8 @@
+{
+  "apps": {
+    "shardbound_blockbench": {
+      "id": "asdk_app_6ac0dda2381c8191b52e8f5f29526256",
+      "required": true
+    }
+  }
+}

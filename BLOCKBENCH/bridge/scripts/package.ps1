@@ -12,7 +12,7 @@ $stage = Join-Path $bridgeRoot ('.local/package-' + [guid]::NewGuid().ToString('
 $packageRoot = Join-Path $stage 'shardbound-blockbench'
 New-Item -ItemType Directory -Path $packageRoot -Force | Out-Null
 # Explicit allowlist: never package pairing credentials, local models or node_modules.
-$entries = @('.gitignore', '.codex-plugin', '.mcp.json', 'plugin.json', 'mcp.json', 'package.json', 'package-lock.json', 'README.md', 'MERGE-REVIEW.md', 'CHATGPT-DESKTOP.md', 'Install.ps1', 'Connect-ChatGPT.ps1', 'mcp', 'shared', 'plugin-src', 'plugin', 'scripts', 'skills', 'tests')
+$entries = @('.gitignore', '.codex-plugin', '.mcp.json', '.app.json', 'plugin.json', 'mcp.json', 'package.json', 'package-lock.json', 'README.md', 'MERGE-REVIEW.md', 'CHATGPT-DESKTOP.md', 'Install.ps1', 'Connect-ChatGPT.ps1', 'mcp', 'shared', 'plugin-src', 'plugin', 'scripts', 'skills', 'tests')
 foreach ($entry in $entries) {
     Copy-Item -LiteralPath (Join-Path $bridgeRoot $entry) -Destination $packageRoot -Recurse
 }
@@ -58,7 +58,7 @@ $zip = [IO.Compression.ZipFile]::OpenRead($archive)
 try {
     if ($zip.Entries | Where-Object { $_.FullName.Contains('\') }) { throw 'Archive member paths must use forward slashes.' }
     $names = @($zip.Entries | ForEach-Object { $_.FullName.Replace('\', '/') })
-    foreach ($required in @('plugin.json', 'mcp.json', '.mcp.json', '.codex-plugin/plugin.json', 'mcp/server.mjs', 'README.md')) {
+    foreach ($required in @('plugin.json', 'mcp.json', '.mcp.json', '.app.json', '.codex-plugin/plugin.json', 'mcp/server.mjs', 'README.md')) {
         if ($names -notcontains ('shardbound-blockbench/' + $required)) { throw "Archive missing $required" }
     }
     if ($names | Where-Object { $_ -match '/(node_modules|\.local|outputs|\.reference)/|chatgpt-password|codex-config|config\.json$' }) {
