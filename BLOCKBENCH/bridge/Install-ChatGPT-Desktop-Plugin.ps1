@@ -115,35 +115,30 @@ Write-Output 'Registrando marketplace pessoal do ChatGPT Desktop...'
 $marketplaceDir = Split-Path -Parent $MarketplacePath
 New-Item -ItemType Directory -Force -Path $marketplaceDir | Out-Null
 
-$marketplace = $null
+$existingPlugins = @()
+$marketplaceName = 'personal-local'
+$marketplaceDisplayName = 'Personal Local Plugins'
+
 if (Test-Path -LiteralPath $MarketplacePath) {
     try {
-        $marketplace = Get-Content -LiteralPath $MarketplacePath -Raw | ConvertFrom-Json
+        $existing = Get-Content -LiteralPath $MarketplacePath -Raw | ConvertFrom-Json
+        if ($existing.PSObject.Properties['name'] -and -not [string]::IsNullOrWhiteSpace([string]$existing.name)) {
+            $marketplaceName = [string]$existing.name
+        }
+        if ($existing.PSObject.Properties['interface'] -and
+            $existing.interface -and
+            $existing.interface.PSObject.Properties['displayName'] -and
+            -not [string]::IsNullOrWhiteSpace([string]$existing.interface.displayName)) {
+            $marketplaceDisplayName = [string]$existing.interface.displayName
+        }
+        if ($existing.PSObject.Properties['plugins'] -and $existing.plugins) {
+            $existingPlugins = @($existing.plugins | Where-Object { $_.name -ne $PluginName })
+        }
     } catch {
         $backup = "$MarketplacePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
         Copy-Item -LiteralPath $MarketplacePath -Destination $backup -Force
-        Write-Warning "marketplace.json existente nao pode ser interpretado; backup criado em $backup"
+        Write-Warning "marketplace.json existente era invalido; backup criado em $backup"
     }
-}
-if (-not $marketplace) {
-    $marketplace = [ordered]@{
-        name = 'personal-local'
-        interface = [ordered]@{ displayName = 'Personal Local Plugins' }
-        plugins = @()
-    }
-}
-if (-not $marketplace.PSObject.Properties['name']) {
-    $marketplace | Add-Member -NotePropertyName name -NotePropertyValue 'personal-local'
-} elseif ([string]::IsNullOrWhiteSpace([string]$marketplace.name)) {
-    $marketplace.name = 'personal-local'
-}
-if (-not $marketplace.PSObject.Properties['interface']) {
-    $marketplace | Add-Member -NotePropertyName interface -NotePropertyValue ([pscustomobject]@{ displayName = 'Personal Local Plugins' })
-}
-if (-not $marketplace.PSObject.Properties['plugins']) {
-    $marketplace | Add-Member -NotePropertyName plugins -NotePropertyValue @()
-} elseif ($null -eq $marketplace.plugins) {
-    $marketplace.plugins = @()
 }
 
 $entry = [ordered]@{
@@ -153,16 +148,29 @@ $entry = [ordered]@{
         path = "./.codex/plugins/$PluginName"
     }
     policy = [ordered]@{
-        installation = 'INSTALLED_BY_DEFAULT'
+        installation = 'AVAILABLE'
         authentication = 'ON_INSTALL'
     }
     category = 'Developer Tools'
 }
 
-$others = @($marketplace.plugins | Where-Object { $_.name -ne $PluginName })
-$marketplace.plugins = @($others + $entry)
-Write-Utf8NoBom $MarketplacePath ($marketplace | ConvertTo-Json -Depth 12)
+$marketplaceOut = [ordered]@{
+    name = $marketplaceName
+    interface = [ordered]@{
+        displayName = $marketplaceDisplayName
+    }
+    plugins = @($existingPlugins + $entry)
+}
 
+Write-Utf8NoBom $MarketplacePath ($marketplaceOut | ConvertTo-Json -Depth 12)
+
+# Re-read what was actually written. Do not claim success unless the entry exists.
+$verifyMarketplace = Get-Content -LiteralPath $MarketplacePath -Raw | ConvertFrom-Json
+$verifyEntry = @($verifyMarketplace.plugins | Where-Object { $_.name -eq $PluginName })
+if ($verifyEntry.Count -ne 1) {
+    throw "Falha ao registrar $PluginName em $MarketplacePath. O arquivo foi gravado, mas a entrada nao foi encontrada na verificacao."
+}
+Write-Output "Marketplace registrado: $PluginName"
 Write-Host ''
 Write-Output 'ShardBound Blockbench Local foi registrado como plugin local do ChatGPT Desktop.'
 Write-Output "Plugin source: $PersonalPluginRoot"
