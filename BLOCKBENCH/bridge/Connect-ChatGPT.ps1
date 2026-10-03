@@ -58,13 +58,61 @@ try {
         '--description', 'Blockbench Generic Model bridge for ChatGPT',
         '--json'
     )
-    & $client @connectArgs
-    if ($LASTEXITCODE -ne 0) { throw 'tunnel-client runtimes connect falhou.' }
+    $connectOutput = (& $client @connectArgs 2>&1 | Out-String).Trim()
+    $connectExitCode = $LASTEXITCODE
+
+    if (-not [string]::IsNullOrWhiteSpace($connectOutput)) {
+        Write-Output $connectOutput
+    }
+
+    if ($connectExitCode -ne 0) {
+        $diagnosticPath = Join-Path $script:LocalDir 'tunnel-connect-error.log'
+        $safeDiagnostic = @(
+            "UTC: $((Get-Date).ToUniversalTime().ToString('o'))",
+            "Tunnel: $($settings.tunnel_id)",
+            "ExitCode: $connectExitCode",
+            '',
+            $connectOutput
+        ) -join [Environment]::NewLine
+        [IO.File]::WriteAllText($diagnosticPath, $safeDiagnostic, [Text.Encoding]::UTF8)
+
+        Write-Host ''
+        Write-Warning 'O tunnel-client recusou a conexao. Causa detectada:'
+        if ($connectOutput -match '(?i)\b401\b|unauthori[sz]ed|invalid.*api.?key|incorrect.*api.?key') {
+            Write-Warning '401/AUTENTICACAO: a Runtime API key e invalida, foi revogada ou nao esta sendo aceita.'
+        } elseif ($connectOutput -match '(?i)\b403\b|forbidden|permission|tunnels?.*use|access required') {
+            Write-Warning '403/PERMISSAO: a chave/principal provavelmente nao tem Tunnels Read + Use para este tunnel, ou o tunnel e a chave pertencem a contextos de organizacao diferentes.'
+        } elseif ($connectOutput -match '(?i)\b404\b|not found|unknown tunnel') {
+            Write-Warning '404/TUNNEL: o tunnel_id nao foi encontrado no contexto acessivel pela chave.'
+        } elseif ($connectOutput -match '(?i)mcp|stdio|command|spawn|process|health|ready') {
+            Write-Warning 'RUNTIME LOCAL: o tunnel foi aceito, mas houve falha ao iniciar/verificar o MCP stdio local.'
+        } else {
+            Write-Warning 'Nao foi possivel classificar automaticamente. A mensagem nativa acima e o diagnostico abaixo contem a causa real.'
+        }
+
+        Write-Host ''
+        Write-Output 'Tentando obter estado parcial do runtime...'
+        $statusOutput = (& $client runtimes status $script:TunnelAlias --json 2>&1 | Out-String).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($statusOutput)) {
+            Write-Output $statusOutput
+            [IO.File]::AppendAllText(
+                $diagnosticPath,
+                [Environment]::NewLine + [Environment]::NewLine + 'STATUS:' + [Environment]::NewLine + $statusOutput,
+                [Text.Encoding]::UTF8
+            )
+        }
+
+        throw "tunnel-client runtimes connect falhou. Diagnostico salvo em $diagnosticPath"
+    }
 
     Write-Host ''
     Write-Output 'Estado do runtime:'
-    & $client runtimes status $script:TunnelAlias --json
-    if ($LASTEXITCODE -ne 0) { throw 'Nao foi possivel consultar o runtime criado.' }
+    $statusOutput = (& $client runtimes status $script:TunnelAlias --json 2>&1 | Out-String).Trim()
+    $statusExitCode = $LASTEXITCODE
+    if (-not [string]::IsNullOrWhiteSpace($statusOutput)) {
+        Write-Output $statusOutput
+    }
+    if ($statusExitCode -ne 0) { throw 'Nao foi possivel consultar o runtime criado.' }
 
     Write-Host ''
     Write-Output 'Secure MCP Tunnel iniciado. Nao existe URL temporaria, Cloudflare ou login OAuth do ShardBound.'
