@@ -78,10 +78,20 @@ function Get-NodeExecutable {
 }
 
 function Get-McpCommand {
-    $node = Get-NodeExecutable
+    # tunnel-client parses stdio commands with a POSIX-like parser where
+    # backslashes are escape characters. Native Windows paths such as
+    # C:\Program Files\... therefore break into an invalid executable.
+    #
+    # Use "node" from PATH plus an encoded file:// URL loaded via -e. The URL
+    # contains no raw spaces/backslashes, so this is stable on Windows even
+    # when the repository lives under "Program Files" or another spaced path.
+    $null = Get-NodeExecutable
     $server = Join-Path $script:BridgeRoot 'mcp\server.mjs'
     if (-not (Test-Path -LiteralPath $server)) { throw "MCP server nao encontrado: $server" }
-    return ('"{0}" "{1}"' -f $node, $server)
+
+    $serverUri = ([System.Uri]$server).AbsoluteUri
+    $tick = [char]96
+    return "node -e import($tick$serverUri$tick)"
 }
 
 function Assert-TunnelId([string]$TunnelId) {
