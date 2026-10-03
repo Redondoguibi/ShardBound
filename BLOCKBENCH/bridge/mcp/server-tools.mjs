@@ -122,7 +122,7 @@ async function writeResult(config, args, result, kind) {
 
 export function createMcp(call, config, oauth = false) {
   const server = new McpServer(
-    { name: 'shardbound-blockbench', version: '0.3.1' },
+    { name: 'shardbound-blockbench', version: '0.3.2' },
     {
       instructions:
         "Control the user's open Blockbench Generic Model. Start with status and read_project; use current project_id and expected_revision for edits. Cubes support per-face UVs/textures. Use list_model_files/open_project_file for editable .bbmodel sources and save_project/export_project for repository-safe writes. Select components before MTools. Inspect mtools_list and capture_view to verify results. Operations are serialized. A timeout may have changed the model: inspect before retrying. Do not assume unlisted MTools actions are supported.",
