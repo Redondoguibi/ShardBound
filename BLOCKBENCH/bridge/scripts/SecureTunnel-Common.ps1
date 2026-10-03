@@ -30,7 +30,18 @@ function Save-TunnelSettings([string]$TunnelId) {
 
 function Save-RuntimeApiKey([Security.SecureString]$Key) {
     Ensure-LocalDirectory
-    $Key | ConvertFrom-SecureString | Set-Content -LiteralPath $script:TunnelKeyPath -Encoding UTF8
+    $encrypted = $Key | ConvertFrom-SecureString
+    if ([string]::IsNullOrWhiteSpace($encrypted)) {
+        throw 'Falha ao criptografar a Runtime API key.'
+    }
+
+    # ConvertFrom-SecureString outputs an ASCII-safe DPAPI blob on Windows.
+    # WriteAllText avoids BOM/newline characters that break ConvertTo-SecureString.
+    [IO.File]::WriteAllText(
+        $script:TunnelKeyPath,
+        $encrypted,
+        [Text.Encoding]::ASCII
+    )
 }
 
 function Convert-SecureStringToPlainText([Security.SecureString]$Secure) {
@@ -44,7 +55,20 @@ function Get-RuntimeApiKey {
     if (-not (Test-Path -LiteralPath $script:TunnelKeyPath)) {
         throw 'Runtime API key nao configurada. Rode .\scripts\Configure-SecureTunnel.ps1.'
     }
-    $secure = Get-Content -LiteralPath $script:TunnelKeyPath -Raw | ConvertTo-SecureString
+
+    # Be tolerant of files produced by the previous implementation, which
+    # could contain a UTF-8 BOM and/or a trailing newline.
+    $encrypted = [IO.File]::ReadAllText($script:TunnelKeyPath)
+    $encrypted = $encrypted.Trim().TrimStart([char]0xFEFF)
+    if ([string]::IsNullOrWhiteSpace($encrypted)) {
+        throw 'Arquivo local da Runtime API key esta vazio. Rode .\Connect-ChatGPT.ps1 -Reconfigure.'
+    }
+
+    try {
+        $secure = $encrypted | ConvertTo-SecureString -ErrorAction Stop
+    } catch {
+        throw 'Nao foi possivel descriptografar a Runtime API key local. Rode .\Connect-ChatGPT.ps1 -Reconfigure para grava-la novamente.'
+    }
     return Convert-SecureStringToPlainText $secure
 }
 
