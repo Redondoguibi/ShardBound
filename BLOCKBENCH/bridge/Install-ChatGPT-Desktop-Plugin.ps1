@@ -118,7 +118,7 @@ New-Item -ItemType Directory -Force -Path $marketplaceDir | Out-Null
 $marketplace = $null
 if (Test-Path -LiteralPath $MarketplacePath) {
     try {
-        $marketplace = Get-Content -LiteralPath $MarketplacePath -Raw | ConvertFrom-Json -AsHashtable
+        $marketplace = Get-Content -LiteralPath $MarketplacePath -Raw | ConvertFrom-Json
     } catch {
         $backup = "$MarketplacePath.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
         Copy-Item -LiteralPath $MarketplacePath -Destination $backup -Force
@@ -132,13 +132,17 @@ if (-not $marketplace) {
         plugins = @()
     }
 }
-if (-not $marketplace.ContainsKey('name') -or [string]::IsNullOrWhiteSpace([string]$marketplace.name)) {
+if (-not $marketplace.PSObject.Properties['name']) {
+    $marketplace | Add-Member -NotePropertyName name -NotePropertyValue 'personal-local'
+} elseif ([string]::IsNullOrWhiteSpace([string]$marketplace.name)) {
     $marketplace.name = 'personal-local'
 }
-if (-not $marketplace.ContainsKey('interface')) {
-    $marketplace.interface = [ordered]@{ displayName = 'Personal Local Plugins' }
+if (-not $marketplace.PSObject.Properties['interface']) {
+    $marketplace | Add-Member -NotePropertyName interface -NotePropertyValue ([pscustomobject]@{ displayName = 'Personal Local Plugins' })
 }
-if (-not $marketplace.ContainsKey('plugins') -or $null -eq $marketplace.plugins) {
+if (-not $marketplace.PSObject.Properties['plugins']) {
+    $marketplace | Add-Member -NotePropertyName plugins -NotePropertyValue @()
+} elseif ($null -eq $marketplace.plugins) {
     $marketplace.plugins = @()
 }
 
@@ -155,10 +159,7 @@ $entry = [ordered]@{
     category = 'Developer Tools'
 }
 
-$others = @($marketplace.plugins | Where-Object {
-    if ($_ -is [Collections.IDictionary]) { return $_['name'] -ne $PluginName }
-    return $_.name -ne $PluginName
-})
+$others = @($marketplace.plugins | Where-Object { $_.name -ne $PluginName })
 $marketplace.plugins = @($others + $entry)
 Write-Utf8NoBom $MarketplacePath ($marketplace | ConvertTo-Json -Depth 12)
 
