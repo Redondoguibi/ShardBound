@@ -1,135 +1,150 @@
-# ChatGPT comum no app Desktop
+# Conectar ao ChatGPT Desktop (Windows, Plus)
 
-Pesquisa consultada em **2 de outubro de 2026**.
+## Estado verificado em 3 de outubro de 2026
 
-## Plugin privado criado para esta máquina
+A ponte oferece 18 ferramentas MCP e 19 adaptadores MTools. O transporte local
+stdio atende ao Codex. O transporte HTTPS com OAuth foi testado com um cliente
+MCP real: descoberta das ferramentas, autenticação PKCE e chamada de `status`.
+A chamada indicou que o Blockbench ainda não estava conectado.
 
-O [ShardBound Blockbench](https://chatgpt.com/plugins/plugins_6abfe848600c8191876653a097dd8d53)
-foi salvo como plugin pessoal privado em 2 de outubro de 2026. Abra seu link no
-ChatGPT Desktop e conclua a instalação se o botão for exibido. Em um Chat novo,
-selecione o plugin pelo `@` e peça uma consulta de status.
+Isso não comprova que as ferramentas já estão disponíveis no Chat comum. A
+validação final depende da conexão adicionada e autorizada na sua conta.
 
-Este pacote privado usa o Node e o servidor preparados na pasta original
-`BLOCKBENCH/bridge` desta máquina. Mantenha a pasta no mesmo local. O token não
-foi enviado: o runtime lê a configuração local existente. A instalação da versão
-0.1.0 foi observada pelo usuário; as ferramentas no Chat comum não foram expostas.
-A versão 0.1.1 foi salva na conta, mas sua execução no Chat comum e a conexão
-com o editor ainda não estão confirmadas.
+## Caminho observado na sua interface
 
-O pacote com essa configuração é gerado por `npm run package:desktop`. O pacote
-portável de código-fonte continua sendo gerado por `npm run package`.
+A imagem fornecida pelo usuário mostra **Configurações → Integrações → Plugins**.
+Dentro de Plugins, o usuário confirmou **Adicionar → Adicionar servidor MCP**.
+O mesmo menu também contém Criar plugin e Adicionar Marketplace.
 
-**Selecionar o plugin no Chat comum não comprova que suas ferramentas locais
-foram carregadas.** O usuário testou a versão 0.1.0 no Desktop e recebeu a skill,
-mas não recebeu `status`, `read_project` ou `capture_view`. A disponibilidade de
-plugins e de MCPs locais é específica de cada modalidade e conta. A documentação
-geral de plugins no Desktop não valida este pacote stdio no Chat comum.
+A segunda imagem, `conectando_mcp_plugin.png`, confirma que o formulário tem
+**Nome** e **Tipo**, com as opções **STDIO** e **HTTP com streaming**. Para a
+conexão HTTPS preparada aqui, selecione **HTTP com streaming**. Os campos
+Comando para iniciar, Argumentos, Variáveis do ambiente, Encaminhamento de
+variáveis do ambiente e Diretório de trabalho mostrados na imagem pertencem
+à opção STDIO.
 
-Na versão 0.1.1, o arquivo gerado inclui também `.mcp.json` e um manifesto de
-compatibilidade com referência explícita ao MCP. Após salvar, a leitura do
-plugin pela API mostrou que o importador preservou `mcp.json` e `.mcp.json`, mas
-recriou `.codex-plugin/plugin.json` sem `mcpServers`, incluindo apenas skills.
-Os dois arquivos MCP iniciam o servidor e descobrem 15 ferramentas quando usados
-por um cliente local real. Esse teste não valida sua descoberta no Chat comum.
-Não edite o cache para tentar corrigir: o importador pode recriá-lo.
+A terceira imagem, `https.png`, confirma os campos da opção HTTP: **URL**,
+**Variável de ambiente de token do portador**, **Cabeçalhos** e **Cabeçalhos a
+partir de variáveis de ambiente**. Preencha Nome e URL, mantendo os campos de
+token e cabeçalhos vazios para testar a descoberta OAuth. `MCP_BEARER_TOKEN`
+é o exemplo de nome de uma variável de ambiente, não uma senha a preencher.
+A imagem não mostra um seletor OAuth; ainda é preciso verificar se o host
+oferece autenticação depois de salvar. Não cole a senha de consentimento nem
+o token de pareamento nesses campos.
 
-Há dois diagnósticos distintos: ferramentas ausentes significam que o host não
-as expôs; uma chamada real de `status` com `connected: false` significa que o
-servidor respondeu, mas o plugin do Blockbench não está pareado. Carregar o
-plugin no editor resolve apenas o segundo caso.
+O usuário confirmou que salvar o servidor não abriu autenticação. Portanto,
+esse cadastro ainda não comprova uma conexão OAuth nem a disponibilidade no
+Chat comum. Testes externos autenticados não substituem esse teste no host.
 
-Para uma conexão customizada documentada no Chat comum, registre um MCP remoto
-via HTTPS ou Secure MCP Tunnel, conforme
-[Connect and test](https://developers.openai.com/plugins/deploy/connect-chatgpt).
-O servidor local deste projeto já possui a alternativa HTTP/OAuth descrita
-abaixo. Ela ainda não tem URL HTTPS ou túnel cadastrado.
+A documentação oficial usa outros nomes em algumas interfaces. Não procure
+“Segurança e login” quando essa seção não aparece na sua instalação.
+Se o formulário tiver transporte remoto/URL, use o endereço HTTPS abaixo.
+Se só aceitar comandos locais, ele não comprova instalação para o Chat comum;
+é preciso verificar o registro remoto em chatgpt.com e sua disponibilidade no Desktop.
 
-Fontes oficiais:
+## Iniciar a conexão de teste
 
-- [ChatGPT Learn — Plugins](https://learn.chatgpt.com/docs/plugins): plugins
-  funcionam em Chat e Work, incluindo Desktop; plugins “Desktop only” exigem
-  o app para instalação e uso.
-- [Help Center — Plugins in ChatGPT](https://help.openai.com/en/articles/20001256-plugins-in-chatgpt):
-  na seção “Choose what your plugin contains”, documenta MCPs locais executados
-  no computador pelo ChatGPT Desktop; salvar na conta não os torna executáveis
-  na web/mobile. Também documenta criação pelo Plugin Creator e restrições de
-  importação/instalação por conta ou workspace.
-- [Formato de pacote](https://developers.openai.com/plugins/build/plugins):
-  manifests e fontes de plugins; marketplaces locais têm disponibilidade
-  específica por superfície.
-
-## Teste do plugin local em um host compatível
-
-O pacote deste projeto contém `plugin.json`, `mcp.json` com transporte `stdio`,
-skill e servidor Node. Assim, o host pode iniciar o MCP na própria máquina,
-que por sua vez conversa com o plugin carregado no Blockbench.
-
-1. Conclua a preparação e o pareamento descritos no [README](README.md).
-2. No ChatGPT Desktop, abra **Plugins**. Use o fluxo disponível de criação ou
-   instalação local do **Plugin Creator** com a pasta deste projeto. Solicitação
-   sugerida: “Instale como plugin local o ShardBound Blockbench desta pasta,
-   usando seu plugin.json e mcp.json; quero usá-lo no Chat comum do Desktop.”
-3. Se o host copiar o pacote para outra pasta, nessa cópia precisam existir as
-   dependências Node e uma configuração válida. Execute `npm ci` e `npm run
-setup` ali e carregue o plugin pareado gerado ali. Alternativamente, configure
-   o servidor instalado com `BLOCKBENCH_BRIDGE_CONFIG` apontando para a
-   configuração já existente; assim os dois clientes reutilizam o mesmo
-   pareamento e daemon. Não copie credenciais para um ZIP compartilhado.
-4. Inicie um chat novo em um host compatível com processos locais, selecione o
-   plugin pelo `@`, pelo `+` ou pelo seletor de Plugins e confirme a descoberta
-   das ferramentas. Se estiver testando o Chat comum, não presuma suporte apenas
-   porque o plugin aparece na lista.
-5. Peça `status`, `read_project` e `capture_view`. Só depois teste uma pequena
-   edição e Undo em um modelo de teste.
-
-O ZIP é um pacote de código-fonte; não instala Node nem executa `npm ci`
-automaticamente. Importação de ZIP pela conta/workspace não é um botão universal:
-use-a apenas se estiver disponível e se a conta permitir. A instalação local
-no Codex e a publicação privada na conta são etapas distintas. O pacote privado
-foi salvo na conta; não foi publicado no diretório público.
-
-**Estado verificado:** servidor, Blockbench, MTools e cliente MCP funcionando;
-MCP registrado no Codex desta máquina. **Ainda não verificado:** o pacote
-selecionável e executando ferramentas em um Chat comum da sua conta. A pesquisa
-confirma suporte do produto, não confirma permissões ou implantação na conta.
-
-O caminho local não exige chave da API OpenAI nem túnel. O assistente usa a
-autenticação e os limites do produto onde você abriu a conversa.
-
-## Alternativa: MCP remoto autenticado por OAuth
-
-Útil se você também quiser acesso pela web ou se o fluxo de plugins locais não
-estiver disponível na sua conta. O servidor já implementa Streamable HTTP,
-OAuth, descoberta de metadados, registro dinâmico de clientes e PKCE S256.
-
-É necessário um endereço **HTTPS estável** encaminhando as requisições para
-`http://127.0.0.1:30123`. O computador e o Blockbench precisam permanecer ligados.
-O provedor/túnel não foi configurado automaticamente neste projeto.
+Na pasta `BLOCKBENCH/bridge`, após o setup normal:
 
 ```powershell
-npm run stop
-npm run setup -- --public-url https://SEU-DOMINIO
-npm run http
+./Connect-ChatGPT.ps1
 ```
 
-Encaminhe o host inteiro, incluindo `/mcp`, endpoints OAuth e `/.well-known/`,
-preservando o caminho. Cadastre `https://SEU-DOMINIO/mcp` como MCP remoto no fluxo
-de desenvolvimento de plugins do ChatGPT e escolha OAuth. Autorize usando a
-senha de `.local/chatgpt-password.txt` na página de consentimento da própria
-ponte. Não use o token interno do Blockbench como senha.
+Esse comando instala `cloudflared` em `.local/bin/` se necessário, verificando
+SHA-256 contra a publicação oficial, e inicia os processos em segundo plano.
+Não instala um serviço do Windows nem altera a inicialização do computador.
+Não precisa de chave da API OpenAI, conta Cloudflare ou domínio para este teste.
 
-O fluxo de conexão customizada e seu acesso dependem da conta/workspace:
-[Connect and test](https://developers.openai.com/plugins/deploy/connect-chatgpt)
-e [Developer mode](https://developers.openai.com/api/docs/guides/developer-mode).
-Não basta colocar `localhost` como endereço de um MCP executado pela nuvem.
+Alternativamente, com o binário já instalado:
 
-Tokens e autorizações OAuth ficam em memória: reiniciar o daemon requer uma
-nova autorização. O servidor continua vinculado a loopback; o túnel/proxy fornece
-o HTTPS. O cliente local do Codex continua usando o token local, simultaneamente.
-Arquivos exportados continuam no computador; essa opção não publica os modelos.
+```powershell
+npm run chatgpt:start
+npm run chatgpt:status
+npm run chatgpt:verify
+```
 
-Para retornar ao modo local: pare o serviço, execute `npm run setup --
---local-only`, encerre o túnel e reinicie a conexão. O Secure MCP Tunnel da OpenAI
-é outra opção documentada, mas exige credenciais/acesso próprios e não está
-pré-configurado aqui:
-[Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels).
+O campo `mcpUrl` mostra o endereço atual, terminado em `/mcp`.
+Ele também fica em `.local/chatgpt-session.json`. Cadastre:
+
+- Nome: **ShardBound Blockbench**.
+- Transporte: HTTP remoto/Streamable HTTP, se houver seletor.
+- URL: copie `mcpUrl` da sessão atual.
+- Autenticação: **OAuth**; o servidor suporta registro dinâmico (DCR).
+- Client ID/secret: não invente valores; use descoberta/registro dinâmico quando disponível.
+
+Na página “Conectar ao seu Blockbench”, use a senha de
+`.local/chatgpt-password.txt`. Não envie essa senha no chat nem use o token de
+pareamento do editor. Autorize a conexão e confira a descoberta das ferramentas.
+Se o host criar uma conexão com ID `plugin_asdk_app...`, esse ID pode ser
+associado ao plugin privado existente pelo Plugin Creator.
+
+## Conectar o editor
+
+No Blockbench, carregue `.local/shardbound_bridge.js` em **File → Plugins →
+Load Plugin from File** e abra um Generic Model. Instale MTools 2.1.0 para seus
+adaptadores. O arquivo pareado mantém as credenciais do setup existente.
+
+Em um Chat novo, selecione a conexão autorizada e peça:
+
+> Execute status, read_project e capture_view. Mostre a captura antes de editar.
+
+Uma chamada real com `connected: false` indica falta de conexão do editor.
+Ferramentas ausentes indicam que o host não as expôs. São problemas diferentes.
+
+## Duração e encerramento
+
+O Quick Tunnel usa uma URL temporária que muda ao reiniciar o túnel. Manter o
+processo ativo conserva a URL durante a sessão, sem garantia de disponibilidade.
+Ao reiniciá-lo, atualize a URL no ChatGPT e autorize novamente.
+
+```powershell
+npm run chatgpt:stop
+```
+
+Isso encerra o túnel e o daemon associado. O Codex pode iniciar novamente seu
+daemon local na próxima conexão. A configuração local, porta e credenciais
+continuam preservadas; a URL temporária só existe no estado da sessão.
+
+O gateway público encaminha apenas MCP e OAuth. `/rpc`, `/shutdown`, `/health`
+e o WebSocket de pareamento não são expostos por esse túnel. MCP exige OAuth;
+segredos e modelos não são incluídos no pacote do plugin.
+
+Para uso permanente, substitua o Quick Tunnel por um hostname estável em um
+provedor configurado por você, ou pelo Secure MCP Tunnel da OpenAI. Este último
+exige `tunnel_id`, chave de runtime e permissões da organização apropriada.
+A escolha depende do acesso que sua conta oferece; não foi contratada infraestrutura.
+
+## Plugin privado e Codex
+
+O plugin privado existente é
+[ShardBound Blockbench](https://chatgpt.com/plugins/plugins_6abfe848600c8191876653a097dd8d53).
+A versão 0.1.1 usa stdio e foi selecionada no Chat comum sem expor ferramentas.
+Reinstalar a mesma configuração não resolve esse diagnóstico por si só.
+
+Em 3 de outubro foi publicada a versão **0.2.0**, mantendo a mesma identidade
+e visibilidade privada. A leitura de volta confirmou `mcp.json` com transporte
+`streamable-http` e a referência `mcpServers` no manifesto de compatibilidade.
+Release: `pluginrel_6ac0704ef428819182a109c48473241b`.
+O endpoint temporário dessa publicação é
+`https://badly-operated-addressing-mortality.trycloudflare.com/mcp`.
+O pacote ainda não tem um vínculo `.app.json` com um app registrado na conta.
+Não invente esse ID: confirme o registro remoto e a autorização no ChatGPT,
+depois use o ID técnico verificado caso esse vínculo seja necessário.
+
+O código-fonte mantém `mcp.json` local para Codex. Um pacote remoto pode ser
+gerado com `scripts/package.ps1 -RemoteUrl https://ENDERECO/mcp` sem modificar
+o registro local. Esse pacote contém a URL, mas nunca senhas ou tokens.
+Uma publicação privada não substitui a autorização OAuth nem o teste no Chat.
+
+## Referências oficiais
+
+- [Developer mode](https://developers.openai.com/api/docs/guides/developer-mode):
+  inclui Plus na disponibilidade web. A interface do Desktop deve ser verificada.
+- [Conectar e testar](https://developers.openai.com/plugins/deploy/connect-chatgpt):
+  registro de MCP remoto e autenticação.
+- [Pacotes e associação a uma conexão](https://developers.openai.com/plugins/build/plugins):
+  referência a `plugin_asdk_app` para empacotar uma conexão registrada.
+- [Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/):
+  temporários, sem garantia de disponibilidade e sem SSE. A ponte usa Streamable
+  HTTP com respostas JSON, validado pelo teste externo.
+- [Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels).

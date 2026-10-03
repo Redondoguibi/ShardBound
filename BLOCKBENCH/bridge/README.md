@@ -100,6 +100,8 @@ Somente Generic Models são aceitos.
 ### `save_project`
 
 Salva o projeto editável como `.bbmodel` em `assets/`, com texturas embutidas.
+Por padrão, preserva arquivos existentes. Para atualizar uma fonte já salva,
+envie `overwrite: true` explicitamente.
 
 ### `export_project`
 
@@ -277,7 +279,7 @@ Na primeira instalação, escolhe uma porta livre; nas seguintes, preserva a por
   PKCE, códigos de uso único, refresh, MCP HTTP e serialização.
 - Cliente MCP stdio real: descoberta das 18 ferramentas e consulta de status.
 - Blockbench 5.2.1 real em perfil temporário: geometria, topologia, seleção,
-  revisões, proteção de aba errada, Undo/Redo, todas as 14 ações MTools adaptadas,
+  revisões, proteção de aba errada, Undo/Redo, todas as 19 ações MTools adaptadas,
   texturas, capturas e quatro formatos de exportação, além de salvar/reabrir a fonte.
 
 O teste Electron usa perfil descartável em `.local/e2e/`, sem abrir os modelos
@@ -285,3 +287,6 @@ do usuário. Nessa instalação, o Blockbench gera dois erros da tela inicial
 antes do carregamento dos plugins; não houve novos erros nas operações da
 ponte. A instalação/seleção no Chat comum da conta ainda requer validação no
 host: testes do servidor não equivalem a testar a interface do ChatGPT.
+
+As decisões entre as versões local e do GitHub estão em
+[MERGE-REVIEW.md](MERGE-REVIEW.md), com os critérios e limites da validação.

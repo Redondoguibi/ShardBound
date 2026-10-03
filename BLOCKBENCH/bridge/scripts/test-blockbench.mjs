@@ -250,11 +250,97 @@ try {
     parameters: { num_cuts: 2 },
   });
   console.log('PASS MTools bridge_edge_loops');
+  await call('undo_redo', { direction: 'undo' });
+  await call('select_elements', {
+    ids: [created.created[0].id],
+    mode: 'face',
+    all_components: true,
+  });
+  await call('mtools_run', {
+    action: 'bridge_edge_loops',
+    parameters: { num_cuts: 64, twist: 40 },
+  });
+  assert.ok((await call('read_project')).elements[0].vertex_count > 32 * 4);
+  console.log('PASS expanded Bridge Edge Loops parameters');
   for (const action of ['polyhedron', 'torusknot']) {
     project = await call('create_project', { name: action });
     await call('mtools_run', { action });
     assert.ok((await call('read_project')).elements.length > 0);
     console.log('PASS MTools ' + action);
+  }
+  for (const [action, parameters] of [
+    ['textmesh', { text: 'Test', size: 4 }],
+    ['terrain_action', { width: 8, height: 8 }],
+    [
+      'xyzmathsurfacefunction',
+      {
+        x: 'u',
+        y: '0',
+        z: 'v',
+        uDivs: 4,
+        vDivs: 4,
+        uWrap: false,
+        vWrap: false,
+        vClose: false,
+      },
+    ],
+  ]) {
+    project = await call('create_project', { name: action });
+    await call('mtools_run', { action, parameters });
+    const generated = await call('read_project', { geometry: true });
+    assert.ok(
+      generated.elements.some((e) => e.type === 'mesh' && e.face_count > 0),
+      action,
+    );
+    await call('undo_redo', { direction: 'undo' });
+    assert.equal(
+      (await call('read_project')).elements.length,
+      0,
+      action + ' Undo',
+    );
+    await call('undo_redo', { direction: 'redo' });
+    assert.ok(
+      (await call('read_project')).elements.length > 0,
+      action + ' Redo',
+    );
+    console.log('PASS MTools ' + action + ' with Undo/Redo');
+  }
+  for (const [action, parameters] of [
+    ['scatter', { density: 1 }],
+    ['boolean', { operation: 'subtraction', acknowledge_experimental: true }],
+  ]) {
+    project = await call('create_project', { name: action });
+    const pair = await call('create_elements', {
+      elements: [
+        { type: 'mesh', name: 'A', vertices, faces },
+        {
+          type: 'mesh',
+          name: 'B',
+          vertices: Object.fromEntries(
+            Object.entries(vertices).map(([k, v]) => [
+              k,
+              [v[0] + 2, v[1] + 2, v[2] + 2],
+            ]),
+          ),
+          faces,
+        },
+      ],
+    });
+    await call('select_elements', {
+      ids: pair.created.map((e) => e.id),
+      mode: 'object',
+    });
+    await call('mtools_run', { action, parameters });
+    assert.ok((await call('read_project')).elements.length > 2, action);
+    await call('undo_redo', { direction: 'undo' });
+    const afterUndo = await call('read_project');
+    assert.equal(afterUndo.elements.length, 2, action + ' Undo');
+    await call('undo_redo', { direction: 'redo' });
+    assert.ok(
+      (await call('read_project')).elements.length > 2,
+      action + ' Redo',
+    );
+    console.log('PASS MTools ' + action + ' with Undo/Redo');
   }
   const texture = await call('put_texture', {
     name: 'Test texture',

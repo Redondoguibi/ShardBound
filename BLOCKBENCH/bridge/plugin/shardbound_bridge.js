@@ -4118,8 +4118,8 @@
       mode: ["edge", "face"],
       amend: true,
       schema: external_exports.object({
-        num_cuts: bounded(1, 32, 1).refine(Number.isInteger),
-        twist: bounded(-32, 32, 0).refine(Number.isInteger),
+        num_cuts: bounded(1, 128, 1).refine(Number.isInteger),
+        twist: bounded(-256, 256, 0).refine(Number.isInteger),
         blend_influence: bounded(-200, 200, 100),
         blend_path: external_exports.boolean().default(true),
         cut_holes: external_exports.boolean().default(true)
@@ -4186,6 +4186,7 @@
     scatter: {
       mode: "object",
       amend: true,
+      trackGroups: true,
       autoConfirmMessage: true,
       schema: external_exports.object({
         density: bounded(0, 256, 3).refine(Number.isInteger),
@@ -4450,7 +4451,7 @@
           (v) => v.toLowerCase().endsWith(".bbmodel"),
           "Save path must end in .bbmodel."
         ),
-        overwrite: external_exports.boolean().default(true)
+        overwrite: external_exports.boolean().default(false)
       }).strict()
     },
     export_project: {
@@ -6225,11 +6226,26 @@
           textures: g.Texture.all.slice()
         };
         const before = new g.UndoSystem.save(aspects), selectionBefore = new g.UndoSystem.selectionSave();
-        const oldAmend = undo.amendEdit, oldShow = g.Dialog.prototype.show, oldMessageBox = g.Blockbench.showMessageBox;
+        const oldAmend = undo.amendEdit, oldInit = undo.initEdit, oldFinish = undo.finishEdit, oldShow = g.Dialog.prototype.show, oldMessageBox = g.Blockbench.showMessageBox;
         let amendment, dialog;
         undo.amendEdit = function(form, callback) {
           amendment = { form, callback };
         };
+        if (spec.trackGroups) {
+          undo.initEdit = function(aspects2, amended) {
+            return oldInit.call(
+              this,
+              { ...aspects2, groups: g.Group.all.slice() },
+              amended
+            );
+          };
+          undo.finishEdit = function(label, aspects2) {
+            return oldFinish.call(this, label, {
+              ...aspects2 ?? this.current_save?.aspects,
+              groups: g.Group.all.slice()
+            });
+          };
+        }
         if (spec.dialog)
           g.Dialog.prototype.show = function(...args) {
             if (dialog) throw new Error("Unexpected additional dialog.");
@@ -6295,6 +6311,8 @@
           throw error;
         } finally {
           undo.amendEdit = oldAmend;
+          undo.initEdit = oldInit;
+          undo.finishEdit = oldFinish;
           g.Dialog.prototype.show = oldShow;
           g.Blockbench.showMessageBox = oldMessageBox;
         }

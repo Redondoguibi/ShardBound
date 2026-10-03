@@ -92,8 +92,8 @@ export const mtools = {
     amend: true,
     schema: z
       .object({
-        num_cuts: bounded(1, 32, 1).refine(Number.isInteger),
-        twist: bounded(-32, 32, 0).refine(Number.isInteger),
+        num_cuts: bounded(1, 128, 1).refine(Number.isInteger),
+        twist: bounded(-256, 256, 0).refine(Number.isInteger),
         blend_influence: bounded(-200, 200, 100),
         blend_path: z.boolean().default(true),
         cut_holes: z.boolean().default(true),
@@ -169,6 +169,7 @@ export const mtools = {
   scatter: {
     mode: 'object',
     amend: true,
+    trackGroups: true,
     autoConfirmMessage: true,
     schema: z
       .object({
@@ -517,7 +518,7 @@ export const tools = {
           (v) => v.toLowerCase().endsWith('.bbmodel'),
           'Save path must end in .bbmodel.',
         ),
-        overwrite: z.boolean().default(true),
+        overwrite: z.boolean().default(false),
       })
       .strict(),
   },

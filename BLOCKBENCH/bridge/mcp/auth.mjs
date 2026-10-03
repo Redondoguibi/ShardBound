@@ -99,7 +99,9 @@ export class BridgeOAuth {
       'Content-Security-Policy':
         "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'",
       'Cache-Control': 'no-store',
-      'Referrer-Policy': 'no-referrer',
+      // no-referrer makes native browser form POSTs send Origin: null,
+      // which correctly fails our origin check. Preserve same-origin consent.
+      'Referrer-Policy': 'same-origin',
     });
     res.send(
       `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Conectar ao Blockbench</title><style>body{font:17px system-ui;max-width:640px;margin:8vh auto;padding:24px;background:#171b21;color:#e7ecf1}input,button{font:inherit;padding:12px;margin-top:16px;width:100%;box-sizing:border-box}code{word-break:break-all}</style><h1>Conectar ao seu Blockbench</h1><p>Cliente: <b>${escape(client.client_name || client.client_id)}</b></p><p>Esta conexão permite ler e modificar o projeto aberto, executar os comandos adaptados do MTools e exportar modelos.</p><p>Destino de retorno: <code>${escape(params.redirectUri)}</code></p><form method="post" action="/approve"><input type="hidden" name="nonce" value="${nonce}"><label>Senha local de conexão (arquivo .local/chatgpt-password.txt)<input type="password" name="password" autocomplete="current-password" required></label><button type="submit">Autorizar conexão</button></form></html>`,

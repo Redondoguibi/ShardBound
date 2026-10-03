@@ -13,10 +13,10 @@ test('OAuth HTTP discovery, DCR, S256 PKCE, consent and protected MCP', async ()
     outputs: 'unused',
   });
   const base = `http://127.0.0.1:${daemon.httpServer.address().port}`;
-  const form = async (endpoint, values) =>
+  const form = async (endpoint, values, origin) =>
     fetch(base + endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...(origin ? { Origin: origin } : {}) },
       body: new URLSearchParams(values),
       redirect: 'manual',
     });
@@ -57,10 +57,14 @@ test('OAuth HTTP discovery, DCR, S256 PKCE, consent and protected MCP', async ()
     });
     const page = await fetch(base + '/authorize?' + query);
     assert.equal(page.status, 200);
+    assert.equal(page.headers.get('referrer-policy'), 'same-origin');
     const html = await page.text();
     const nonce = /name="nonce" value="([^"]+)"/.exec(html)[1];
     assert.equal((await form('/approve', { nonce })).status, 403);
-    const approval = await form('/approve', { nonce, password: secret });
+    for (const origin of ['null', 'https://untrusted.test']) {
+      assert.equal((await form('/approve', { nonce, password: secret }, origin)).status, 403);
+    }
+    const approval = await form('/approve', { nonce, password: secret }, 'https://bridge.test');
     assert.equal(approval.status, 302);
     const callback = new URL(approval.headers.get('location'));
     assert.equal(callback.searchParams.get('state'), 'test-state');

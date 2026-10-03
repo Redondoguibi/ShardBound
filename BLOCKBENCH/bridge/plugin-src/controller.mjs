@@ -538,12 +538,31 @@ export function createController(g) {
       const before = new g.UndoSystem.save(aspects),
         selectionBefore = new g.UndoSystem.selectionSave();
       const oldAmend = undo.amendEdit,
+        oldInit = undo.initEdit,
+        oldFinish = undo.finishEdit,
         oldShow = g.Dialog.prototype.show,
         oldMessageBox = g.Blockbench.showMessageBox;
       let amendment, dialog;
       undo.amendEdit = function (form, callback) {
         amendment = { form, callback };
       };
+      // MTools Scatter omits its new groups from native Undo on Blockbench 5.2.
+      // Track them for both the initial action and its parameter amendment.
+      if (spec.trackGroups) {
+        undo.initEdit = function (aspects, amended) {
+          return oldInit.call(
+            this,
+            { ...aspects, groups: g.Group.all.slice() },
+            amended,
+          );
+        };
+        undo.finishEdit = function (label, aspects) {
+          return oldFinish.call(this, label, {
+            ...(aspects ?? this.current_save?.aspects),
+            groups: g.Group.all.slice(),
+          });
+        };
+      }
       if (spec.dialog)
         g.Dialog.prototype.show = function (...args) {
           if (dialog) throw new Error('Unexpected additional dialog.');
@@ -609,6 +628,8 @@ export function createController(g) {
         throw error;
       } finally {
         undo.amendEdit = oldAmend;
+        undo.initEdit = oldInit;
+        undo.finishEdit = oldFinish;
         g.Dialog.prototype.show = oldShow;
         g.Blockbench.showMessageBox = oldMessageBox;
       }
