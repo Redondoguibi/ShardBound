@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const APP_ID = 'asdk_app_6ac0dda2381c8191b52e8f5f29526256';
+const APP_ID = 'plugin_asdk_app_6ac0dda2381c8191b52e8f5f29526256';
 const root = new URL('../', import.meta.url);
 
 async function readJson(path) {
