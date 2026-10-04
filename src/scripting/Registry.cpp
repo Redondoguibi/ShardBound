@@ -1,6 +1,13 @@
 #include "scripting/Registry.h"
 #include "assets/AssetId.h"
 namespace game::script {
+std::vector<Definition> Registry::entries(const std::string& category) const {
+    std::vector<Definition> result;
+    for(const auto& [key,definition]:definitions_) if(definition.category==category)
+        result.push_back({definition.id,definition.category,definition.type,clone(definition.data)});
+    return result;
+}
+bool Registry::contains(const std::string& category,const std::string& id) const { return definitions_.contains(category+"/"+id); }
 void Registry::add(Definition definition,const Location& at) {
     (void)AssetId(definition.id);
     const auto key=definition.category+"/"+definition.id;

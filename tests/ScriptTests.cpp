@@ -59,6 +59,25 @@ on_tick(value):
         require(fire.data.member("Attributes",{}).member("speed",{}).number()==1,"from lost inherited property");
         require(runtime.emit("on_tick",{Value(3.0)}).empty(),"Event failed");
         require(runtime.global("test","total").number()==19,"Event did not update module global");
+        runtime.execute("collections",R"SL(
+@Globals
+entries = get_definitions("Entities")
+catalog_size = list_count(entries)
+copied = list_at(entries, 0)
+copied.data.Attributes.health = 999
+values = []
+for index in number_range(3):
+    list_append(values, index)
+last = list_at(values, 2)
+present = definition_exists("Entities", "test:Zombie")
+absent = definition_exists("Items", "missing:Item")
+)SL");
+        require(runtime.global("collections","catalog_size").number()==2 && runtime.global("collections","last").number()==2,"Collection enumeration failed");
+        require(runtime.global("collections","present").boolean() && !runtime.global("collections","absent").boolean(),"Definition presence failed");
+        require(runtime.registry().get("Entities","test:FireZombie").data.member("Attributes",{}).member("health",{}).number()==50,"Enumeration modified registry");
+        rejects([&] { runtime.execute("collections","list_at(values, -1)"); },"SCRIPT301");
+        rejects([&] { runtime.execute("collections","number_range(4097)"); },"SCRIPT301");
+        rejects([&] { runtime.execute("collections","list_count(1)"); },"SCRIPT301");
         require(std::get<std::shared_ptr<List>>(runtime.global("test","pair_result").data)->values.size()==2,"Multiple returns failed");
         rejects([&] { runtime.execute("test","@Globals\nLIMIT = 5\n"); },"SCRIPT303");
         rejects([&] { runtime.execute("types","@Globals\nx = \"10\" + 5\n"); },"SCRIPT301");

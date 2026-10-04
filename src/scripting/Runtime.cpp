@@ -204,7 +204,51 @@ struct Runtime::Impl {
         }
     }
 };
-Runtime::Runtime() : impl_(std::make_unique<Impl>()) {}
+Runtime::Runtime() : impl_(std::make_unique<Impl>()) {
+    const auto arity=[](const auto& a,size_t n,const auto& at) { if(a.size()!=n) fail(at,"SCRIPT312","Invalid collection argument count"); };
+    bind("list_count",native([arity](const auto& a,const auto& at) {
+        arity(a,1,at); const auto p=std::get_if<std::shared_ptr<List>>(&a[0].data);
+        if(!p) fail(at,"SCRIPT301","Expected list"); return Value(double((*p)->values.size()));
+    }));
+    bind("number_range",native([arity](const auto& a,const auto& at) {
+        arity(a,1,at); const auto count=a[0].number(at);
+        if(!std::isfinite(count) || count<0 || count>4096 || count!=std::floor(count)) fail(at,"SCRIPT301","Range requires integer in [0,4096]");
+        std::vector<Value> values; for(size_t i=0;i<count;++i) values.emplace_back(double(i)); return list(std::move(values));
+    }));
+    bind("list_append",native([arity](const auto& a,const auto& at) {
+        arity(a,2,at); const auto p=std::get_if<std::shared_ptr<List>>(&a[0].data);
+        if(!p || (*p)->values.size()>=4096) fail(at,"SCRIPT301","Expected list with fewer than 4096 entries");
+        // Copy the value to avoid aliasing mutable item attributes and list cycles.
+        (*p)->values.push_back(clone(a[1])); return Value{};
+    }));
+    bind("list_at",native([arity](const auto& a,const auto& at) {
+        arity(a,2,at); const auto p=std::get_if<std::shared_ptr<List>>(&a[0].data); const auto index=a[1].number(at);
+        if(!p || !std::isfinite(index) || index<0 || index!=std::floor(index) || index>=(*p)->values.size()) fail(at,"SCRIPT301","List index out of range");
+        return (*p)->values[static_cast<size_t>(index)];
+    }));
+    bind("list_contains",native([arity](const auto& a,const auto& at) {
+        arity(a,2,at); const auto p=std::get_if<std::shared_ptr<List>>(&a[0].data);
+        if(!p) fail(at,"SCRIPT301","Expected list");
+        for(const auto& value:(*p)->values) if(equal(value,a[1])) return Value(true);
+        return Value(false);
+    }));
+    bind("record_has",native([arity](const auto& a,const auto& at) {
+        arity(a,2,at); const auto p=std::get_if<std::shared_ptr<Object>>(&a[0].data);
+        if(!p) fail(at,"SCRIPT301","Expected record"); return Value((*p)->fields.contains(a[1].string(at)));
+    }));
+    bind("text_length",native([arity](const auto& a,const auto& at) { arity(a,1,at); return Value(double(a[0].string(at).size())); }));
+    bind("data_merge",native([arity](const auto& a,const auto& at) { arity(a,2,at); return Registry::merge(a[0],a[1]); }));
+    bind("definition_exists",native([this,arity](const auto& a,const auto& at) {
+        arity(a,2,at); return Value(impl_->registry.contains(a[0].string(at),reference(a[1],at)));
+    }));
+    bind("get_definitions",native([this,arity](const auto& a,const auto& at) {
+        arity(a,1,at); std::vector<Value> values;
+        for(const auto& entry:impl_->registry.entries(a[0].string(at))) {
+            auto value=object(); value.setMember("id",Value(entry.id),at); value.setMember("type",Value(entry.type),at); value.setMember("data",entry.data,at); values.push_back(std::move(value));
+        }
+        return list(std::move(values));
+    }));
+}
 Runtime::~Runtime()=default;
 void Runtime::bind(std::string name,Value value) { impl_->builtins->bindings[std::move(name)]={std::move(value),true}; }
 void Runtime::registerSymbol(std::string name) { bind(name,Value(Symbol{name})); }

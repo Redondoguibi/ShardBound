@@ -76,6 +76,13 @@ void bindGameplayApi(script::Runtime& runtime,World& world,PhysicsSystem& physic
     runtime.bind("item_count",native([&](const auto& a,const auto& at) {
         arity(a,2,at); return Value(double(itemCount(world,requireEntity(a[0],world,at),itemId(runtime,a[1],at))));
     }));
+    runtime.bind("inventory_entries",native([&](const auto& a,const auto& at) {
+        arity(a,1,at); const auto entity=requireEntity(a[0],world,at); std::vector<Value> values;
+        if(world.has<InventoryComponent>(entity)) for(const auto& [id,count]:world.get<InventoryComponent>(entity).items) {
+            auto item=object(); item.setMember("id",Value(id),at); item.setMember("count",Value(double(count)),at); values.push_back(std::move(item));
+        }
+        return list(std::move(values));
+    }));
     runtime.bind("set_interactable",native([&](const auto& a,const auto& at) {
         arity(a,2,at); world.add(requireEntity(a[0],world,at),InteractableComponent{a[1].boolean(at)}); return Value{};
     }));
