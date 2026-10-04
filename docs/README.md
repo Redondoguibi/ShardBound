@@ -25,6 +25,7 @@ Esta pasta registra a visão atual do projeto. Ela deve ser atualizada conforme 
 - [19-GAMEPLAY-V0-API.md](19-GAMEPLAY-V0-API.md) — APIs executáveis de gameplay e sandbox.
 - [20-MODCHECK-CLI.md](20-MODCHECK-CLI.md) — validação de manifests, sintaxe e imports.
 - [21-EXTENSIBILITY-V1.md](21-EXTENSIBILITY-V1.md) — etapa 12: componentes, hooks, overrides, saves e SDK nativo.
+- [24-EQUIPMENT-AND-WORLD-CONTENT.md](24-EQUIPMENT-AND-WORLD-CONTENT.md) — instâncias, inventário, combate visual e mundo extensível.
 - [22-GAME-DIRECTION-AND-REFERENCES.md](22-GAME-DIRECTION-AND-REFERENCES.md) — preparação da etapa 13: decisões do autor, pesquisa de MCD II e limites ainda abertos.
 
 ## Documentação para modders

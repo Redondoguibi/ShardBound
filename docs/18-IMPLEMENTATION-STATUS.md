@@ -158,12 +158,21 @@ apoio físico, mapa com três waystones, combate com preparação/recuperação,
 crítico de queda 1,7×, dois itens equipáveis, ouro, morte e save/load. O modelo
 original do personagem foi criado/exportado pelo plugin Blockbench; poses
 rígidas, tint por entidade e HUD são APIs reutilizáveis. Conteúdo e regras
-ficam em sete módulos `.sl`. O exemplo `trailcraft` altera dano por registry/hook.
+ficam em módulos `.sl`. O exemplo `trailcraft` altera dano por registry/hook e
+agora adiciona arma, atributos individuais, região e waystone.
 
 Contrato e limites: [23-PLAYABLE-SLICE.md](23-PLAYABLE-SLICE.md). Continua sendo
-protótipo: três inimigos do mesmo tipo, duas armas, inventário por definição,
+protótipo: três inimigos do mesmo tipo e duas definições oficiais de arma,
 sem skinning/clips, streaming, UI/arte final, catálogo amplo ou otimização final.
 Esse marco não encerra a Etapa 13.
+
+O marco 2–5 seguinte acrescenta empunhadura/poses por fase de ataque, indicação
+visual de alcance e impacto; instâncias com UID/nível/raridade/atributos próprios;
+inventário paginado com seleção/equipamento de conteúdo de mods; regiões e
+waystones em registries, mapa com enquadramento automático e reconciliação de
+conteúdo novo ao carregar. Saves anteriores migram contagens/descobertas.
+Itens e descobertas de mods ausentes preservam dados. Contrato:
+[24-EQUIPMENT-AND-WORLD-CONTENT.md](24-EQUIPMENT-AND-WORLD-CONTENT.md).
 
 ## Build e execução
 
@@ -187,14 +196,16 @@ ctest --preset debug
 Builds, dependências locais e caches são ignorados pelo Git. Bibliotecas serão
 adicionadas somente na etapa em que forem utilizadas.
 
-Validação em 2026-10-04: builds MSVC Debug/Release concluídos; 27/27 testes CTest
+Validação em 2026-10-04: builds MSVC Debug/Release concluídos; 28/28 testes CTest
 aprovados em cada configuração. Incluem pixels na GPU (recorte alfa, profundidade
 e faces duplas), galeria dos três assets por script, ciclo adventure com
 salto/combate/viagem/morte/loot/equipamento/save, extensão real por mod, scripts/mods, Jolt,
 PCM offline, gameplay, componentes/migrações, saves/órfãos, DLLs reais e CLI. Input de interação foi sintetizado; gamepad físico
 e qualidade audível no dispositivo não foram avaliados manualmente.
-O hub e o mapa foram conferidos por readback real de D3D11. Não houve sessão
-manual completa de gameplay; os testes sintetizam input e exercitam as APIs.
+O hub e o mapa foram conferidos por readback real de D3D11. O autor confirmou a
+jogabilidade do marco anterior. As mudanças atuais foram verificadas com input
+sintetizado, APIs e readback real de GPU; não houve nova sessão manual completa
+feita pelo agente.
 
 ## Limites do planejamento
 

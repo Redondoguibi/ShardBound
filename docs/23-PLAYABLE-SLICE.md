@@ -10,9 +10,12 @@ registries, hooks e saves existentes. A Application apenas conecta serviços.
 O hub e a floresta são uma área contínua pequena, sem carregamento/streaming.
 O limite do protótipo é físico; nenhuma missão bloqueia a passagem entre regiões.
 
+Este contrato inicial foi ampliado em [24](24-EQUIPMENT-AND-WORLD-CONTENT.md).
+
 Entradas provisórias: WASD, Espaço para salto, botão esquerdo para ataque na
 direção do último movimento, M para mapa, 1/2/3 para destinos descobertos,
-I para inventário, Q para trocar arma, F5/F9 para salvar/carregar e Escape para sair.
+I para inventário, Q para selecionar, E para confirmar, F5/F9 para salvar/carregar
+e Escape para sair. Fora dos menus Q alterna entre instâncias disponíveis.
 O mapa não pausa inimigos nem o relógio de combate. Não há movimento por clique.
 
 O controlador preserva a física Jolt a 60 Hz e usa sondas descendentes que
@@ -88,15 +91,16 @@ Ausência de mods mantém a preservação de órfãos da Etapa 12.
 `pose_part` aplica a matriz após a transformação estática da parte e antes
 da transformação da entidade. Prefixos sobrepostos usam a primeira entrada
 lexicográfica; o rig do protótipo usa prefixos disjuntos. Dados/poses de uma
-entidade não alteram o asset compartilhado. `show_ui` usa um diagrama fixo da
-área de protótipo, não um formato público final de mapas. Texto/UI e poses
+entidade não alteram o asset compartilhado. `show_ui` agora enquadra os marcadores automaticamente, conforme 24; ainda
+não é um formato público final de mapas. Texto/UI e poses
 são reconstruídos; não se serializam handles de GPU.
 
 O conteúdo publica `adventure:melee` (hook com source/target/amount),
 `adventure:attacked` (ID de arma), `adventure:travelled` (nome do destino) e
 `adventure:respawned` (ouro perdido). Arco de arma é o cosseno mínimo aceito
-para o ângulo ao alvo; padrões implementados: slash e thrust. O inventário
-continua sendo contagens por definição, com ID equipado no estado do pacote.
+para o ângulo ao alvo; padrões implementados: slash e thrust. O inventário genérico
+continua com contagens por definição; instâncias/atributos e UID equipado ficam
+no estado do pacote, conforme 24.
 
 ## Aceitação
 
