@@ -31,7 +31,7 @@ public:
     MeshHandle createMesh(std::span<const Vertex> vertices, std::span<const std::uint32_t> indices);
     TextureHandle createTexture(unsigned width, unsigned height, std::span<const std::uint8_t> rgba, bool srgb = true, bool nearest = true);
     void resize(int width, int height);
-    void render(const Camera& camera, std::span<const RenderItem> items);
+    void render(const Camera& camera, std::span<const RenderItem> items,TextureHandle overlay = {});
     void present();
     // Development readback of the internal target, before present.
     std::vector<std::uint8_t> readback();

@@ -2,7 +2,9 @@
 
 Decisões do autor e pesquisa pública consolidadas em 2026-10-01. Este documento
 registra a direção da etapa 13; o primeiro marco de assets/materiais está
-implementado, mas os demais sistemas abaixo continuam como planejamento.
+implementado. O primeiro ciclo jogável foi acrescentado em
+[23-PLAYABLE-SLICE.md](23-PLAYABLE-SLICE.md); o acabamento e a abrangência final
+dos sistemas abaixo continuam em desenvolvimento.
 O estado executável permanece em [18-IMPLEMENTATION-STATUS.md](18-IMPLEMENTATION-STATUS.md).
 
 ## Prioridade das decisões
@@ -213,7 +215,8 @@ Espada, árvore e waystone ficam disponíveis pelos IDs públicos `core:sword`,
 [examples/asset-gallery](../examples/asset-gallery/README.md) cria os três
 objetos por script e os exibe com escalas provisórias de apresentação.
 
-Esse marco não implementa ainda movimento definitivo, salto, hub/floresta,
-waystones funcionais ou combate. O autor não precisa produzir mais assets
+Esse marco inicial não implementava salto, hub/floresta, waystones ou combate;
+esses sistemas agora possuem protótipo no pacote `adventure`, conforme o
+contrato 23. O autor não precisa produzir mais assets
 para o próximo avanço técnico; os arquivos editáveis da espada e árvore
 continuam úteis para ajustes futuros.

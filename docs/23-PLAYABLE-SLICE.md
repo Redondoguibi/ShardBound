@@ -19,6 +19,9 @@ O controlador preserva a física Jolt a 60 Hz e usa sondas descendentes que
 ignoram o próprio corpo para detectar apoio. Salto só ocorre vivo, ativo e
 apoiado, nunca durante subida. A API retorna false quando não pode saltar.
 Velocidade vertical negativa, sem apoio, define queda. Diagonais são normalizadas.
+Câmera oblíqua acompanha o centro físico com offset provisório (7,10,-10).
+WASD usa os vetores da câmera projetados no chão. A câmera ainda acompanha
+verticalmente o salto; smoothing, oclusão e parâmetros finais permanecem abertos.
 
 ## Arte e movimento rígido
 
@@ -53,7 +56,47 @@ referências de runtime são reconstruídas em `on_loaded`. Cooldowns e descober
 fazem parte do estado, para carregar não liberar viagem durante combate.
 Tint RGB é campo opcional do modelo no save, padrão branco para saves antigos;
 poses rígidas são reconstruídas. Saves futuros incompatíveis geram diagnóstico.
+`player.camera` é opcional, com default histórico (0,8,-10) em saves antigos.
+`on_validate_load(state_por_mod)` roda antes da troca do mundo e deve apenas
+validar dados, sem mutações. `script_error(message)` aborta a validação com
+diagnóstico; `on_save_diagnostic(loading,message)` permite feedback de UI.
 Ausência de mods mantém a preservação de órfãos da Etapa 12.
+
+## APIs acrescentadas
+
+| API | Contrato |
+| --- | --- |
+| `jump(speed)` | Impulso vertical positivo, false quando não permitido. |
+| `is_grounded(entity)` | Sondas físicas com alcance extra de 0,06 e normal Y > 0,6. |
+| `get_velocity(entity)` / `set_velocity(entity,vec3)` | Velocidade do corpo existente; valores finitos. |
+| `teleport(entity,vec3)` | Sincroniza corpo/Transform e zera velocidade imediatamente. |
+| `line_of_sight(from,to)` | Segmento entre centros físicos; ignora origem, aceita destino como primeiro impacto. |
+| `movement_enabled(bool)` | Habilita input do controlador e salto; não pausa física. |
+| `keyboard_movement_only(bool)` | Desativa eixos de gamepad para movimento desse runtime. |
+| `set_camera_offset(vec3)` | Y positivo, projeção horizontal não nula; coordenadas até 100 unidades. |
+| `set_rotation(entity,vec3)` | Rotação visual em radianos; não gira os boxes físicos. |
+| `set_parent(child,parent)` | Hierarquia visual; null remove pai, corpo físico não pode ser filho. |
+| `set_tint(entity,vec3)` | Multiplicador RGB em [0,1] por entidade, persistido. |
+| `pose_part(entity,prefix,pivot,rotation)` | Pose visual rígida em unidades do GLB e radianos. Prefixo vazio/ausente é erro. |
+| `get_entities(definition_id)` | Snapshot de entidades com a definição exata, incluindo inativas. |
+| `damage_from(source,target,amount)` | Mesmo hook `core:damage`, com `source` informativo, e evento `on_damage_dealt(source,target,applied)`. |
+| `maximum_health(entity)` | Vida máxima atual. |
+| `math_floor`, `math_sin`, `math_sqrt`, `math_atan2` | Utilitários numéricos, sem substituir nomes locais comuns como `floor`. |
+| `number_text(number)` | Número arredondado sem casas para apresentação. |
+| `show_ui(text,map,markers)` | Painel provisório; até 4096 bytes e 64 marcadores com x/z/label/active. |
+
+`pose_part` aplica a matriz após a transformação estática da parte e antes
+da transformação da entidade. Prefixos sobrepostos usam a primeira entrada
+lexicográfica; o rig do protótipo usa prefixos disjuntos. Dados/poses de uma
+entidade não alteram o asset compartilhado. `show_ui` usa um diagrama fixo da
+área de protótipo, não um formato público final de mapas. Texto/UI e poses
+são reconstruídos; não se serializam handles de GPU.
+
+O conteúdo publica `adventure:melee` (hook com source/target/amount),
+`adventure:attacked` (ID de arma), `adventure:travelled` (nome do destino) e
+`adventure:respawned` (ouro perdido). Arco de arma é o cosseno mínimo aceito
+para o ângulo ao alvo; padrões implementados: slash e thrust. O inventário
+continua sendo contagens por definição, com ID equipado no estado do pacote.
 
 ## Aceitação
 

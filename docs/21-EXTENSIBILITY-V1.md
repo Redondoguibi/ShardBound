@@ -210,6 +210,14 @@ e mostra mods/contagem de entidades; não executa migrações nem restaura o mun
 
 ## Critérios executáveis
 
+Extensões aditivas usadas pela Etapa 13: tint RGB opcional por modelo,
+`player.camera` opcional e evento `on_validate_load(state_por_mod)` antes
+da troca do mundo. Validadores não devem mutar o runtime; podem abortar com
+`script_error(message)`. Saves antigos usam tint branco e câmera histórica.
+`damage_from` mantém `core:damage` e acrescenta o evento `on_damage_dealt`;
+`damage(target,amount)` e `on_damage(target,applied)` continuam compatíveis.
+Detalhes e limites em [23-PLAYABLE-SLICE.md](23-PLAYABLE-SLICE.md).
+
 O teste `extensions` cobre hooks de dano/eventos, unsubscribe, componentes e
 migração, save/load com mundo/física/player, backup, remoção/reinstalação de mod,
 preservação de dados desconhecidos/futuros, rollback de load inválido, conflitos de

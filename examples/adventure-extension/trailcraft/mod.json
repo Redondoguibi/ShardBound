@@ -1,0 +1,1 @@
+{"id":"trailcraft","name":"Adventure extension example","version":"0.1.0","api":"0.1","entry":"main.sl","dependencies":["adventure >= 0.1.0"]}

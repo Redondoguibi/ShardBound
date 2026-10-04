@@ -6,7 +6,7 @@ namespace game {
 struct EntityId { std::uint64_t value = 0; auto operator<=>(const EntityId&) const = default; explicit operator bool() const { return value!=0; } };
 struct TransformComponent { Transform local; };
 struct NameComponent { std::string name; };
-struct ModelComponent { AssetId definition; ModelHandle model; };
+struct ModelComponent { AssetId definition; ModelHandle model; Color tint{}; std::map<std::string,Matrix> poses; };
 struct ActiveComponent { bool value = true; };
 struct HealthComponent { float current = 100, maximum = 100; };
 struct InventoryComponent { std::map<std::string,std::uint32_t> items; };

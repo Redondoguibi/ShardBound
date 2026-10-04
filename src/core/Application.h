@@ -10,6 +10,7 @@
 #include "audio/AudioSystem.h"
 #include "scripting/ExtensionBridge.h"
 #include "extensions/NativeMods.h"
+#include "game/GameUi.h"
 namespace game {
 class Application {
 public:
@@ -27,7 +28,7 @@ private:
     RenderConfig renderConfig_;
     std::unique_ptr<Renderer> renderer_;
     std::filesystem::path root_;
-    std::filesystem::path modsDirectory_ = "mods";
+    std::filesystem::path modsDirectory_ = "content";
     VirtualFileSystem vfs_;
     std::unique_ptr<AssetManager> assets_;
     std::unique_ptr<World> world_;
@@ -35,6 +36,7 @@ private:
     std::unique_ptr<PlayerController> player_;
     std::unique_ptr<AudioSystem> audio_;
     std::unique_ptr<script::Runtime> scripting_;
+    std::unique_ptr<GameUi> ui_;
     std::unique_ptr<Components> components_;
     std::unique_ptr<SaveGame> saves_;
     std::unique_ptr<ExtensionBridge> extensions_;

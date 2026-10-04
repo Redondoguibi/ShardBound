@@ -7,7 +7,7 @@ namespace game {
 struct TextureSource { AssetId id; std::filesystem::path source; bool srgb = true, nearest = true; };
 struct ModelSource { AssetId id; std::filesystem::path source; };
 struct SoundSource { AssetId id; std::filesystem::path source; bool streaming = false; };
-struct ModelResource { std::vector<RenderItem> parts; };
+struct ModelResource { std::vector<RenderItem> parts; std::vector<std::string> names; };
 using ModelHandle = std::shared_ptr<const ModelResource>;
 class AssetManager {
 public:

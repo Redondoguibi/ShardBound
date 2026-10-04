@@ -128,7 +128,7 @@ GUIDs, física/player, estado por mod, backup e preservação de órfãos; SDK C
 com DLL real e lifecycle; CLI com inspeção de saves e manifests nativos.
 Contratos, APIs, exemplos e limites: [21-EXTENSIBILITY-V1.md](21-EXTENSIBILITY-V1.md).
 
-## Etapa 13 — primeiro marco: assets e materiais
+## Etapa 13 — assets e primeiro ciclo jogável
 
 O sandbox técnico não é o hub ou o jogo final. Progressão, áreas oficiais,
 combate final e identidade artística dependem do desenho de conteúdo e dos
@@ -150,8 +150,20 @@ modelos foi versionado para evitar reutilizar materiais compilados pelo v1.
 A [galeria executável](../examples/asset-gallery/README.md) cria os três objetos
 por script, sem spawn especial na Application. Execute
 `./build/debug/game.exe --mods examples/asset-gallery`. Escalas de apresentação
-e câmera fixa servem à conferência dos assets. Controlador definitivo, salto,
-hub/floresta, viagem rápida, combate e itens continuam como próximos marcos.
+e câmera fixa servem à conferência dos assets.
+
+O pacote [adventure](../content/adventure/README.md), carregado por padrão,
+implementa um abrigo e floresta contínuos, WASD relativo à câmera, salto com
+apoio físico, mapa com três waystones, combate com preparação/recuperação,
+crítico de queda 1,7×, dois itens equipáveis, ouro, morte e save/load. O modelo
+original do personagem foi criado/exportado pelo plugin Blockbench; poses
+rígidas, tint por entidade e HUD são APIs reutilizáveis. Conteúdo e regras
+ficam em sete módulos `.sl`. O exemplo `trailcraft` altera dano por registry/hook.
+
+Contrato e limites: [23-PLAYABLE-SLICE.md](23-PLAYABLE-SLICE.md). Continua sendo
+protótipo: três inimigos do mesmo tipo, duas armas, inventário por definição,
+sem skinning/clips, streaming, UI/arte final, catálogo amplo ou otimização final.
+Esse marco não encerra a Etapa 13.
 
 ## Build e execução
 
@@ -175,11 +187,14 @@ ctest --preset debug
 Builds, dependências locais e caches são ignorados pelo Git. Bibliotecas serão
 adicionadas somente na etapa em que forem utilizadas.
 
-Validação em 2026-10-01: builds MSVC Debug/Release concluídos; 23/23 testes CTest
+Validação em 2026-10-04: builds MSVC Debug/Release concluídos; 27/27 testes CTest
 aprovados em cada configuração. Incluem pixels na GPU (recorte alfa, profundidade
-e faces duplas), galeria dos três assets por script, scripts/mods, Jolt,
+e faces duplas), galeria dos três assets por script, ciclo adventure com
+salto/combate/viagem/morte/loot/equipamento/save, extensão real por mod, scripts/mods, Jolt,
 PCM offline, gameplay, componentes/migrações, saves/órfãos, DLLs reais e CLI. Input de interação foi sintetizado; gamepad físico
 e qualidade audível no dispositivo não foram avaliados manualmente.
+O hub e o mapa foram conferidos por readback real de D3D11. Não houve sessão
+manual completa de gameplay; os testes sintetizam input e exercitam as APIs.
 
 ## Limites do planejamento
 

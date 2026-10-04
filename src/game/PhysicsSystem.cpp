@@ -21,6 +21,13 @@ PhysicsSystem::Box PhysicsSystem::description(EntityId entity) const { return re
 void PhysicsSystem::swapState(PhysicsSystem& other) noexcept { physics_.swapState(other.physics_); bodies_.swap(other.bodies_); }
 Vec3 PhysicsSystem::velocity(EntityId entity) const { return physics_.velocity(require(entity).body); }
 void PhysicsSystem::setVelocity(EntityId entity,Vec3 velocity) { physics_.setVelocity(require(entity).body,velocity); }
+bool PhysicsSystem::grounded(EntityId entity) const { const auto& e=require(entity); return e.description.dynamic && physics_.grounded(e.body,e.description.halfExtent); }
+bool PhysicsSystem::clearPath(EntityId from,EntityId to) const { return physics_.clearPath(require(from).body,require(to).body); }
+void PhysicsSystem::teleport(EntityId entity,Vec3 position) {
+    const auto body=require(entity).body;
+    physics_.setPosition(body,position); physics_.setVelocity(body,{});
+    world_.get<TransformComponent>(entity).local.position=position; bodies_.at(entity).lastPosition=position;
+}
 void PhysicsSystem::step(float delta) {
     for(auto it=bodies_.begin();it!=bodies_.end();) {
         const auto id=it->first;

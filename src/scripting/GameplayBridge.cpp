@@ -5,6 +5,8 @@
 #include "core/Log.h"
 #include <cmath>
 #include <limits>
+#include <sstream>
+#include <iomanip>
 namespace game {
 namespace {
 using namespace script;
@@ -47,14 +49,21 @@ void bindGameplayApi(script::Runtime& runtime,World& world,PhysicsSystem& physic
     runtime.bind("health",native([&](const auto& a,const auto& at) {
         arity(a,1,at); return Value(double(world.get<HealthComponent>(requireEntity(a[0],world,at)).current));
     }));
-    runtime.bind("damage",native([&](const auto& a,const auto& at) {
-        arity(a,2,at); auto context=object(); context.setMember("target",a[0],at); context.setMember("amount",a[1],at);
+    runtime.bind("maximum_health",native([&](const auto& a,const auto& at) { arity(a,1,at); return Value(double(world.get<HealthComponent>(requireEntity(a[0],world,at)).maximum)); }));
+    const auto applyDamage=[&](Value victim,Value requested,Value source,const Location& at) {
+        const bool attributed=!std::holds_alternative<std::monostate>(source.data);
+        if(attributed) (void)requireEntity(source,world,at);
+        auto context=object(); context.setMember("target",victim,at); context.setMember("amount",requested,at);
+        context.setMember("source",source,at);
         context=runtime.filter("core:damage",context);
         const auto target=context.member("target",at); const auto amount=number(context.member("amount",at),at);
         const auto applied=damage(world,requireEntity(target,world,at),amount);
         for(const auto& error:runtime.emit("on_damage",{target,Value(double(applied))})) LOG_ERROR("SCRIPT",DiagnosticError(error).what());
+        if(attributed) for(const auto& error:runtime.emit("on_damage_dealt",{source,target,Value(double(applied))})) LOG_ERROR("SCRIPT",DiagnosticError(error).what());
         return Value(double(applied));
-    }));
+    };
+    runtime.bind("damage",native([applyDamage](const auto& a,const auto& at) { arity(a,2,at); return applyDamage(a[0],a[1],Value{},at); }));
+    runtime.bind("damage_from",native([applyDamage](const auto& a,const auto& at) { arity(a,3,at); return applyDamage(a[1],a[2],a[0],at); }));
     runtime.bind("heal",native([&](const auto& a,const auto& at) {
         arity(a,2,at); return Value(double(heal(world,requireEntity(a[0],world,at),number(a[1],at))));
     }));
@@ -81,6 +90,49 @@ void bindGameplayApi(script::Runtime& runtime,World& world,PhysicsSystem& physic
     }));
     runtime.bind("play_sound",native([&](const auto& a,const auto& at) {
         arity(a,1,at); const auto sound=assets.sound(AssetId(a[0].string(at))); audio.play(sound.source,sound.streaming); return Value{};
+    }));
+    runtime.bind("jump",native([&](const auto& a,const auto& at) { arity(a,1,at); return Value(player.jump(number(a[0],at))); }));
+    runtime.bind("set_camera_offset",native([&](const auto& a,const auto& at) { arity(a,1,at); player.setViewOffset(vector(a[0],at)); return Value{}; }));
+    runtime.bind("movement_enabled",native([&](const auto& a,const auto& at) { arity(a,1,at); player.setEnabled(a[0].boolean(at)); return Value{}; }));
+    runtime.bind("keyboard_movement_only",native([&](const auto& a,const auto& at) { arity(a,1,at); input.keyboardMovementOnly(a[0].boolean(at)); return Value{}; }));
+    runtime.bind("is_grounded",native([&](const auto& a,const auto& at) { arity(a,1,at); return Value(physics.grounded(requireEntity(a[0],world,at))); }));
+    runtime.bind("get_velocity",native([&](const auto& a,const auto& at) {
+        arity(a,1,at); auto v=physics.velocity(requireEntity(a[0],world,at)); auto result=object();
+        result.setMember("x",Value(double(v.x)),at); result.setMember("y",Value(double(v.y)),at); result.setMember("z",Value(double(v.z)),at); return result;
+    }));
+    runtime.bind("set_velocity",native([&](const auto& a,const auto& at) { arity(a,2,at); physics.setVelocity(requireEntity(a[0],world,at),vector(a[1],at)); return Value{}; }));
+    runtime.bind("teleport",native([&](const auto& a,const auto& at) { arity(a,2,at); physics.teleport(requireEntity(a[0],world,at),vector(a[1],at)); return Value{}; }));
+    runtime.bind("line_of_sight",native([&](const auto& a,const auto& at) { arity(a,2,at); return Value(physics.clearPath(requireEntity(a[0],world,at),requireEntity(a[1],world,at))); }));
+    runtime.bind("set_rotation",native([&](const auto& a,const auto& at) { arity(a,2,at); world.get<TransformComponent>(requireEntity(a[0],world,at)).local.rotation=vector(a[1],at); return Value{}; }));
+    runtime.bind("set_parent",native([&](const auto& a,const auto& at) {
+        arity(a,2,at); const auto child=requireEntity(a[0],world,at);
+        if(physics.contains(child)) fail(at,"GAME104","Physical entities must remain roots");
+        world.setParent(child,std::holds_alternative<std::monostate>(a[1].data) ? EntityId{} : requireEntity(a[1],world,at)); return Value{};
+    }));
+    runtime.bind("set_tint",native([&](const auto& a,const auto& at) {
+        arity(a,2,at); const auto v=vector(a[1],at);
+        if(v.x<0 || v.x>1 || v.y<0 || v.y>1 || v.z<0 || v.z>1) fail(at,"BRIDGE105","Tint must be in [0,1]");
+        world.get<ModelComponent>(requireEntity(a[0],world,at)).tint={v.x,v.y,v.z,1}; return Value{};
+    }));
+    runtime.bind("pose_part",native([&](const auto& a,const auto& at) {
+        arity(a,4,at); auto& model=world.get<ModelComponent>(requireEntity(a[0],world,at));
+        const auto prefix=a[1].string(at); bool found=false;
+        if(model.model) for(const auto& name:model.model->names) found|=name.starts_with(prefix);
+        if(prefix.empty() || !found) fail(at,"BRIDGE105","Model part prefix not found");
+        const auto pivot=vector(a[2],at),rotation=vector(a[3],at);
+        model.poses[prefix]=multiply(transformMatrix({{-pivot.x,-pivot.y,-pivot.z}}),transformMatrix({pivot,rotation})); return Value{};
+    }));
+    runtime.bind("get_entities",native([&](const auto& a,const auto& at) {
+        arity(a,1,at); const auto definition=a[0].string(at); std::vector<Value> values;
+        for(auto id:world.entities()) if(world.get<IdentityComponent>(id).definition==definition) values.push_back(entityValue(world,id));
+        return list(std::move(values));
+    }));
+    runtime.bind("math_floor",native([](const auto& a,const auto& at) { arity(a,1,at); return Value(std::floor(a[0].number(at))); }));
+    runtime.bind("math_sin",native([](const auto& a,const auto& at) { arity(a,1,at); return Value(std::sin(number(a[0],at))); }));
+    runtime.bind("math_sqrt",native([](const auto& a,const auto& at) { arity(a,1,at); const auto v=number(a[0],at); if(v<0) fail(at,"BRIDGE105","sqrt requires nonnegative input"); return Value(std::sqrt(double(v))); }));
+    runtime.bind("math_atan2",native([](const auto& a,const auto& at) { arity(a,2,at); return Value(std::atan2(double(number(a[0],at)),double(number(a[1],at)))); }));
+    runtime.bind("number_text",native([](const auto& a,const auto& at) {
+        arity(a,1,at); std::ostringstream text; text<<std::fixed<<std::setprecision(0)<<number(a[0],at); return Value(text.str());
     }));
 }
 }

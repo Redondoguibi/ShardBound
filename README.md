@@ -64,5 +64,8 @@ Para criar mods, comece pelo [Guia oficial de modding](docs/modding/README.md).
 
 > Estado atual: implementação iniciada. Veja [build e progresso](docs/18-IMPLEMENTATION-STATUS.md).
 
-Primeiro marco da Etapa 13: [galeria de espada, árvore e waystone](examples/asset-gallery/README.md).
-Após o build, execute `./build/debug/game.exe --mods examples/asset-gallery`.
+Primeiro ciclo jogável da Etapa 13: [abrigo, floresta e combate](content/adventure/README.md).
+Após `./tools/build.ps1 debug`, execute `./build/debug/game.exe`.
+Inclui WASD/salto, mapa/waystones, duas armas, inimigos, morte e save/load.
+A [galeria de assets](examples/asset-gallery/README.md) permanece disponível com
+`--mods examples/asset-gallery`. A Etapa 13 completa continua em desenvolvimento.

@@ -9,6 +9,9 @@ InputSystem::InputSystem() {
     bind("Dodge", {{Key::Space, MouseButton::Unknown, PadButton::South}});
     bind("Interact", {{Key::E, MouseButton::Unknown, PadButton::North}});
     bind("Quit", {{Key::Escape}});
+    bind("Jump", {{Key::Space}}); bind("Map", {{Key::M}}); bind("Inventory", {{Key::I}});
+    bind("Equip", {{Key::Q}}); bind("Travel1", {{Key::One}}); bind("Travel2", {{Key::Two}}); bind("Travel3", {{Key::Three}});
+    bind("Save", {{Key::F5}}); bind("Load", {{Key::F9}});
 }
 void InputSystem::beginFrame() {
     auto clear = [](auto& buttons) { for (auto& b : buttons) b.pressed = b.released = false; };
@@ -55,12 +58,12 @@ bool InputSystem::pressed(std::string_view action) const { return query(action, 
 bool InputSystem::released(std::string_view action) const { return query(action, &Button::released); }
 float InputSystem::moveX() const {
     float value = float(held("MoveRight")) - float(held("MoveLeft"));
-    for (const auto& [id, pad] : pads_) { (void)id; if (std::abs(pad.x) > 0.15f) value += pad.x; }
+    if(!keyboardOnly_) for (const auto& [id, pad] : pads_) { (void)id; if (std::abs(pad.x) > 0.15f) value += pad.x; }
     return std::clamp(value, -1.0f, 1.0f);
 }
 float InputSystem::moveY() const {
     float value = float(held("MoveForward")) - float(held("MoveBackward"));
-    for (const auto& [id, pad] : pads_) { (void)id; if (std::abs(pad.y) > 0.15f) value -= pad.y; }
+    if(!keyboardOnly_) for (const auto& [id, pad] : pads_) { (void)id; if (std::abs(pad.y) > 0.15f) value -= pad.y; }
     return std::clamp(value, -1.0f, 1.0f);
 }
 }

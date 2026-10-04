@@ -4,6 +4,10 @@ Esta é a API executável da etapa 11. Os valores do sandbox são parâmetros de
 teste, não decisões de balanceamento, escala final, formato de mapa ou rig final.
 Jolt e miniaudio ficam privados aos adaptadores C++; EnTT continua privado a World.
 
+O jogo padrão agora é o pacote `adventure`. Este documento preserva o contrato
+do sandbox da Etapa 11; salto, câmera configurável, poses e APIs adicionais
+estão em [23-PLAYABLE-SLICE.md](23-PLAYABLE-SLICE.md).
+
 ## Executar o sandbox
 
 ```powershell

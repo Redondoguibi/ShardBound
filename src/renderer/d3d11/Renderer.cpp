@@ -156,7 +156,7 @@ void Renderer::resize(int width, int height) {
     check(p.swap->ResizeBuffers(0, UINT(width), UINT(height), DXGI_FORMAT_UNKNOWN, p.tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0), "resize");
     p.width = width; p.height = height; p.targets();
 }
-void Renderer::render(const Camera& camera, std::span<const RenderItem> items) {
+void Renderer::render(const Camera& camera, std::span<const RenderItem> items,TextureHandle overlay) {
     using namespace DirectX;
     const auto start = std::chrono::steady_clock::now();
     auto& p = *impl_; p.stats = {};
@@ -192,6 +192,18 @@ void Renderer::render(const Camera& camera, std::span<const RenderItem> items) {
         const auto& texture = item.material.texture ? item.material.texture : p.white;
         p.context->PSSetShaderResources(0,1,texture->view.GetAddressOf()); p.context->PSSetSamplers(0,1,texture->sampler.GetAddressOf());
         p.context->DrawIndexed(item.mesh->count,0,0); ++p.stats.draws; p.stats.triangles += item.mesh->count/3;
+    }
+    if(overlay) {
+        p.context->OMSetRenderTargets(1,p.color.GetAddressOf(),nullptr);
+        ComPtr<ID3D11Resource> resource; overlay->view->GetResource(&resource);
+        ComPtr<ID3D11Texture2D> texture; check(resource.As(&texture),"overlay texture");
+        D3D11_TEXTURE2D_DESC description{}; texture->GetDesc(&description);
+        const float scale=std::min({1.0f,float(p.renderWidth)/float(description.Width),float(p.renderHeight)/float(description.Height)});
+        D3D11_VIEWPORT panel{0,0,float(description.Width)*scale,float(description.Height)*scale,0,1};
+        p.context->RSSetViewports(1,&panel); p.context->RSSetState(p.raster.Get());
+        p.context->IASetInputLayout(nullptr); p.context->VSSetShader(p.screenVertex.Get(),nullptr,0); p.context->PSSetShader(p.screenPixel.Get(),nullptr,0);
+        p.context->PSSetShaderResources(0,1,overlay->view.GetAddressOf()); p.context->PSSetSamplers(0,1,p.screenSampler.GetAddressOf());
+        p.context->Draw(3,0);
     }
     p.context->OMSetRenderTargets(1,p.back.GetAddressOf(),nullptr);
     p.context->RSSetState(p.raster.Get());

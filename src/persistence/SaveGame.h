@@ -13,6 +13,8 @@ public:
     std::vector<Diagnostic> load(const std::string& slot);
     static Data inspect(const std::filesystem::path& file);
     std::function<bool(const std::string&)> definitionAvailable;
+    // Runs before committing the staged world; throwing leaves live state intact.
+    std::function<void(const Data&)> validateState;
 private:
     std::filesystem::path path(const std::string& slot) const;
     std::filesystem::path directory_;

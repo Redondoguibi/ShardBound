@@ -5,10 +5,17 @@ std::vector<RenderItem> collectRenderItems(World& world) {
     for (const auto id:world.entities()) {
         if (world.has<ActiveComponent>(id) && !world.get<ActiveComponent>(id).value) continue;
         if (!world.has<ModelComponent>(id) || !world.has<TransformComponent>(id)) continue;
-        const auto& model=world.get<ModelComponent>(id).model;
+        const auto& visual=world.get<ModelComponent>(id);
+        const auto& model=visual.model;
         if (!model) continue;
         const auto transform=world.worldMatrix(id);
-        for (auto item:model->parts) { item.world=multiply(item.world,transform); items.push_back(std::move(item)); }
+        for (size_t i=0;i<model->parts.size();++i) {
+            auto item=model->parts[i];
+            if(i<model->names.size()) for(const auto& [prefix,pose]:visual.poses)
+                if(model->names[i].starts_with(prefix)) { item.world=multiply(item.world,pose); break; }
+            item.material.color.r*=visual.tint.r; item.material.color.g*=visual.tint.g; item.material.color.b*=visual.tint.b;
+            item.world=multiply(item.world,transform); items.push_back(std::move(item));
+        }
     }
     return items;
 }

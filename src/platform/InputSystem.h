@@ -22,6 +22,7 @@ public:
     bool released(std::string_view action) const;
     float moveX() const;
     float moveY() const;
+    void keyboardMovementOnly(bool value) { keyboardOnly_=value; }
     float mouseX() const { return mouseX_; }
     float mouseY() const { return mouseY_; }
 private:
@@ -34,6 +35,7 @@ private:
     bool query(std::string_view action, bool Button::* field) const;
     static void set(Button& button, bool down);
     bool focused_ = true;
+    bool keyboardOnly_ = false;
     float mouseX_ = 0, mouseY_ = 0;
 };
 }

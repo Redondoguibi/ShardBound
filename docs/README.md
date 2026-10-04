@@ -43,6 +43,9 @@ Autores externos devem começar em:
 
 ## Regra de documentação
 
+O primeiro ciclo jogável está descrito em
+[23-PLAYABLE-SLICE.md](23-PLAYABLE-SLICE.md), com controles, persistência e APIs.
+
 Evitar transformar hipótese em decisão. Cada documento diferencia:
 
 - **Definido** — já decidido na concepção atual.

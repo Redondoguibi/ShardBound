@@ -8,6 +8,10 @@
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Body/BodyFilter.h>
+#include <Jolt/Physics/Body/BodyLock.h>
 #include <atomic>
 #include <cmath>
 #include <map>
@@ -73,5 +77,27 @@ void PhysicsWorld::step(float delta) {
 void PhysicsWorld::setPosition(BodyId id,Vec3 p) {
     if(!finite(p)) throw DiagnosticError({"PHYS104","Non-finite position"});
     impl_->physics.GetBodyInterface().SetPosition(impl_->require(id),JPH::RVec3(p.x,p.y,p.z),JPH::EActivation::Activate);
+}
+bool PhysicsWorld::grounded(BodyId id,Vec3 half) const {
+    const auto raw=impl_->require(id);
+    if(velocity(id).y>0.1f) return false;
+    const auto p=position(id);
+    // A small inset avoids wall faces and supports standing near ledges.
+    for(const auto offset: {Vec2{},Vec2{-half.x*.8f,-half.z*.8f},Vec2{half.x*.8f,-half.z*.8f},
+        Vec2{-half.x*.8f,half.z*.8f},Vec2{half.x*.8f,half.z*.8f}}) {
+        JPH::RRayCast ray(JPH::RVec3(p.x+offset.x,p.y,p.z+offset.y),JPH::Vec3(0,-half.y-.06f,0));
+        JPH::RayCastResult hit;
+        if(impl_->physics.GetNarrowPhaseQuery().CastRay(ray,hit,{}, {},JPH::IgnoreSingleBodyFilter(raw))) {
+            JPH::BodyLockRead lock(impl_->physics.GetBodyLockInterface(),hit.mBodyID);
+            if(lock.Succeeded() && lock.GetBody().GetWorldSpaceSurfaceNormal(hit.mSubShapeID2,ray.GetPointOnRay(hit.mFraction)).GetY()>.6f) return true;
+        }
+    }
+    return false;
+}
+bool PhysicsWorld::clearPath(BodyId from,BodyId to) const {
+    auto a=position(from),b=position(to);
+    JPH::RRayCast ray(JPH::RVec3(a.x,a.y,a.z),JPH::Vec3(b.x-a.x,b.y-a.y,b.z-a.z));
+    JPH::RayCastResult hit;
+    return !impl_->physics.GetNarrowPhaseQuery().CastRay(ray,hit,{}, {},JPH::IgnoreSingleBodyFilter(impl_->require(from))) || hit.mBodyID==impl_->require(to);
 }
 }

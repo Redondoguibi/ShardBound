@@ -12,6 +12,9 @@ public:
     bool contains(EntityId entity) const;
     Vec3 velocity(EntityId entity) const;
     void setVelocity(EntityId entity,Vec3 velocity);
+    bool grounded(EntityId entity) const;
+    bool clearPath(EntityId from,EntityId to) const;
+    void teleport(EntityId entity,Vec3 position);
     void step(float delta);
     Box description(EntityId entity) const;
     void swapState(PhysicsSystem& other) noexcept;

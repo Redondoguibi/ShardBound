@@ -56,6 +56,7 @@ bool Application::initialize() {
     try { audio_=std::make_unique<AudioSystem>(); }
     catch(const DiagnosticError& error) { LOG_WARN("AUDIO",error.what()); audio_=std::make_unique<AudioSystem>(true); }
     scripting_=std::make_unique<script::Runtime>();
+    ui_=std::make_unique<GameUi>(*scripting_,*renderer_);
     bindRuntimeApi(*scripting_,*world_,*assets_);
     bindGameplayApi(*scripting_,*world_,*physics_,*player_,input_,*audio_,*assets_);
     components_=std::make_unique<Components>();
@@ -121,7 +122,7 @@ void Application::run() {
     };
     callbacks.render = [&](double) {
         const auto items=collectRenderItems(*world_);
-        renderer_->render(player_->camera(),items); renderer_->present();
+        renderer_->render(player_->camera(),items,ui_->texture()); renderer_->present();
     };
     loop_.run(config_, callbacks);
 }
@@ -136,6 +137,7 @@ void Application::shutdown() noexcept {
     saves_.reset();
     components_.reset();
     scripting_.reset();
+    ui_.reset();
     player_.reset();
     physics_.reset();
     audio_.reset();

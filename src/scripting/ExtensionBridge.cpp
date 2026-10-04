@@ -11,6 +11,11 @@ void own(Runtime& runtime,const AssetId& type,const Location& at) { if(type.name
 }
 ExtensionBridge::ExtensionBridge(script::Runtime& runtime,World& world,Components& components,SaveGame& saves):runtime_(runtime),saves_(saves) {
     using namespace script;
+    saves.validateState=[&runtime](const Data& state) {
+        auto errors=runtime.emit("on_validate_load",{fromData(state)});
+        if(!errors.empty()) throw DiagnosticError(errors.front());
+    };
+    runtime.bind("script_error",native([](const auto& a,const auto& at)->Value { arity(a,1,at); fail(at,"SCRIPT325",a[0].string(at)); }));
     runtime.bind("record",native([](const auto& a,const auto& at) { arity(a,0,at); return object(); }));
     runtime.bind("entity_key",native([&](const auto& a,const auto& at) { arity(a,1,at); return Value(world.get<IdentityComponent>(requireEntity(a[0],world,at)).persistent); }));
     runtime.bind("get_entity_by_key",native([&](const auto& a,const auto& at) { arity(a,1,at); return entityValue(world,world.findPersistent(a[0].string(at))); }));
@@ -60,6 +65,10 @@ std::vector<Diagnostic> ExtensionBridge::process() {
         }
     } catch(const DiagnosticError& error) { diagnostics.push_back(error.diagnostic); }
     catch(const std::exception& error) { diagnostics.push_back({"SAVE106",error.what()}); }
+    if(!diagnostics.empty()) {
+        auto errors=runtime_.emit("on_save_diagnostic",{script::Value(request.first),script::Value(diagnostics.front().message)});
+        diagnostics.insert(diagnostics.end(),errors.begin(),errors.end());
+    }
     pending_.reset(); return diagnostics;
 }
 }

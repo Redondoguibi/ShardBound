@@ -50,7 +50,10 @@ void SaveGame::save(const std::string& slot) {
                 {"active",world_.get<ActiveComponent>(id).value},{"custom",Json::object()}};
             if(auto parent=world_.parent(id)) e["parent"]=world_.get<IdentityComponent>(parent).persistent;
             if(world_.has<TransformComponent>(id)) { const auto& t=world_.get<TransformComponent>(id).local; e["transform"]={vector(t.position),vector(t.rotation),vector(t.scale)}; }
-            if(world_.has<ModelComponent>(id)) e["model"]=world_.get<ModelComponent>(id).definition.str();
+            if(world_.has<ModelComponent>(id)) {
+                const auto& model=world_.get<ModelComponent>(id); e["model"]=model.definition.str();
+                e["tint"]={model.tint.r,model.tint.g,model.tint.b};
+            }
             if(world_.has<HealthComponent>(id)) { const auto h=world_.get<HealthComponent>(id); e["health"]={h.current,h.maximum}; }
             if(world_.has<InventoryComponent>(id)) e["inventory"]=world_.get<InventoryComponent>(id).items;
             if(world_.has<InteractableComponent>(id)) e["interactable"]=world_.get<InteractableComponent>(id).enabled;
@@ -64,7 +67,7 @@ void SaveGame::save(const std::string& slot) {
             json["entities"].push_back(std::move(e));
         }
         json["player"]=Json::parse(encodeData(orphanPlayer_));
-        if(auto id=player_.entity()) json["player"]={{"entity",world_.get<IdentityComponent>(id).persistent},{"speed",player_.speed()}};
+        if(auto id=player_.entity()) json["player"]={{"entity",world_.get<IdentityComponent>(id).persistent},{"speed",player_.speed()},{"camera",vector(player_.viewOffset())}};
         const auto text=encodeData(decodeData(json.dump()));
         std::filesystem::create_directories(directory_);
         const auto temp=file.wstring()+L".tmp",backup=file.wstring()+L".bak";
@@ -114,6 +117,10 @@ std::vector<Diagnostic> SaveGame::load(const std::string& slot) {
             if(e.contains("transform")) { const auto& t=e["transform"]; if(!t.is_array() || t.size()!=3) throw std::runtime_error("Invalid transform"); staged.add(id,TransformComponent{{vector(t[0]),vector(t[1]),vector(t[2])}}); }
             if(e.contains("model")) { AssetId model(e["model"].get<std::string>()); ModelHandle handle; try { handle=assets_.model(model); } catch(const std::exception& error) { diagnostics.push_back({"SAVE204",error.what(),file.string(),model.nameSpace(),model.str()}); } staged.add(id,ModelComponent{model,handle}); }
             if(e.contains("health")) { const auto& h=e["health"]; if(!h.is_array() || h.size()!=2) throw std::runtime_error("Invalid health"); float current=finite(h[0]),maximum=finite(h[1]); if(current<0 || maximum<=0 || current>maximum) throw std::runtime_error("Invalid health range"); staged.add(id,HealthComponent{current,maximum}); }
+            if(e.contains("tint") && staged.has<ModelComponent>(id)) {
+                const auto t=vector(e["tint"]); if(t.x<0 || t.x>1 || t.y<0 || t.y>1 || t.z<0 || t.z>1) throw std::runtime_error("Invalid model tint");
+                staged.get<ModelComponent>(id).tint={t.x,t.y,t.z,1};
+            }
             if(e.contains("inventory")) {
                 InventoryComponent inventory;
                 for(const auto& [item,count]:e["inventory"].items()) { (void)AssetId(item); const auto n=count.get<double>(); if(n<1 || n>UINT32_MAX || n!=std::floor(n)) throw std::runtime_error("Invalid inventory count"); inventory.items[item]=static_cast<std::uint32_t>(n); }
@@ -125,16 +132,21 @@ std::vector<Diagnostic> SaveGame::load(const std::string& slot) {
             if(e.contains("physics")) { const auto& p=e["physics"]; stagedPhysics.attachBox(id,vector(p.at("half")),p.at("dynamic").get<bool>()); stagedPhysics.setVelocity(id,vector(p.at("velocity"))); }
         }
         for(const auto& [key,id]:ids) { const auto parent=entries.at(key).value("parent",std::string{}); if(!parent.empty()) { if(stagedPhysics.contains(id)) throw std::runtime_error("Physical child is not supported"); staged.setParent(id,ids.at(parent)); } }
-        EntityId player{}; float speed=0; Data orphanPlayer;
+        EntityId player{}; float speed=0; Vec3 camera{0,8,-10}; Data orphanPlayer;
         if(json.contains("player") && !json["player"].is_null()) {
             const auto key=json["player"].at("entity").get<std::string>(); speed=finite(json["player"].at("speed"));
             if(!entries.contains(key)) throw std::runtime_error("Player entity missing");
             if(missing.contains(key)) orphanPlayer=decodeData(json["player"].dump());
-            else { player=ids.at(key); stagedPlayer.possess(player,speed); }
+            else {
+                player=ids.at(key); stagedPlayer.possess(player,speed);
+                if(json["player"].contains("camera")) camera=vector(json["player"]["camera"]);
+                stagedPlayer.setViewOffset(camera);
+            }
         }
         auto state=std::get<Data::Object>(decodeData(json.at("state").dump()).value);
+        if(validateState) validateState(Data{state});
         world_.swapState(staged); physics_.swapState(stagedPhysics); player_.release();
-        if(player) player_.possess(player,speed);
+        if(player) { player_.possess(player,speed); player_.setViewOffset(camera); }
         state_.swap(state); orphans_.swap(orphans); orphanPlayer_=std::move(orphanPlayer); savedMods_.swap(savedMods);
         return diagnostics;
     } catch(const std::exception& e) { throw DiagnosticError({"SAVE104",e.what(),file.string()}); }

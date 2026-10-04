@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 namespace game {
-enum class Key { Unknown, W, A, S, D, Space, E, Escape, Count };
+enum class Key { Unknown, W, A, S, D, Space, E, Escape, M, I, Q, One, Two, Three, F5, F9, Count };
 enum class MouseButton { Unknown, Left, Middle, Right, Count };
 enum class PadButton { Unknown, South, East, West, North, Count };
 enum class EventType {

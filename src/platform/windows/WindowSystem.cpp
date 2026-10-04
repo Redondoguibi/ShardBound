@@ -12,6 +12,9 @@ Key keyFrom(SDL_Scancode key) {
     case SDL_SCANCODE_W: return Key::W; case SDL_SCANCODE_A: return Key::A;
     case SDL_SCANCODE_S: return Key::S; case SDL_SCANCODE_D: return Key::D;
     case SDL_SCANCODE_E: return Key::E; case SDL_SCANCODE_SPACE: return Key::Space;
+    case SDL_SCANCODE_M: return Key::M; case SDL_SCANCODE_I: return Key::I; case SDL_SCANCODE_Q: return Key::Q;
+    case SDL_SCANCODE_1: return Key::One; case SDL_SCANCODE_2: return Key::Two; case SDL_SCANCODE_3: return Key::Three;
+    case SDL_SCANCODE_F5: return Key::F5; case SDL_SCANCODE_F9: return Key::F9;
     case SDL_SCANCODE_ESCAPE: return Key::Escape; default: return Key::Unknown;
     }
 }
