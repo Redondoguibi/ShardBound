@@ -1,7 +1,8 @@
 func begin_attack():
-    if state.attack > 0 or health(hero) <= 0:
+    if state.attack > 0 or health(hero) <= 0 or equipped_item() == null:
         return false
     spec = weapon_definition()
+    validate_weapon(spec)
     state.attack = spec.windup
     state.winding = true
     state.swing = spec
@@ -13,9 +14,13 @@ func strike_target(target, amount):
     hit.source = hero
     hit.target = target
     hit.amount = amount
+    hit.weapon = state.swing
+    hit.item_uid = state.equipped_uid
     hit = apply_hook("adventure:melee", hit)
     applied = damage_from(hero, hit.target, hit.amount)
     if applied > 0:
+        impact_position = vec3(hit.target.position.x, hit.target.position.y, hit.target.position.z)
+        impact_time = 0.18
         play_sound("core:hit")
         if has_component(hit.target, Sentinel):
             hit_brain = get_component(hit.target, Sentinel)
@@ -47,11 +52,9 @@ func defeat_enemy(foe, brain):
     look.active = false
     teleport(foe, vec3(brain.home.x, -20, brain.home.z))
     state.gold = state.gold + get_definition("Entities", Enemy).reward
-    if item_count(hero, ForestSword) == 0:
-        give_item(hero, ForestSword, 1)
-        notice = "Espada incomum encontrada! I: inventario / Q: equipar."
-    else:
-        notice = "Inimigo derrotado. Ouro coletado."
+    give_item(hero, ForestSword, 1)
+    sync_equipment()
+    notice = "Equipamento encontrado! I: inventario, Q: selecionar, E: equipar."
 
 func enemy_tick(foe, delta):
     brain = get_component(foe, Sentinel)
@@ -71,7 +74,7 @@ func enemy_tick(foe, delta):
             defeat_enemy(foe, brain)
         else:
             gap = distance_xz(foe.position, hero.position)
-            can_chase = hero.position.z >= 7 and gap < 8 and health(hero) > 0
+            can_chase = not in_safe_region() and gap < 8 and health(hero) > 0
             speed = 0
             heading = direction(foe.position, brain.home)
             if can_chase:
@@ -130,7 +133,7 @@ func animate_hero(delta):
     walk_time = walk_time + delta
     motion = get_velocity(hero)
     speed = math_sqrt(motion.x * motion.x + motion.z * motion.z)
-    if speed > 0.1 and not state.winding:
+    if speed > 0.1 and state.attack == 0:
         facing = vec3(motion.x / speed, 0, motion.z / speed)
     set_rotation(avatar, vec3(0, math_atan2(-facing.x, -facing.z), 0))
     animate_rig(avatar, speed, state.attack > 0)
@@ -138,10 +141,16 @@ func animate_hero(delta):
         pose_part(avatar, "LeftLeg", vec3(-0.125, 0.75, 0), vec3(0.3, 0, 0))
         pose_part(avatar, "RightLeg", vec3(0.125, 0.75, 0), vec3(-0.3, 0, 0))
         pose_part(avatar, "LeftArm", vec3(-0.25, 1.375, 0), vec3(-0.4, 0, -0.2))
-    if state.attack > 0:
-        if state.swing.pattern == "thrust":
-            set_rotation(blade, vec3(-1.2, 0, 0))
-        else:
-            set_rotation(blade, vec3(-0.7, 0, math_sin(state.attack * 9) * 0.8))
-    else:
-        set_rotation(blade, vec3(0, 0, 0))
+    arm = attack_arm()
+    if state.attack == 0:
+        arm = math_sin(walk_time * 10) * 0.55
+        if speed < 0.1:
+            arm = 0
+    pose_part(avatar, "RightArm", vec3(0.25, 1.375, 0), vec3(arm, 0, 0))
+    ? The authored blade begins at Y=14. Anchor Y=14.5 in the hand.
+    angle = arm + 3.141592654
+    grip = 14.5 * 0.075
+    hand_y = 1.375 - 0.625 * math_sin(arm + 1.570796327)
+    hand_z = -0.625 * math_sin(arm)
+    blade.position = vec3(0.375, hand_y - grip * math_sin(angle + 1.570796327), hand_z - grip * math_sin(angle))
+    set_rotation(blade, vec3(angle, 0, 0))

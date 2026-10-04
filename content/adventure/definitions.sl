@@ -29,6 +29,8 @@ entity Blade:
 
 @Items
 weapon IronSword:
+    .slot = "weapon"
+    .tint = vec3(1, 1, 1)
     .name = "Espada de ferro"
     .level = 1
     .rarity = "Comum"
@@ -39,6 +41,7 @@ weapon IronSword:
     .recovery = 0.32
     .pattern = "slash"
 weapon ForestSword from IronSword:
+    .tint = vec3(0.55, 1, 0.7)
     .name = "Espada da floresta"
     .level = 2
     .rarity = "Incomum"
@@ -72,6 +75,10 @@ notice = "Explore a floresta ao norte."
 hud_time = 0
 walk_time = 0
 facing = vec3(0, 0, -1)
+selected_item = 0
+selected_destination = 0
+reach_marks = []
+impact_marks = []
 
 func maximum(a, b):
     if a > b:
@@ -94,4 +101,10 @@ func direction(a, b):
     return vec3((b.x - a.x) / length, 0, (b.z - a.z) / length)
 
 func weapon_definition():
-    return get_definition("Items", state.equipped)
+    item = equipped_item()
+    if item == null:
+        return get_definition("Items", IronSword)
+    spec = data_merge(get_definition("Items", item.definition), item.attributes)
+    spec.level = item.level
+    spec.rarity = item.rarity
+    return spec

@@ -12,10 +12,10 @@ std::wstring utf8(const std::string& text) {
     MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,text.data(),static_cast<int>(text.size()),result.data(),count); return result;
 }
 }
-std::vector<std::uint8_t> gamePanelImage(const std::string& text,bool map,const std::vector<UiMarker>& markers) {
+std::vector<std::uint8_t> gamePanelImage(const std::string& text,bool map,const std::vector<UiMarker>& markers,bool expanded) {
     const auto wideText=utf8(text);
     std::vector<std::wstring> labels; for(const auto& marker:markers) labels.push_back(utf8(marker.label));
-    const int width=600,height=map ? 440 : 156;
+    const int width=600,height=(map || expanded) ? 440 : 156;
     HDC dc=CreateCompatibleDC(nullptr); if(!dc) throw std::runtime_error("Cannot create UI DC");
     BITMAPINFO info{}; info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER); info.bmiHeader.biWidth=width;
     info.bmiHeader.biHeight=-height; info.bmiHeader.biPlanes=1; info.bmiHeader.biBitCount=32; info.bmiHeader.biCompression=BI_RGB;
@@ -24,16 +24,33 @@ std::vector<std::uint8_t> gamePanelImage(const std::string& text,bool map,const 
     auto old=SelectObject(dc,bitmap); RECT area{0,0,width,height}; auto brush=CreateSolidBrush(RGB(14,26,32)); FillRect(dc,&area,brush); DeleteObject(brush);
     auto font=CreateFontW(19,0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,ANTIALIASED_QUALITY,DEFAULT_PITCH,L"Segoe UI");
     auto oldFont=SelectObject(dc,font); SetTextColor(dc,RGB(221,237,229)); SetBkMode(dc,TRANSPARENT);
-    RECT textArea{14,8,590,150}; DrawTextW(dc,wideText.c_str(),static_cast<int>(wideText.size()),&textArea,DT_LEFT|DT_NOPREFIX);
+    RECT textArea{14,8,590,expanded && !map ? 432 : 150}; DrawTextW(dc,wideText.c_str(),static_cast<int>(wideText.size()),&textArea,DT_LEFT|DT_NOPREFIX);
     if(map) {
         RECT ground{28,168,572,422}; brush=CreateSolidBrush(RGB(35,64,47)); FillRect(dc,&ground,brush); DeleteObject(brush);
-        // Diagram of the connected prototype area, world X [-18,18], Z [-12,42].
-        RECT hub{28,346,572,422}; brush=CreateSolidBrush(RGB(93,79,55)); FillRect(dc,&hub,brush); DeleteObject(brush);
+        float minX=0,maxX=0,minZ=0,maxZ=0;
+        if(!markers.empty()) minX=maxX=markers.front().x,minZ=maxZ=markers.front().z;
+        for(const auto& marker:markers) { minX=std::min(minX,marker.x); maxX=std::max(maxX,marker.x); minZ=std::min(minZ,marker.z); maxZ=std::max(maxZ,marker.z); }
+        const float scale=std::min(480.0f/std::max(8.0f,maxX-minX),210.0f/std::max(8.0f,maxZ-minZ));
+        const float centerX=(minX+maxX)*.5f,centerZ=(minZ+maxZ)*.5f;
+        std::vector<RECT> placedLabels;
         for(size_t i=0;i<markers.size();++i) {
             const auto& marker=markers[i];
-            const int x=std::clamp(int(300+marker.x*14),32,562),y=std::clamp(int(362-marker.z*4.5f),174,408);
+            const int x=std::clamp(int(300+(marker.x-centerX)*scale),32,562),y=std::clamp(int(295-(marker.z-centerZ)*scale),174,408);
             RECT dot{x-4,y-4,x+4,y+4}; brush=CreateSolidBrush(marker.active ? RGB(97,228,199) : RGB(122,130,125)); FillRect(dc,&dot,brush); DeleteObject(brush);
-            RECT label{x+7,y-10,std::min(x+150,590),y+20}; DrawTextW(dc,labels[i].c_str(),static_cast<int>(labels[i].size()),&label,DT_LEFT|DT_NOPREFIX);
+            SIZE extent{}; GetTextExtentPoint32W(dc,labels[i].c_str(),static_cast<int>(labels[i].size()),&extent);
+            const int labelWidth=std::min(260,int(extent.cx)+4);
+            const int left=std::clamp(x+7,32,572-labelWidth);
+            for(int attempt=0;attempt<15;++attempt) {
+                const int offset=attempt==0 ? 0 : ((attempt+1)/2)*22*(attempt%2 ? 1 : -1);
+                const int top=std::clamp(y-10+offset,170,400);
+                RECT label{left,top,left+labelWidth,top+22}; bool overlaps=false;
+                for(const auto& placed:placedLabels) { RECT intersection{}; if(IntersectRect(&intersection,&label,&placed)) { overlaps=true; break; } }
+                if(!overlaps) {
+                    placedLabels.push_back(label);
+                    DrawTextW(dc,labels[i].c_str(),static_cast<int>(labels[i].size()),&label,DT_LEFT|DT_NOPREFIX|DT_SINGLELINE|DT_END_ELLIPSIS);
+                    break;
+                }
+            }
         }
     }
     GdiFlush(); const auto* bytes=static_cast<const std::uint8_t*>(pixels); std::vector<std::uint8_t> result(size_t(width)*height*4);

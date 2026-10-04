@@ -33,32 +33,41 @@ func enemy_at(x, z):
     brain.home = vec3(x, 1, z)
     set_component(foe, Sentinel, brain)
 
+func build_region(region):
+    spec = region.data
+    center = vec3((spec.min.x + spec.max.x) / 2, -0.5, (spec.min.z + spec.max.z) / 2)
+    half = vec3((spec.max.x - spec.min.x) / 2, 0.5, (spec.max.z - spec.min.z) / 2)
+    block_at(center, half, spec.color, true)
+    for where in spec.shelters:
+        shelter(where.x, where.z)
+    for where in spec.trees:
+        tree = spawn(Tree, where)
+        set_scale(tree, vec3(0.038, 0.038, 0.038))
+        trunk = block_at(vec3(where.x, where.y + 1, where.z), vec3(0.3, 1, 0.3), vec3(0.35, 0.27, 0.19), true)
+        trunk.active = false
+    for where in spec.enemies:
+        enemy_at(where.x, where.z)
+    list_append(state.built_regions, region.id)
+
+func sync_world_content():
+    validate_world_content()
+    for region in get_definitions("Regions"):
+        built = false
+        for id in state.built_regions:
+            if id == region.id:
+                built = true
+        if not built:
+            build_region(region)
+    for entry in destination_list():
+        if get_entity(entry.data.label) == null:
+            stone_at(entry.data.label, entry.data.position)
+
 func build_world():
-    block_at(vec3(0, -0.5, 14), vec3(18, 0.5, 28), vec3(0.3, 0.48, 0.25), true)
-    block_at(vec3(0, 0.012, -3), vec3(12, 0.01, 9), vec3(0.62, 0.54, 0.37), false)
+    sync_world_content()
     block_at(vec3(0, 0.016, 17), vec3(1.8, 0.01, 21), vec3(0.53, 0.46, 0.32), false)
-    for side in [-1, 1]:
-        block_at(vec3(side * 18, 1.2, 14), vec3(0.4, 1.2, 28), vec3(0.27, 0.33, 0.29), true)
-    for end in [-14, 42]:
-        block_at(vec3(0, 1.2, end), vec3(18, 1.2, 0.4), vec3(0.27, 0.33, 0.29), true)
-    shelter(-7, -3)
-    shelter(7, -3)
-    shelter(-7, 4)
-    for z in [10, 17, 24, 32, 39]:
-        for x in [-13, -8, 8, 13]:
-            tree = spawn(Tree, vec3(x, 0, z))
-            set_scale(tree, vec3(0.038, 0.038, 0.038))
-            trunk = block_at(vec3(x, 1, z), vec3(0.3, 1, 0.3), vec3(0.35, 0.27, 0.19), true)
-            trunk.active = false
     for x in [-4, 4]:
         block_at(vec3(x, 0.25, 12), vec3(0.8, 0.25, 0.8), vec3(0.55, 0.6, 0.59), true)
-    stone_at("hub_waystone", vec3(3, 0.06, 0))
-    stone_at("forest_waystone", vec3(-3, 0.06, 20))
-    stone_at("grove_waystone", vec3(3, 0.06, 36))
-    enemy_at(2, 14)
-    enemy_at(-3, 26)
-    enemy_at(4, 31)
-    hero = spawn(Actor, vec3(0, 1.1, 0))
+    hero = spawn(Actor, get_definition("Worlds", "adventure:Main").start)
     hero.name = "player"
     add_box(hero, vec3(0.4, 1, 0.3), true)
     stats = get_definition("Entities", Actor)
@@ -67,8 +76,9 @@ func build_world():
     avatar = spawn(Explorer, vec3(0, -1, 0))
     avatar.name = "player_visual"
     set_parent(avatar, hero)
-    blade = spawn(Blade, vec3(0.38, -0.6, -0.2))
+    blade = spawn(Blade, vec3(0.375, -0.6, 0))
     blade.name = "player_sword"
     set_parent(blade, avatar)
     set_scale(blade, vec3(0.075, 0.075, 0.075))
     give_item(hero, IronSword, 1)
+    build_combat_visuals()
