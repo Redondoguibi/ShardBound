@@ -206,6 +206,7 @@ struct Runtime::Impl {
 };
 Runtime::Runtime() : impl_(std::make_unique<Impl>()) {
     const auto arity=[](const auto& a,size_t n,const auto& at) { if(a.size()!=n) fail(at,"SCRIPT312","Invalid collection argument count"); };
+    bind("registry_revision",native([this,arity](const auto& a,const auto& at) { arity(a,0,at); return Value(double(impl_->registry.revision())); }));
     bind("list_count",native([arity](const auto& a,const auto& at) {
         arity(a,1,at); const auto p=std::get_if<std::shared_ptr<List>>(&a[0].data);
         if(!p) fail(at,"SCRIPT301","Expected list"); return Value(double((*p)->values.size()));

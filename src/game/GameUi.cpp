@@ -17,7 +17,9 @@ GameUi::GameUi(script::Runtime& runtime,Renderer& renderer) {
             if(label.size()>128) script::fail(at,"UI101","Map label exceeds 128 bytes");
             markers.push_back({float(x),float(z),label,v.member("active",at).boolean(at)});
         }
-        texture_=renderer.createTexture(600,(map || expanded) ? 440 : 156,gamePanelImage(text,map,markers,expanded),false,false);
+        if(texture_ && text_==text && map_==map && expanded_==expanded && (!map || markers_==markers)) return script::Value{};
+        auto texture=renderer.createTexture(600,(map || expanded) ? 440 : 156,gamePanelImage(text,map,markers,expanded),false,false);
+        texture_=std::move(texture); text_=text; map_=map; expanded_=expanded; markers_=std::move(markers);
         return script::Value{};
     }));
 }

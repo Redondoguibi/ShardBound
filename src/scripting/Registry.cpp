@@ -12,6 +12,7 @@ void Registry::add(Definition definition,const Location& at) {
     (void)AssetId(definition.id);
     const auto key=definition.category+"/"+definition.id;
     if(!definitions_.emplace(key,std::move(definition)).second) fail(at,"SCRIPT401","Duplicate definition: "+key);
+    ++revision_;
 }
 const Definition& Registry::get(const std::string& category,const std::string& id,const Location& at) const {
     auto it=definitions_.find(category+"/"+id); if(it==definitions_.end()) fail(at,"SCRIPT402","Unknown definition: "+category+"/"+id); return it->second;
@@ -56,6 +57,7 @@ void Registry::patch(const std::string& category,const std::string& id,const Val
         writers.push_back(Write{mod,clone(value)});
     }
     definitions_.at(prefix).data=std::move(updated);
+    ++revision_;
 }
 void Registry::replace(const std::string& category,const std::string& id,Value value,const std::string& mod,const Location& at) {
     (void)get(category,id,at); const auto prefix=category+"/"+id;
@@ -65,5 +67,6 @@ void Registry::replace(const std::string& category,const std::string& id,Value v
     auto copied=clone(value);
     writes_[prefix].push_back({mod,clone(copied)});
     definitions_.at(prefix).data=std::move(copied);
+    ++revision_;
 }
 }

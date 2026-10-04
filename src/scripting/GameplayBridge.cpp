@@ -37,6 +37,14 @@ void bindGameplayApi(script::Runtime& runtime,World& world,PhysicsSystem& physic
         if(scale.x<=0 || scale.y<=0 || scale.z<=0) fail(at,"BRIDGE105","Scale must be positive");
         world.get<TransformComponent>(id).local.scale=scale; return Value{};
     }));
+    runtime.bind("set_model",native([&](const auto& a,const auto& at) {
+        arity(a,2,at); const auto entity=requireEntity(a[0],world,at); const AssetId id(a[1].string(at));
+        const auto model=assets.model(id);
+        if(world.has<ModelComponent>(entity)) {
+            auto& visual=world.get<ModelComponent>(entity); visual.definition=id; visual.model=model; visual.poses.clear();
+        } else world.add(entity,ModelComponent{id,model,{},{}});
+        return Value{};
+    }));
     runtime.bind("add_box",native([&](const auto& a,const auto& at) {
         arity(a,3,at); physics.attachBox(requireEntity(a[0],world,at),vector(a[1],at),a[2].boolean(at)); return Value{};
     }));
@@ -133,6 +141,9 @@ void bindGameplayApi(script::Runtime& runtime,World& world,PhysicsSystem& physic
         arity(a,1,at); const auto definition=a[0].string(at); std::vector<Value> values;
         for(auto id:world.entities()) if(world.get<IdentityComponent>(id).definition==definition) values.push_back(entityValue(world,id));
         return list(std::move(values));
+    }));
+    runtime.bind("entity_definition",native([&](const auto& a,const auto& at) {
+        arity(a,1,at); return Value(world.get<IdentityComponent>(requireEntity(a[0],world,at)).definition);
     }));
     runtime.bind("math_floor",native([](const auto& a,const auto& at) { arity(a,1,at); return Value(std::floor(a[0].number(at))); }));
     runtime.bind("math_sin",native([](const auto& a,const auto& at) { arity(a,1,at); return Value(std::sin(number(a[0],at))); }));

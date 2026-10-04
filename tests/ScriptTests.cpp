@@ -91,7 +91,11 @@ absent = definition_exists("Items", "missing:Item")
         runtime.execute("core","@Entities\nenemy player:\n    .health = 100\n    .speed = 1\n");
         runtime.execute("patch_a","@Core/Entities\nmodify player {\n    .health = 150\n}\n");
         runtime.execute("patch_b","@Core/Entities\nmodify player {\n    .speed = 2\n}\n");
+        const auto beforeFailedPatch=runtime.registry().revision();
         rejects([&] { runtime.execute("patch_c","@Core/Entities\nmodify player {\n    .health = 200\n}\n"); },"SCRIPT403");
+        require(runtime.registry().revision()==beforeFailedPatch,"Failed patch changed registry revision");
+        runtime.execute("test","@Globals\nrevision_seen = registry_revision()\n");
+        require(runtime.global("test","revision_seen").number()==double(beforeFailedPatch),"Registry revision API mismatch");
         require(runtime.registry().get("Entities","core:player").data.member("health",{}).number()==150,"Failed patch changed target");
         std::filesystem::create_directories("user/script-tests");
         { std::ofstream out("user/script-tests/a.sl"); out<<"import \"b.sl\"\n"; }

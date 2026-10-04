@@ -33,6 +33,13 @@ ExtensionBridge::ExtensionBridge(script::Runtime& runtime,World& world,Component
     runtime.bind("get_component",native([&](const auto& a,const auto& at) { arity(a,2,at); return fromData(components.get(world,requireEntity(a[0],world,at),id(a[1],at))); }));
     runtime.bind("set_component",native([&](const auto& a,const auto& at) { arity(a,3,at); components.set(world,requireEntity(a[0],world,at),id(a[1],at),toData(a[2])); return Value{}; }));
     runtime.bind("has_component",native([&](const auto& a,const auto& at) { arity(a,2,at); return Value(world.custom(requireEntity(a[0],world,at)).contains(id(a[1],at).str())); }));
+    runtime.bind("get_entities_with",native([&](const auto& a,const auto& at) {
+        arity(a,1,at); const auto type=id(a[0],at);
+        if(!components.known(type)) fail(at,"EXT102","Component type is not registered");
+        std::vector<Value> result;
+        for(auto entity:world.entities()) if(world.custom(entity).contains(type.str())) result.push_back(entityValue(world,entity));
+        return list(std::move(result));
+    }));
     runtime.bind("remove_component",native([&](const auto& a,const auto& at) { arity(a,2,at); return Value(world.removeCustom(requireEntity(a[0],world,at),id(a[1],at))); }));
     runtime.bind("on_event",native([&](const auto& a,const auto& at) { arity(a,2,at); return Value(double(runtime.subscribe(a[0].string(at),a[1]))); }));
     runtime.bind("add_hook",native([&](const auto& a,const auto& at) { arity(a,2,at); return Value(double(runtime.subscribe(a[0].string(at),a[1],true))); }));
