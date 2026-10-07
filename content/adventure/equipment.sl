@@ -18,11 +18,25 @@ func create_equipment(definition):
     list_append(state.items, item)
     return list_at(state.items, list_count(state.items) - 1)
 
+func weapon_visuals(spec):
+    ? Additive fields preserve weapons written against the previous contract.
+    defaults = get_definition("Items", IronSword)
+    if not record_has(spec, "model"):
+        spec.model = defaults.model
+    if not record_has(spec, "visual_scale"):
+        spec.visual_scale = defaults.visual_scale
+    if not record_has(spec, "grip"):
+        spec.grip = defaults.grip
+    return spec
+
 func validate_weapon(spec):
+    spec = weapon_visuals(spec)
     if text_length(spec.name) == 0 or text_length(spec.name) > 64:
         script_error("Weapon names must contain 1 to 64 UTF-8 bytes")
     if spec.damage < 0 or spec.reach <= 0 or spec.reach > 100 or spec.arc < -1 or spec.arc > 1 or spec.windup <= 0 or spec.recovery <= 0:
         script_error("Invalid weapon combat attributes")
+    if text_length(spec.model) == 0 or spec.visual_scale.x <= 0 or spec.visual_scale.y <= 0 or spec.visual_scale.z <= 0 or spec.grip < 0:
+        script_error("Invalid weapon model, scale or grip")
     if spec.pattern != "slash" and spec.pattern != "thrust":
         script_error("Unsupported weapon attack pattern")
     if spec.tint.x < 0 or spec.tint.x > 1 or spec.tint.y < 0 or spec.tint.y > 1 or spec.tint.z < 0 or spec.tint.z > 1:
@@ -80,10 +94,13 @@ func equip_instance(item):
     if state.attack > 0 or not usable_item(item):
         notice = "Equipamento indisponivel ou ataque em andamento."
         return false
+    spec = weapon_visuals(data_merge(get_definition("Items", item.definition), item.attributes))
+    validate_weapon(spec)
+    set_model(blade, spec.model)
+    set_scale(blade, spec.visual_scale)
+    set_tint(blade, spec.tint)
     state.equipped_uid = item.uid
     state.equipped = item.definition
-    spec = weapon_definition()
-    set_tint(blade, spec.tint)
     emit_event("adventure:equipped", [item.uid, item.definition])
     return true
 

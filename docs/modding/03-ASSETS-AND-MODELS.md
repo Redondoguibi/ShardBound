@@ -96,7 +96,12 @@ RightLeg
 
 com pivôs/articulações previsíveis.
 
-Quando o projeto publicar um template oficial de player/rig, **use esse template** como referência técnica.
+O template atual está em [`player.bbmodel`](../../assets/core/models/player.bbmodel),
+com seis grupos e pivôs usados pelas poses rígidas.
+[`scout.bbmodel`](../../assets/core/models/scout.bbmodel) e
+[`brute.bbmodel`](../../assets/core/models/brute.bbmodel) mostram variações
+compatíveis, com texturas originais 16×16. Detalhes de escala/exportação:
+[modelos oficiais](../../assets/core/models/README.md).
 
 Não dependa de extrair ou redistribuir texturas/arquivos proprietários de outros jogos; o ecossistema deve usar assets próprios, mesmo quando a geometria/proporções de referência forem equivalentes.
 

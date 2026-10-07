@@ -19,19 +19,31 @@ func stone_at(label, where):
     set_tint(stone, vec3(0.5, 0.55, 0.6))
     return stone
 
-func enemy_at(x, z):
-    foe = spawn(Enemy, vec3(x, 1, z))
-    add_box(foe, vec3(0.4, 1, 0.3), true)
-    stats = get_definition("Entities", Enemy)
+func enemy_at(x, z, definition="adventure:Enemy"):
+    stats = get_definition("Entities", definition)
+    if stats.body.x <= 0 or stats.body.y <= 0 or stats.body.z <= 0 or stats.max_health <= 0 or stats.speed < 0 or stats.damage < 0 or stats.windup <= 0 or stats.recovery <= 0 or stats.respawn <= 0 or stats.stop <= 0 or stats.trigger < stats.stop or stats.reach < stats.trigger or stats.aggro < stats.reach or stats.reward < 0:
+        script_error("Invalid enemy combat or body attributes")
+    foe = spawn(definition, vec3(x, stats.body.y, z))
+    add_box(foe, stats.body, true)
     set_health(foe, stats.max_health)
-    look = spawn(Explorer, vec3(0, -1, 0))
+    look = spawn(stats.visual, vec3(0, -stats.body.y, 0))
     set_parent(look, foe)
-    set_tint(look, vec3(0.9, 0.45, 0.45))
+    set_scale(look, stats.visual_scale)
+    set_tint(look, stats.tint)
     add_component(foe, Sentinel)
     brain = get_component(foe, Sentinel)
     brain.visual = entity_key(look)
-    brain.home = vec3(x, 1, z)
+    brain.home = vec3(x, stats.body.y, z)
     set_component(foe, Sentinel, brain)
+    return foe
+
+func sync_encounters(region):
+    if not record_has(region.data, "encounters"):
+        return
+    for entry in region.data.encounters:
+        if not list_contains(state.encounters, entry.key):
+            enemy_at(entry.position.x, entry.position.z, entry.definition)
+            list_append(state.encounters, entry.key)
 
 func build_region(region):
     spec = region.data
@@ -51,13 +63,14 @@ func build_region(region):
 
 func sync_world_content():
     validate_world_content()
-    for region in get_definitions("Regions"):
+    for region in region_catalog:
         built = false
         for id in state.built_regions:
             if id == region.id:
                 built = true
         if not built:
             build_region(region)
+        sync_encounters(region)
     for entry in destination_list():
         if get_entity(entry.data.label) == null:
             stone_at(entry.data.label, entry.data.position)

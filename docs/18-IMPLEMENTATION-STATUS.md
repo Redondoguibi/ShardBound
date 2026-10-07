@@ -155,14 +155,14 @@ e câmera fixa servem à conferência dos assets.
 O pacote [adventure](../content/adventure/README.md), carregado por padrão,
 implementa um abrigo e floresta contínuos, WASD relativo à câmera, salto com
 apoio físico, mapa com três waystones, combate com preparação/recuperação,
-crítico de queda 1,7×, dois itens equipáveis, ouro, morte e save/load. O modelo
+crítico de queda 1,7×, quatro tipos de arma, ouro, morte e save/load. O modelo
 original do personagem foi criado/exportado pelo plugin Blockbench; poses
 rígidas, tint por entidade e HUD são APIs reutilizáveis. Conteúdo e regras
 ficam em módulos `.sl`. O exemplo `trailcraft` altera dano por registry/hook e
 agora adiciona arma, atributos individuais, região e waystone.
 
 Contrato e limites: [23-PLAYABLE-SLICE.md](23-PLAYABLE-SLICE.md). Continua sendo
-protótipo: três inimigos do mesmo tipo e duas definições oficiais de arma,
+protótipo: cinco inimigos de três tipos e quatro definições oficiais de arma,
 sem skinning/clips, streaming, UI/arte final, catálogo amplo ou otimização final.
 Esse marco não encerra a Etapa 13.
 
@@ -173,6 +173,15 @@ waystones em registries, mapa com enquadramento automático e reconciliação de
 conteúdo novo ao carregar. Saves anteriores migram contagens/descobertas.
 Itens e descobertas de mods ausentes preservam dados. Contrato:
 [24-EQUIPMENT-AND-WORLD-CONTENT.md](24-EQUIPMENT-AND-WORLD-CONTENT.md).
+
+O marco seguinte adiciona Scout e Brute, com modelos originais e texturas 16×16
+criados pelo plugin Blockbench, exportação completa da espada do autor, atributos
+de IA por definição, encontros persistentes reconciliados em saves antigos e
+itens no chão que conservam estado ao morrer/salvar. Mods podem derivar esses
+inimigos e alterar drops. Campos visuais de armas são opcionais para preservar
+o contrato anterior. Catálogos usam a revisão do registry para evitar cópias
+repetidas; a UI reutiliza texturas quando os pixels não mudam. Contrato:
+[25-COMBATANTS-LOOT-AND-RUNTIME-CACHES.md](25-COMBATANTS-LOOT-AND-RUNTIME-CACHES.md).
 
 ## Build e execução
 
@@ -196,10 +205,12 @@ ctest --preset debug
 Builds, dependências locais e caches são ignorados pelo Git. Bibliotecas serão
 adicionadas somente na etapa em que forem utilizadas.
 
-Validação em 2026-10-04: builds MSVC Debug/Release concluídos; 28/28 testes CTest
+Validação em 2026-10-07: builds MSVC Debug/Release concluídos; 29/29 testes CTest
 aprovados em cada configuração. Incluem pixels na GPU (recorte alfa, profundidade
 e faces duplas), galeria dos três assets por script, ciclo adventure com
-salto/combate/viagem/morte/loot/equipamento/save, extensão real por mod, scripts/mods, Jolt,
+salto/combate/viagem/morte/loot/equipamento/save, variantes de inimigo, coleta com
+capacidade cheia/hook rejeitado, encontros reconciliados e caches, extensão real
+por mod, scripts/mods, Jolt,
 PCM offline, gameplay, componentes/migrações, saves/órfãos, DLLs reais e CLI. Input de interação foi sintetizado; gamepad físico
 e qualidade audível no dispositivo não foram avaliados manualmente.
 O hub e o mapa foram conferidos por readback real de D3D11. O autor confirmou a

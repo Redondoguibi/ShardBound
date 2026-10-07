@@ -26,6 +26,7 @@ region NorthTrail from "adventure:Forest":
     .max = vec3(18, 0, 62)
     .trees = [vec3(-8, 0, 50), vec3(8, 0, 50)]
     .enemies = []
+    .encounters = []
     .shelters = []
 
 @Waystones

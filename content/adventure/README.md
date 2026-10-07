@@ -23,7 +23,9 @@ resolvidos a partir da pasta do executável; caminhos absolutos também funciona
 | Escape | Sair |
 
 Saia do abrigo pela trilha para explorar a floresta. A aproximação das waystones
-as ativa. Derrotar um inimigo concede ouro e uma cópia da espada da floresta;
+as ativa. Derrotar um inimigo concede ouro e deixa sua arma no chão.
+Aproxime-se para coletar; inventário cheio mantém o drop no mundo. Há inimigos
+comuns, um explorador leve e um adversário blindado, com ataques diferentes;
 o inimigo reaparece após 25 segundos. A preparação do ataque inimigo muda sua
 cor para amarelo. Ataques recebidos ou causados impedem viagem por seis segundos.
 No abrigo, a vida se recupera. Na morte, perde-se 15% do ouro, arredondado para
@@ -42,6 +44,7 @@ Abrir o executável inicia um mundo novo; use F9 para restaurar o save.
 - `world.sl`: composição do abrigo/floresta e posicionamento de conteúdo.
 - `exploration.sl`: descoberta, viagem, combate recente e morte.
 - `combat.sl`: ataques, IA, recompensas e poses rígidas.
+- `loot.sl`: itens persistentes no chão e coleta por proximidade.
 - `interface.sl`: input, HUD, mapa e seleção de equipamento.
 - `persistence.sl`: schema de estado, validação e restauração de referências.
 - `main.sl`: montagem e eventos do pacote.
@@ -54,12 +57,13 @@ desativá-lo. Seus arquivos-fonte e o pacote oficial ficam separados.
 ## Limites atuais
 
 É um protótipo jogável, não a Etapa 13 completa. O conteúdo oficial tem três
-waystones, hub/floresta pequenos, três inimigos do mesmo tipo, duas definições
-de espada e um slot equipado. Regiões/destinos/armas são extensíveis por mods.
+waystones, hub/floresta pequenos, cinco inimigos de três tipos, quatro definições
+de arma e um slot equipado. Regiões/destinos/armas são extensíveis por mods.
 Cada cópia possui UID, nível, raridade e atributos persistidos; não há sorteio
 de atributos, armaduras, catálogo amplo, streaming ou campanha. O limite
 atual é 256 instâncias e 63 waystones no catálogo. Saves antigos são migrados.
 Os modelos/cenários, poses procedurais e painel de texto são provisórios.
 O importador continua sem skinning/clips glTF; a pose rígida opera sobre partes
 nomeadas. Ainda não há sombras, partículas completas ou medição de desempenho
-representativa de muitos mods. Contratos: `docs/23-PLAYABLE-SLICE.md` e `docs/24-EQUIPMENT-AND-WORLD-CONTENT.md`.
+representativa de muitos mods. Contratos: `docs/23-PLAYABLE-SLICE.md`, `docs/24-EQUIPMENT-AND-WORLD-CONTENT.md`
+e `docs/25-COMBATANTS-LOOT-AND-RUNTIME-CACHES.md`.

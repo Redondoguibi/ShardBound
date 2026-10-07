@@ -34,7 +34,7 @@ func resolve_attack():
     if get_velocity(hero).y < 0 and not is_grounded(hero):
         amount = amount * 1.7
         notice = "Critico de queda: 1,7x!"
-    for foe in get_entities("adventure:Enemy"):
+    for foe in get_entities_with(Sentinel):
         if health(foe) > 0:
             toward = direction(hero.position, foe.position)
             dot = toward.x * state.aim.x + toward.z * state.aim.z
@@ -47,18 +47,23 @@ func resolve_attack():
 func defeat_enemy(foe, brain):
     brain.dead = true
     brain.winding = false
-    brain.timer = 25
+    spec = get_definition("Entities", entity_definition(foe))
+    brain.timer = spec.respawn
     look = get_entity_by_key(brain.visual)
     look.active = false
+    where = vec3(foe.position.x, 0, foe.position.z)
     teleport(foe, vec3(brain.home.x, -20, brain.home.z))
-    state.gold = state.gold + get_definition("Entities", Enemy).reward
-    give_item(hero, ForestSword, 1)
-    sync_equipment()
-    notice = "Equipamento encontrado! I: inventario, Q: selecionar, E: equipar."
+    set_velocity(foe, vec3(0, 0, 0))
+    ? Commit defeat before extension content can fail while creating a drop.
+    set_component(foe, Sentinel, brain)
+    state.gold = state.gold + spec.reward
+    for item in spec.drops:
+        drop_item(item, where)
+    notice = "Inimigo derrotado. Ouro recebido; loot no chao."
 
 func enemy_tick(foe, delta):
     brain = get_component(foe, Sentinel)
-    spec = get_definition("Entities", Enemy)
+    spec = get_definition("Entities", entity_definition(foe))
     look = get_entity_by_key(brain.visual)
     brain.timer = countdown(brain.timer, delta)
     brain.flash = countdown(brain.flash, delta)
@@ -74,14 +79,14 @@ func enemy_tick(foe, delta):
             defeat_enemy(foe, brain)
         else:
             gap = distance_xz(foe.position, hero.position)
-            can_chase = not in_safe_region() and gap < 8 and health(hero) > 0
+            can_chase = not in_safe_region() and gap < spec.aggro and health(hero) > 0
             speed = 0
             heading = direction(foe.position, brain.home)
             if can_chase:
                 heading = direction(foe.position, hero.position)
-                if gap > 1.35 and not brain.winding:
+                if gap > spec.stop and not brain.winding:
                     speed = spec.speed
-                if gap <= 1.65 and brain.timer == 0 and not brain.winding:
+                if gap <= spec.trigger and brain.timer == 0 and not brain.winding:
                     brain.winding = true
                     brain.timer = spec.windup
             else:
@@ -89,7 +94,7 @@ func enemy_tick(foe, delta):
                 if distance_xz(foe.position, brain.home) > 0.25:
                     speed = spec.speed
             if brain.winding and brain.timer == 0:
-                if can_chase and gap < 1.9 and line_of_sight(foe, hero):
+                if can_chase and gap < spec.reach and line_of_sight(foe, hero):
                     damage_from(foe, hero, spec.damage)
                     play_sound("core:hit")
                 brain.winding = false
@@ -97,7 +102,7 @@ func enemy_tick(foe, delta):
             if brain.winding:
                 set_tint(look, vec3(1, 0.75, 0.25))
             else:
-                set_tint(look, vec3(0.9, 0.45, 0.45))
+                set_tint(look, spec.tint)
             if brain.flash > 0:
                 set_tint(look, vec3(1, 1, 1))
             vertical = get_velocity(foe).y
@@ -113,8 +118,9 @@ func combat_tick(delta):
             resolve_attack()
         state.winding = false
         state.attack = state.swing.recovery
-    for foe in get_entities("adventure:Enemy"):
+    for foe in get_entities_with(Sentinel):
         enemy_tick(foe, delta)
+    collect_loot()
     respawn_if_dead()
 
 func animate_rig(look, speed, attacking):
@@ -147,9 +153,10 @@ func animate_hero(delta):
         if speed < 0.1:
             arm = 0
     pose_part(avatar, "RightArm", vec3(0.25, 1.375, 0), vec3(arm, 0, 0))
-    ? The authored blade begins at Y=14. Anchor Y=14.5 in the hand.
+    ? Grip and scale belong to the equipped content definition.
     angle = arm + 3.141592654
-    grip = 14.5 * 0.075
+    visual = weapon_definition()
+    grip = visual.grip * visual.visual_scale.y
     hand_y = 1.375 - 0.625 * math_sin(arm + 1.570796327)
     hand_z = -0.625 * math_sin(arm)
     blade.position = vec3(0.375, hand_y - grip * math_sin(angle + 1.570796327), hand_z - grip * math_sin(angle))

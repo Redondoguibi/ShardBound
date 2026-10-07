@@ -4,6 +4,7 @@ import "regions.sl"
 import "world.sl"
 import "combat_visuals.sl"
 import "exploration.sl"
+import "loot.sl"
 import "combat.sl"
 import "interface.sl"
 import "persistence.sl"
@@ -19,6 +20,7 @@ on_start():
     state.grove = false
     state.discoveries = []
     state.built_regions = []
+    state.encounters = []
     state.equipped = "adventure:IronSword"
     state.equipment_schema = 1
     state.items = []

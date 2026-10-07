@@ -1,3 +1,10 @@
+func encounter(key, definition, where):
+    entry = record()
+    entry.key = key
+    entry.definition = definition
+    entry.position = where
+    return entry
+
 @Regions
 region Hub:
     .name = "ABRIGO"
@@ -9,6 +16,7 @@ region Hub:
     .trees = []
     .shelters = [vec3(-7, 0, -3), vec3(7, 0, -3), vec3(-7, 0, 4)]
     .enemies = []
+    .encounters = []
 region Forest:
     .name = "FLORESTA"
     .priority = 0
@@ -19,6 +27,7 @@ region Forest:
     .trees = [vec3(-13, 0, 10), vec3(-8, 0, 10), vec3(8, 0, 10), vec3(13, 0, 10), vec3(-13, 0, 17), vec3(-8, 0, 17), vec3(8, 0, 17), vec3(13, 0, 17), vec3(-13, 0, 24), vec3(-8, 0, 24), vec3(8, 0, 24), vec3(13, 0, 24), vec3(-13, 0, 32), vec3(-8, 0, 32), vec3(8, 0, 32), vec3(13, 0, 32), vec3(-13, 0, 39), vec3(-8, 0, 39), vec3(8, 0, 39), vec3(13, 0, 39)]
     .shelters = []
     .enemies = [vec3(2, 1, 14), vec3(-3, 1, 26), vec3(4, 1, 31)]
+    .encounters = [encounter("adventure:ScoutWest", "adventure:Scout", vec3(-5, 0, 18)), encounter("adventure:BruteEast", "adventure:Brute", vec3(5, 0, 28))]
 
 @Waystones
 waystone Hub:
@@ -49,10 +58,33 @@ world Main:
     .respawn = vec3(0, 1.1, 0)
 
 @Globals
+catalog_revision = -1
+region_catalog = []
+destination_catalog = []
+
+func refresh_world_catalogs():
+    revision = registry_revision()
+    if catalog_revision == revision:
+        return
+    region_catalog = get_definitions("Regions")
+    destination_catalog = []
+    ? Preserve the original three shortcuts, then append all mod destinations.
+    for id in ["adventure:Hub", "adventure:Forest", "adventure:Grove"]:
+        if definition_exists("Waystones", id):
+            entry = record()
+            entry.id = id
+            entry.data = get_definition("Waystones", id)
+            list_append(destination_catalog, entry)
+    for entry in get_definitions("Waystones"):
+        if entry.id != "adventure:Hub" and entry.id != "adventure:Forest" and entry.id != "adventure:Grove":
+            list_append(destination_catalog, entry)
+    catalog_revision = revision
+
 func current_region():
+    refresh_world_catalogs()
     found = null
     priority = -1000000
-    for region in get_definitions("Regions"):
+    for region in region_catalog:
         spec = region.data
         if hero.position.x >= spec.min.x and hero.position.x <= spec.max.x and hero.position.z >= spec.min.z and hero.position.z <= spec.max.z:
             if spec.priority > priority:
@@ -81,21 +113,12 @@ func discovered(id):
     return false
 
 func destination_list():
-    ? Preserve the original three shortcuts, then append all mod destinations.
-    result = []
-    for id in ["adventure:Hub", "adventure:Forest", "adventure:Grove"]:
-        if definition_exists("Waystones", id):
-            entry = record()
-            entry.id = id
-            entry.data = get_definition("Waystones", id)
-            list_append(result, entry)
-    for entry in get_definitions("Waystones"):
-        if entry.id != "adventure:Hub" and entry.id != "adventure:Forest" and entry.id != "adventure:Grove":
-            list_append(result, entry)
-    return result
+    refresh_world_catalogs()
+    return destination_catalog
 
 func validate_world_content():
-    stones = get_definitions("Waystones")
+    refresh_world_catalogs()
+    stones = destination_catalog
     if list_count(stones) > 63:
         script_error("At most 63 waystones are supported by this map")
     for entry in stones:
@@ -105,10 +128,20 @@ func validate_world_content():
         for other in stones:
             if entry.id != other.id and spec.label == other.data.label:
                 script_error("Waystone entity labels must be unique")
-    regions = get_definitions("Regions")
+    regions = region_catalog
     if list_count(regions) > 256:
         script_error("At most 256 regions are supported")
+    encounter_keys = []
     for entry in regions:
         spec = entry.data
         if spec.min.x >= spec.max.x or spec.min.z >= spec.max.z:
             script_error("Invalid region bounds")
+        if record_has(spec, "encounters"):
+            for entry in spec.encounters:
+                if text_length(entry.key) == 0 or text_length(entry.key) > 128 or not definition_exists("Entities", entry.definition):
+                    script_error("Invalid encounter identity or definition")
+                if list_contains(encounter_keys, entry.key):
+                    script_error("Encounter keys must be unique across regions")
+                list_append(encounter_keys, entry.key)
+    if list_count(encounter_keys) > 256:
+        script_error("At most 256 keyed encounters are supported")

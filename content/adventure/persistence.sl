@@ -35,6 +35,14 @@ on_validate_load(saved):
         for id in data.built_regions:
             if text_length(id) == 0 or text_length(id) > 128:
                 script_error("Invalid saved region identity")
+    if record_has(data, "encounters"):
+        if list_count(data.encounters) > 256:
+            script_error("Too many saved encounters")
+        seen = []
+        for key in data.encounters:
+            if text_length(key) == 0 or text_length(key) > 128 or list_contains(seen, key):
+                script_error("Invalid or duplicate saved encounter")
+            list_append(seen, key)
 
 on_before_save():
     ensure_equipment()
@@ -65,11 +73,16 @@ on_loaded():
         discovery("adventure:Grove").active = state.grove
     if not record_has(state, "built_regions"):
         state.built_regions = ["adventure:Hub", "adventure:Forest"]
+    if not record_has(state, "encounters"):
+        state.encounters = []
     sync_world_content()
     build_combat_visuals()
     ensure_equipment()
     if equipped_item() != null:
-        set_tint(blade, weapon_definition().tint)
+        spec = weapon_definition()
+        set_model(blade, spec.model)
+        set_scale(blade, spec.visual_scale)
+        set_tint(blade, spec.tint)
     selected_item = 0
     selected_destination = 0
     map_open = false
