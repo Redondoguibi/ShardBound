@@ -4,6 +4,8 @@
 #include "game/InteractionSystem.h"
 #include "core/Log.h"
 #include <cmath>
+#include <algorithm>
+#include <DirectXMath.h>
 #include <limits>
 #include <sstream>
 #include <iomanip>
@@ -103,6 +105,37 @@ void bindGameplayApi(script::Runtime& runtime,World& world,PhysicsSystem& physic
     runtime.bind("action_held",native([&](const auto& a,const auto& at) {
         arity(a,1,at); return Value(input.held(a[0].string(at)));
     }));
+    runtime.bind("pointer_position",native([&](const auto& a,const auto& at) {
+        arity(a,0,at); const float scale=std::min(input.width()/1280.0f,input.height()/720.0f);
+        const float x=(input.mouseX()-(input.width()-1280*scale)/2)/scale,y=(input.mouseY()-(input.height()-720*scale)/2)/scale;
+        auto out=object(); out.setMember("x",Value(double(x)),at); out.setMember("y",Value(double(y)),at);
+        out.setMember("valid",Value(input.hasPointer() && x>=0 && y>=0 && x<1280 && y<720),at); return out;
+    }));
+    const auto cameraMatrix=[&]() {
+        using namespace DirectX; const auto c=player.camera();
+        return XMMatrixLookAtLH(XMVectorSet(c.eye.x,c.eye.y,c.eye.z,1),XMVectorSet(c.target.x,c.target.y,c.target.z,1),XMVectorSet(0,1,0,0))*
+            XMMatrixPerspectiveFovLH(c.fov,float(input.width())/input.height(),c.nearPlane,c.farPlane);
+    };
+    runtime.bind("aim_position",native([&,cameraMatrix](const auto& a,const auto& at) {
+        arity(a,0,at); if(!input.hasPointer() || !player.entity()) return Value{};
+        using namespace DirectX; const auto inverse=XMMatrixInverse(nullptr,cameraMatrix());
+        const float x=2*input.mouseX()/input.width()-1,y=1-2*input.mouseY()/input.height();
+        XMFLOAT3 nearPoint,farPoint; XMStoreFloat3(&nearPoint,XMVector3TransformCoord(XMVectorSet(x,y,0,1),inverse)); XMStoreFloat3(&farPoint,XMVector3TransformCoord(XMVectorSet(x,y,1,1),inverse));
+        const auto plane=world.get<TransformComponent>(player.entity()).local.position.y;
+        const float dy=farPoint.y-nearPoint.y; if(std::abs(dy)<.0001f) return Value{};
+        const float t=(plane-nearPoint.y)/dy; if(t<0 || t>1) return Value{};
+        auto out=object(); out.setMember("x",Value(double(nearPoint.x+t*(farPoint.x-nearPoint.x))),at); out.setMember("y",Value(double(plane)),at); out.setMember("z",Value(double(nearPoint.z+t*(farPoint.z-nearPoint.z))),at); return out;
+    }));
+    runtime.bind("screen_position",native([&,cameraMatrix](const auto& a,const auto& at) {
+        arity(a,1,at); using namespace DirectX; const auto v=vector(a[0],at);
+        XMFLOAT4 clip; XMStoreFloat4(&clip,XMVector4Transform(XMVectorSet(v.x,v.y,v.z,1),cameraMatrix()));
+        auto out=object(); const bool visible=clip.w>0 && clip.z>=0 && clip.z<=clip.w && std::abs(clip.x)<=clip.w && std::abs(clip.y)<=clip.w;
+        const float w=clip.w==0 ? 1 : clip.w,scale=std::min(input.width()/1280.0f,input.height()/720.0f);
+        out.setMember("x",Value(double(((clip.x/w*.5f+.5f)*input.width()-(input.width()-1280*scale)/2)/scale)),at);
+        out.setMember("y",Value(double(((-clip.y/w*.5f+.5f)*input.height()-(input.height()-720*scale)/2)/scale)),at);
+        out.setMember("visible",Value(visible),at); return out;
+    }));
+    runtime.bind("audio_volume",native([&](const auto& a,const auto& at) { arity(a,1,at); audio.setVolume(number(a[0],at)); return Value{}; }));
     runtime.bind("play_sound",native([&](const auto& a,const auto& at) {
         arity(a,1,at); const auto sound=assets.sound(AssetId(a[0].string(at))); audio.play(sound.source,sound.streaming); return Value{};
     }));

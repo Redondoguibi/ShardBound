@@ -23,6 +23,10 @@ public:
     float moveX() const;
     float moveY() const;
     void keyboardMovementOnly(bool value) { keyboardOnly_=value; }
+    void setViewport(int width,int height);
+    int width() const { return width_; }
+    int height() const { return height_; }
+    bool hasPointer() const { return pointer_ && focused_; }
     float mouseX() const { return mouseX_; }
     float mouseY() const { return mouseY_; }
 private:
@@ -37,5 +41,7 @@ private:
     bool focused_ = true;
     bool keyboardOnly_ = false;
     float mouseX_ = 0, mouseY_ = 0;
+    int width_=1280,height_=720;
+    bool pointer_=false;
 };
 }

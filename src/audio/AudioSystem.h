@@ -9,6 +9,7 @@ public:
     ~AudioSystem();
     void play(const std::filesystem::path& file,bool streaming=false);
     void update();
+    void setVolume(float volume);
     std::vector<float> mix(unsigned frames);
     bool offline() const;
 private:

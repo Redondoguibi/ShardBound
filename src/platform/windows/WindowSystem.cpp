@@ -58,6 +58,10 @@ int WindowSystem::width() const { return impl_->width; }
 int WindowSystem::height() const { return impl_->height; }
 std::vector<Event> WindowSystem::pollEvents() {
     std::vector<Event> result;
+    int logicalWidth=1,logicalHeight=1; SDL_GetWindowSize(impl_->window,&logicalWidth,&logicalHeight);
+    int pixelWidth=1,pixelHeight=1; SDL_GetWindowSizeInPixels(impl_->window,&pixelWidth,&pixelHeight);
+    const float pixelX=logicalWidth>0 ? float(pixelWidth)/logicalWidth : 1;
+    const float pixelY=logicalHeight>0 ? float(pixelHeight)/logicalHeight : 1;
     SDL_Event raw;
     while (SDL_PollEvent(&raw)) {
         Event e;
@@ -73,9 +77,10 @@ std::vector<Event> WindowSystem::pollEvents() {
             if (raw.key.repeat) continue;
             e.type = raw.type == SDL_EVENT_KEY_DOWN ? EventType::KeyDown : EventType::KeyUp;
             e.key = keyFrom(raw.key.scancode); break;
-        case SDL_EVENT_MOUSE_MOTION: e.type = EventType::MouseMove; e.x = raw.motion.x; e.y = raw.motion.y; break;
+        case SDL_EVENT_MOUSE_MOTION: e.type = EventType::MouseMove; e.x = raw.motion.x*pixelX; e.y = raw.motion.y*pixelY; break;
         case SDL_EVENT_MOUSE_BUTTON_DOWN: case SDL_EVENT_MOUSE_BUTTON_UP:
             e.type = raw.type == SDL_EVENT_MOUSE_BUTTON_DOWN ? EventType::MouseDown : EventType::MouseUp;
+            { Event pointer; pointer.type=EventType::MouseMove; pointer.x=raw.button.x*pixelX; pointer.y=raw.button.y*pixelY; result.push_back(pointer); }
             e.mouse = mouseFrom(raw.button.button); break;
         case SDL_EVENT_GAMEPAD_ADDED: {
             auto* pad = SDL_OpenGamepad(raw.gdevice.which);

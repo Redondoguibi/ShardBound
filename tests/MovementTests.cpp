@@ -13,14 +13,22 @@ int main() {
         for(int i=0;i<30;++i) physics.step(1.0f/60);
         require(physics.grounded(actor),"Standing actor is not grounded");
         player.move(1,1); auto v=physics.velocity(actor); require(std::abs(std::hypot(v.x,v.z)-4)<.001f,"Diagonal speed differs");
+        player.updateCamera(1.0f/60); const auto cameraY=player.camera().target.y;
         require(player.jump(6),"Grounded jump rejected"); require(!player.jump(6),"Immediate double jump accepted");
         float peak=0; bool falling=false;
         for(int i=0;i<120;++i) {
             player.move(0,0); physics.step(1.0f/60); auto p=world.get<TransformComponent>(actor).local.position;
+            player.updateCamera(1.0f/60);
+            if(p.y>1.2f && !physics.grounded(actor)) require(std::abs(player.camera().target.y-cameraY)<.01f,"Camera follows jump height abruptly");
             peak=std::max(peak,p.y); falling|=physics.velocity(actor).y<-.1f && !physics.grounded(actor);
             if(i==30) require(!player.jump(6),"Air jump accepted");
         }
         require(peak>2.4f && falling && physics.grounded(actor),"Jump did not rise, fall and land");
+        physics.teleport(actor,{2,1,0}); player.updateCamera(1.0f/60);
+        require(player.camera().target.x>0 && player.camera().target.x<2,"Camera did not smooth lateral movement");
+        physics.teleport(actor,{30,1,0}); player.updateCamera(1.0f/60);
+        require(player.camera().target.x==30,"Camera did not snap after distant travel");
+        physics.teleport(actor,{0,1,0});
         player.setEnabled(false); require(!player.jump(6),"Disabled jump accepted"); player.move(1,0); require(physics.velocity(actor).x==0,"Disabled actor moves"); player.setEnabled(true);
         world.add(actor,HealthComponent{0,100}); require(!player.jump(6),"Dead actor jumps"); world.get<HealthComponent>(actor).current=100;
         physics.teleport(actor,{0,6,0}); require(!physics.grounded(actor) && physics.velocity(actor).y==0,"Teleport retained support/velocity");

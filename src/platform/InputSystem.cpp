@@ -24,6 +24,7 @@ void InputSystem::set(Button& button, bool down) {
     (down ? button.pressed : button.released) = true;
 }
 void InputSystem::process(const Event& e) {
+    if(e.type==EventType::Resized) setViewport(e.width,e.height);
     if (e.type == EventType::FocusLost) {
         focused_ = false;
         for (auto& b : keys_) set(b, false);
@@ -35,11 +36,12 @@ void InputSystem::process(const Event& e) {
     else if (focused_) {
         if (e.type == EventType::KeyDown || e.type == EventType::KeyUp) set(keys_.at(static_cast<size_t>(e.key)), e.type == EventType::KeyDown);
         if (e.type == EventType::MouseDown || e.type == EventType::MouseUp) set(mouse_.at(static_cast<size_t>(e.mouse)), e.type == EventType::MouseDown);
-        if (e.type == EventType::MouseMove) { mouseX_ = e.x; mouseY_ = e.y; }
+        if (e.type == EventType::MouseMove) { mouseX_ = e.x; mouseY_ = e.y; pointer_=true; }
         if (e.type == EventType::PadDown || e.type == EventType::PadUp) set(pads_[e.device].buttons.at(static_cast<size_t>(e.pad)), e.type == EventType::PadDown);
         if (e.type == EventType::PadAxis) { pads_[e.device].x = e.x; pads_[e.device].y = e.y; }
     }
 }
+void InputSystem::setViewport(int width,int height) { if(width>0 && height>0) { width_=width; height_=height; } }
 void InputSystem::bind(std::string action, std::vector<InputBinding> bindings) { bindings_.insert_or_assign(std::move(action), std::move(bindings)); }
 bool InputSystem::query(std::string_view action, bool Button::* field) const {
     const auto it = bindings_.find(action);

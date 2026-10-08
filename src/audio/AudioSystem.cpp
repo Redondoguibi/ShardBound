@@ -1,5 +1,6 @@
 #include "audio/AudioSystem.h"
 #include "core/Diagnostic.h"
+#include <cmath>
 #define MINIAUDIO_IMPLEMENTATION
 #include <miniaudio.h>
 namespace game {
@@ -23,6 +24,10 @@ void AudioSystem::play(const std::filesystem::path& file,bool streaming) {
     sound->initialized=true;
     if(ma_sound_start(&sound->value)!=MA_SUCCESS) throw DiagnosticError({"AUDIO103","Cannot start sound",file.string()});
     impl_->sounds.push_back(std::move(sound));
+}
+void AudioSystem::setVolume(float volume) {
+    if(!std::isfinite(volume) || volume<0 || volume>1) throw DiagnosticError({"AUDIO106","Volume must be in [0,1]"});
+    ma_engine_set_volume(&impl_->engine,volume);
 }
 void AudioSystem::update() { std::erase_if(impl_->sounds,[](const auto& sound) { return ma_sound_at_end(&sound->value)!=0; }); }
 std::vector<float> AudioSystem::mix(unsigned frames) {

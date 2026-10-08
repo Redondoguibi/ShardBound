@@ -47,6 +47,7 @@ bool Application::initialize() {
     LOG_INFO("CORE", "Application starting");
     window_ = std::make_unique<WindowSystem>(windowConfig_);
     renderer_ = std::make_unique<Renderer>(window_->nativeHandle(),window_->width(),window_->height(),root_ / "assets/core/shaders/forward.hlsl", renderConfig_);
+    input_.setViewport(window_->width(),window_->height());
     vfs_.mount("core",root_ / "assets/core");
     assets_ = std::make_unique<AssetManager>(vfs_,*renderer_,root_ / "user/cache");
     registerCoreModels(*assets_);
@@ -91,6 +92,7 @@ bool Application::initialize() {
     saves_->setMods(std::move(versions));
     for(const auto& diagnostic:scripting_->emit("on_start")) LOG_ERROR("SCRIPT",DiagnosticError(diagnostic).what());
     for(const auto& diagnostic:extensions_->process()) LOG_WARN("SAVE",DiagnosticError(diagnostic).what());
+    for(const auto& diagnostic:scripting_->emit("on_ready")) LOG_ERROR("SCRIPT",DiagnosticError(diagnostic).what());
     initialized_ = true;
     LOG_INFO("CORE", "Runtime initialized");
     return true;
@@ -106,10 +108,11 @@ void Application::run() {
             if (event.type == EventType::Closed) loop_.stop();
             if (event.type == EventType::Resized) renderer_->resize(event.width,event.height);
         }
-        if (input_.pressed("Quit")) loop_.stop();
+        if (input_.pressed("Quit") && !ui_->handlesPause()) loop_.stop();
     };
     callbacks.suspended = [&] { return window_->minimized(); };
     callbacks.fixedUpdate=[&](double delta) {
+        if(ui_->paused()) return;
         for(const auto& d:scripting_->emit("on_fixed_update",{script::Value(delta)})) LOG_ERROR("SCRIPT",DiagnosticError(d).what());
         player_->move(input_.moveX(),input_.moveY());
         physics_->step(static_cast<float>(delta));
@@ -119,6 +122,8 @@ void Application::run() {
         for(const auto& d:extensions_->process()) LOG_WARN("SAVE",DiagnosticError(d).what());
         if(audio_->offline()) (void)audio_->mix(static_cast<unsigned>(delta*48000));
         audio_->update();
+        if(!ui_->paused()) player_->updateCamera(static_cast<float>(delta));
+        if(ui_->quitRequested()) loop_.stop();
     };
     callbacks.render = [&](double) {
         const auto items=collectRenderItems(*world_);
