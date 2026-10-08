@@ -4,6 +4,8 @@
 #include <fstream>
 #include <set>
 #include <cmath>
+#include <thread>
+#include <chrono>
 namespace game {
 namespace {
 using Json=nlohmann::json;
@@ -73,7 +75,14 @@ void SaveGame::save(const std::string& slot) {
         const auto temp=file.wstring()+L".tmp",backup=file.wstring()+L".bak";
         { std::ofstream out(temp,std::ios::binary|std::ios::trunc); out.write(text.data(),static_cast<std::streamsize>(text.size())); out.flush(); if(!out) throw std::runtime_error("Cannot write save"); }
         if(std::filesystem::exists(file)) {
-            if(!ReplaceFileW(file.c_str(),temp.c_str(),backup.c_str(),0,nullptr,nullptr)) throw std::runtime_error("Cannot atomically replace save");
+            // Indexers can briefly hold a file without delete sharing. Never remove the live save.
+            for(unsigned attempt=0;;++attempt) {
+                if(ReplaceFileW(file.c_str(),temp.c_str(),backup.c_str(),0,nullptr,nullptr)) break;
+                const auto error=GetLastError();
+                if(attempt==4 || (error!=ERROR_SHARING_VIOLATION && error!=ERROR_LOCK_VIOLATION))
+                    throw std::runtime_error("Cannot atomically replace save (Windows error "+std::to_string(error)+")");
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            }
         } else if(!MoveFileExW(temp.c_str(),file.c_str(),MOVEFILE_WRITE_THROUGH)) throw std::runtime_error("Cannot publish save");
     } catch(const std::exception& e) { throw DiagnosticError({"SAVE103",e.what(),file.string()}); }
 }

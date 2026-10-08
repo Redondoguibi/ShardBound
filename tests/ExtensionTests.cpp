@@ -4,6 +4,7 @@
 #include "extensions/NativeMods.h"
 #include "platform/WindowSystem.h"
 #include <fstream>
+#include <Windows.h>
 #include <iostream>
 #include <stdexcept>
 using namespace game;
@@ -71,6 +72,15 @@ on_before_save():
         runtime.execute("test","save_game(\"roundtrip\")\n"); require(extension.process().empty(),"Queued save failed");
         require(std::get<double>(std::get<Data::Object>(saves.state("test").value).at("checkpoint").value)==7,"Save hook did not write module state");
         saves.save("roundtrip"); saves.save("roundtrip"); require(std::filesystem::exists("user/extensions/saves/roundtrip.json.bak"),"Backup not retained");
+        // A sharing conflict must preserve the last complete file and allow a later save.
+        const auto beforeLock=encodeData(SaveGame::inspect("user/extensions/saves/roundtrip.json"));
+        const auto locked=CreateFileW(L"user/extensions/saves/roundtrip.json",GENERIC_READ,FILE_SHARE_READ,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr);
+        require(locked!=INVALID_HANDLE_VALUE,"Could not create save sharing-conflict fixture");
+        bool lockedRejected=false;
+        try { saves.save("roundtrip"); } catch(const DiagnosticError& error) { lockedRejected=error.diagnostic.code=="SAVE103"; }
+        CloseHandle(locked);
+        require(lockedRejected && beforeLock==encodeData(SaveGame::inspect("user/extensions/saves/roundtrip.json")),"Failed save damaged the live file");
+        saves.save("roundtrip");
         saves.setMods({{"test","2.0.0"}});
         runtime.execute("test","load_game(\"roundtrip\")\n"); auto diagnostics=extension.process();
         require(!diagnostics.empty() && runtime.global("test","loaded").number()==1,"Missing mod warning or load event absent");
