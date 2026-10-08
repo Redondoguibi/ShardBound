@@ -24,3 +24,14 @@ As variantes leve/pesada usam escalas 0,03 e 0,065 deste mesmo modelo.
 
 Rig rígido e poses procedurais; nenhum skinning ou clip glTF está implícito.
 As fontes `.bbmodel` podem ser abertas e modificadas no formato Generic Model.
+
+## Revisão de apresentação (outubro de 2026)
+
+- `woodland_pine.bbmodel` / `.glb`: pinheiro autoral criado no Blockbench pelo
+  bridge, 11 cuboides, três texturas de 16×16; altura 6,3125 unidades após export.
+- `grass_block`, `earth_block`, `plaster_block`, `roof_block`, `stone_block`:
+  cubos unitários com texturas originais de 32×32, reproduzíveis por
+  `python tools/create-scenery-materials.py` (Pillow). PNGs em `textures/woodland`.
+  O gerador reutiliza somente a geometria original de `solid.glb`.
+- Os modelos originais de árvore e waystone continuam disponíveis. A composição
+  mistura árvores de copa e pinheiros e preserva os troncos de colisão.
