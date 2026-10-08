@@ -132,7 +132,7 @@ weapon LegacySword:
             renderer.render(Camera{{6,4,-14},{0,1,-6}},collectRenderItems(world),ui.texture()); auto pixels=renderer.readback();
             std::ofstream image("user/combat-content-preview.ppm",std::ios::binary); image<<"P6\n960 640\n255\n";
             for(size_t i=0;i<pixels.size();i+=4) image.write(reinterpret_cast<const char*>(pixels.data()+i),3);
-            require(renderer.stats().draws>100,"New art failed to render");
+            require(renderer.stats().instances>50 && renderer.stats().triangles>600,"New art failed to render");
             std::cout<<"Preview draws="<<renderer.stats().draws<<" render_cpu_ms="<<renderer.stats().cpuMilliseconds<<"\n";
         }
         std::cout<<"Combat variants, ground loot, saves, reconciliation and caches verified\n"; return 0;

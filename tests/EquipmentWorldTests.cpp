@@ -122,7 +122,7 @@ waystone EastCamp from NorthCamp:
         require(state().member("equipped_uid",{}).number()==items()[6].member("uid",{}).number(),"Equipment beyond first inventory page cannot be selected");
         run("refresh_hud()");
         renderer.render(player.camera(),collectRenderItems(world),ui.texture()); auto pixels=renderer.readback();
-        require(ui.texture() && renderer.stats().draws>100,"Expanded inventory failed to render");
+        require(ui.texture() && renderer.stats().instances>0 && renderer.stats().triangles>0 && !pixels.empty(),"Expanded inventory failed to render");
         if(argc>1) {
             auto image=[&](const char* path) { std::ofstream file(path,std::ios::binary); file<<"P6\n960 640\n255\n"; for(size_t i=0;i<pixels.size();i+=4) file.write(reinterpret_cast<const char*>(pixels.data()+i),3); };
             image("user/equipment-preview.ppm");

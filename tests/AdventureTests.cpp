@@ -113,7 +113,7 @@ int main(int argc,char**) {
         run("notice = \"Explore a floresta ao norte.\"\nfacing = vec3(0, 0, -1)\nrefresh_hud()");
         emit("on_update",{script::Value(.016)});
         renderer.render(player.camera(),collectRenderItems(world),ui.texture()); auto pixels=renderer.readback();
-        require(renderer.stats().draws>100 && ui.texture(),"World/UI not rendered");
+        require(renderer.stats().instances>50 && renderer.stats().triangles>600 && ui.texture(),"World/UI not rendered");
         if(argc>1) {
             std::ofstream image("user/adventure-preview.ppm",std::ios::binary); image<<"P6\n960 640\n255\n";
             for(size_t i=0;i<pixels.size();i+=4) image.write(reinterpret_cast<const char*>(pixels.data()+i),3);

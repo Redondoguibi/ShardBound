@@ -9,9 +9,11 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <map>
+#include <tuple>
 namespace game {
 using namespace d3d;
-struct MeshResource { ComPtr<ID3D11Buffer> vertices, indices; UINT count = 0; };
+struct MeshResource { ComPtr<ID3D11Buffer> vertices, indices; UINT count = 0; Vec3 center; float radius=0; };
 struct TextureResource { ComPtr<ID3D11ShaderResourceView> view; ComPtr<ID3D11SamplerState> sampler; };
 struct Renderer::Impl {
     ComPtr<ID3D11Device> device;
@@ -22,9 +24,17 @@ struct Renderer::Impl {
     ComPtr<ID3D11ShaderResourceView> targetView;
     ComPtr<ID3D11DepthStencilView> depth;
     ComPtr<ID3D11VertexShader> vertexShader, screenVertex;
-    ComPtr<ID3D11PixelShader> pixelShader, screenPixel;
+    ComPtr<ID3D11PixelShader> pixelShader, screenPixel, shadowPixel;
     ComPtr<ID3D11InputLayout> layout;
-    ComPtr<ID3D11Buffer> constants;
+    ComPtr<ID3D11Buffer> constants, instances;
+    UINT instanceCapacity=0;
+    ComPtr<ID3D11DepthStencilView> shadowDepth;
+    ComPtr<ID3D11ShaderResourceView> shadowView;
+    ComPtr<ID3D11SamplerState> shadowSampler;
+    ComPtr<ID3D11RasterizerState> shadowRaster;
+    ComPtr<ID3D11BlendState> overlayBlend;
+    Environment environment;
+    bool canvasOverlay=false;
     ComPtr<ID3D11RasterizerState> raster, rasterDoubleMirrored, rasterBack, rasterMirrored;
     ComPtr<ID3D11SamplerState> screenSampler;
     TextureHandle white;
@@ -96,15 +106,21 @@ Renderer::Renderer(void* nativeWindow, int width, int height, const std::filesys
     auto vs = compile("vertexMain", "vs_5_0"), ps = compile("pixelMain", "ps_5_0");
     check(p.device->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, &p.vertexShader), "vertex shader");
     check(p.device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, &p.pixelShader), "pixel shader");
-    D3D11_INPUT_ELEMENT_DESC layout[] = {
+    std::vector<D3D11_INPUT_ELEMENT_DESC> layout{
         {"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0},
         {"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,12,D3D11_INPUT_PER_VERTEX_DATA,0},
         {"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,24,D3D11_INPUT_PER_VERTEX_DATA,0}};
-    check(p.device->CreateInputLayout(layout, 3, vs->GetBufferPointer(), vs->GetBufferSize(), &p.layout), "input layout");
+    for(UINT row=0;row<4;++row) layout.push_back({"WORLD",row,DXGI_FORMAT_R32G32B32A32_FLOAT,1,row*16,D3D11_INPUT_PER_INSTANCE_DATA,1});
+    for(UINT row=0;row<4;++row) layout.push_back({"INORMAL",row,DXGI_FORMAT_R32G32B32A32_FLOAT,1,64+row*16,D3D11_INPUT_PER_INSTANCE_DATA,1});
+    layout.push_back({"COLOR",0,DXGI_FORMAT_R32G32B32A32_FLOAT,1,128,D3D11_INPUT_PER_INSTANCE_DATA,1});
+    layout.push_back({"PARAMS",0,DXGI_FORMAT_R32G32B32A32_FLOAT,1,144,D3D11_INPUT_PER_INSTANCE_DATA,1});
+    check(p.device->CreateInputLayout(layout.data(),UINT(layout.size()),vs->GetBufferPointer(),vs->GetBufferSize(),&p.layout),"instanced input layout");
+    ps=compile("shadowPixel","ps_5_0");
+    check(p.device->CreatePixelShader(ps->GetBufferPointer(),ps->GetBufferSize(),nullptr,&p.shadowPixel),"shadow pixel shader");
     vs = compile("screenVertex", "vs_5_0"); ps = compile("screenPixel", "ps_5_0");
     check(p.device->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, &p.screenVertex), "screen vertex shader");
     check(p.device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, &p.screenPixel), "screen pixel shader");
-    D3D11_BUFFER_DESC cb{}; cb.ByteWidth = 160; cb.Usage = D3D11_USAGE_DEFAULT; cb.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    D3D11_BUFFER_DESC cb{}; cb.ByteWidth = 224; cb.Usage = D3D11_USAGE_DEFAULT; cb.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     check(p.device->CreateBuffer(&cb, nullptr, &p.constants), "constant buffer");
     D3D11_RASTERIZER_DESC raster{}; raster.FillMode = D3D11_FILL_SOLID; raster.CullMode = D3D11_CULL_NONE; raster.DepthClipEnable = TRUE;
     raster.FrontCounterClockwise = FALSE;
@@ -118,6 +134,25 @@ Renderer::Renderer(void* nativeWindow, int width, int height, const std::filesys
     D3D11_SAMPLER_DESC sampler{}; sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sampler.AddressU = sampler.AddressV = sampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP; sampler.MaxLOD = D3D11_FLOAT32_MAX;
     check(p.device->CreateSamplerState(&sampler, &p.screenSampler), "screen sampler");
+    D3D11_TEXTURE2D_DESC shadow{}; shadow.Width=shadow.Height=2048; shadow.MipLevels=shadow.ArraySize=1;
+    shadow.Format=DXGI_FORMAT_R32_TYPELESS; shadow.SampleDesc.Count=1;
+    shadow.BindFlags=D3D11_BIND_DEPTH_STENCIL|D3D11_BIND_SHADER_RESOURCE;
+    ComPtr<ID3D11Texture2D> shadowTexture; check(p.device->CreateTexture2D(&shadow,nullptr,&shadowTexture),"shadow map");
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsv{}; dsv.Format=DXGI_FORMAT_D32_FLOAT; dsv.ViewDimension=D3D11_DSV_DIMENSION_TEXTURE2D;
+    check(p.device->CreateDepthStencilView(shadowTexture.Get(),&dsv,&p.shadowDepth),"shadow depth view");
+    D3D11_SHADER_RESOURCE_VIEW_DESC srv{}; srv.Format=DXGI_FORMAT_R32_FLOAT; srv.ViewDimension=D3D11_SRV_DIMENSION_TEXTURE2D; srv.Texture2D.MipLevels=1;
+    check(p.device->CreateShaderResourceView(shadowTexture.Get(),&srv,&p.shadowView),"shadow resource view");
+    sampler.Filter=D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT; sampler.ComparisonFunc=D3D11_COMPARISON_LESS_EQUAL;
+    sampler.AddressU=sampler.AddressV=sampler.AddressW=D3D11_TEXTURE_ADDRESS_BORDER;
+    std::fill_n(sampler.BorderColor,4,1.0f);
+    check(p.device->CreateSamplerState(&sampler,&p.shadowSampler),"shadow comparison sampler");
+    raster.CullMode=D3D11_CULL_NONE; raster.FrontCounterClockwise=FALSE; raster.DepthBias=500; raster.SlopeScaledDepthBias=1.5f;
+    check(p.device->CreateRasterizerState(&raster,&p.shadowRaster),"shadow raster");
+    D3D11_BLEND_DESC blend{}; auto& channel=blend.RenderTarget[0]; channel.BlendEnable=TRUE;
+    channel.SrcBlend=D3D11_BLEND_SRC_ALPHA; channel.DestBlend=D3D11_BLEND_INV_SRC_ALPHA; channel.BlendOp=D3D11_BLEND_OP_ADD;
+    channel.SrcBlendAlpha=D3D11_BLEND_ONE; channel.DestBlendAlpha=D3D11_BLEND_INV_SRC_ALPHA; channel.BlendOpAlpha=D3D11_BLEND_OP_ADD;
+    channel.RenderTargetWriteMask=D3D11_COLOR_WRITE_ENABLE_ALL;
+    check(p.device->CreateBlendState(&blend,&p.overlayBlend),"overlay alpha blend");
     const std::uint8_t white[] = {255,255,255,255}; p.white = createTexture(1,1,white);
     LOG_INFO("RENDER", std::format("D3D11 initialized, feature level {:X}, flip-model, {}x{}", unsigned(selected), width, height));
 }
@@ -132,7 +167,13 @@ MeshHandle Renderer::createMesh(std::span<const Vertex> vertices, std::span<cons
     check(impl_->device->CreateBuffer(&desc, &data, &mesh->vertices), "vertex buffer");
     desc.BindFlags = D3D11_BIND_INDEX_BUFFER; desc.ByteWidth = UINT(indices.size_bytes()); data.pSysMem = indices.data();
     check(impl_->device->CreateBuffer(&desc, &data, &mesh->indices), "index buffer");
-    mesh->count = UINT(indices.size()); return mesh;
+    mesh->count = UINT(indices.size());
+    Vec3 low=vertices.front().position,high=low;
+    for(const auto& v:vertices) { low.x=std::min(low.x,v.position.x); low.y=std::min(low.y,v.position.y); low.z=std::min(low.z,v.position.z);
+        high.x=std::max(high.x,v.position.x); high.y=std::max(high.y,v.position.y); high.z=std::max(high.z,v.position.z); }
+    mesh->center={(low.x+high.x)*.5f,(low.y+high.y)*.5f,(low.z+high.z)*.5f};
+    mesh->radius=std::sqrt((high.x-low.x)*(high.x-low.x)+(high.y-low.y)*(high.y-low.y)+(high.z-low.z)*(high.z-low.z))*.5f;
+    return mesh;
 }
 TextureHandle Renderer::createTexture(unsigned width, unsigned height, std::span<const std::uint8_t> rgba, bool srgb, bool nearest) {
     if (!width || !height || width > 16384 || height > 16384 || rgba.size() != size_t(width)*height*4)
@@ -156,62 +197,111 @@ void Renderer::resize(int width, int height) {
     check(p.swap->ResizeBuffers(0, UINT(width), UINT(height), DXGI_FORMAT_UNKNOWN, p.tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0), "resize");
     p.width = width; p.height = height; p.targets();
 }
-void Renderer::render(const Camera& camera, std::span<const RenderItem> items,TextureHandle overlay) {
+void Renderer::setEnvironment(const Environment& environment) { impl_->environment=environment; }
+void Renderer::setCanvasOverlay(bool value) { impl_->canvasOverlay=value; }
+void Renderer::render(const Camera& camera,std::span<const RenderItem> items,TextureHandle overlay) {
     using namespace DirectX;
-    const auto start = std::chrono::steady_clock::now();
-    auto& p = *impl_; p.stats = {};
-    const float clear[] = {0.025f,0.035f,0.06f,1};
-    ID3D11ShaderResourceView* none = nullptr; p.context->PSSetShaderResources(0,1,&none);
-    p.context->OMSetRenderTargets(1,p.color.GetAddressOf(),p.depth.Get());
-    p.context->ClearRenderTargetView(p.color.Get(), clear); p.context->ClearDepthStencilView(p.depth.Get(),D3D11_CLEAR_DEPTH,1,0);
-    D3D11_VIEWPORT viewport{0,0,float(p.renderWidth),float(p.renderHeight),0,1}; p.context->RSSetViewports(1,&viewport);
-    p.context->RSSetState(p.raster.Get());
-    p.context->IASetInputLayout(p.layout.Get()); p.context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    p.context->VSSetShader(p.vertexShader.Get(),nullptr,0); p.context->PSSetShader(p.pixelShader.Get(),nullptr,0);
-    p.context->VSSetConstantBuffers(0,1,p.constants.GetAddressOf()); p.context->PSSetConstantBuffers(0,1,p.constants.GetAddressOf());
-    const auto view = XMMatrixLookAtLH(XMVectorSet(camera.eye.x,camera.eye.y,camera.eye.z,1), XMVectorSet(camera.target.x,camera.target.y,camera.target.z,1), XMVectorSet(0,1,0,0));
-    const auto projection = XMMatrixPerspectiveFovLH(camera.fov,float(p.renderWidth)/float(p.renderHeight),camera.nearPlane,camera.farPlane);
-    struct Constants { XMFLOAT4X4 mvp, normalMatrix; Color color; XMFLOAT4 material; } constants;
-    static_assert(sizeof(Constants)==160);
-    for (const auto& item : items) {
-        if (!item.mesh) continue;
-        XMFLOAT4X4 world; std::copy_n(item.world.values.begin(),16,&world._11);
-        const auto matrix = XMLoadFloat4x4(&world);
-        const auto determinant=XMVectorGetX(XMMatrixDeterminant(matrix));
-        p.context->RSSetState(item.material.doubleSided ? (determinant<0 ? p.rasterDoubleMirrored.Get() : p.raster.Get()) :
-            (determinant<0 ? p.rasterMirrored.Get() : p.rasterBack.Get()));
-        XMStoreFloat4x4(&constants.mvp,XMMatrixTranspose(matrix * view * projection));
-        const auto normals=std::abs(determinant)>1e-12f ? XMMatrixTranspose(XMMatrixInverse(nullptr,matrix)) : matrix;
-        XMStoreFloat4x4(&constants.normalMatrix,XMMatrixTranspose(normals)); constants.color = item.material.color;
-        constants.material={item.material.alphaCutoff,item.material.alphaMode==AlphaMode::Mask ? 1.0f : 0.0f,
-            item.material.unlit ? 1.0f : 0.0f,item.material.doubleSided ? 1.0f : 0.0f};
-        p.context->UpdateSubresource(p.constants.Get(),0,nullptr,&constants,0,0);
-        UINT stride = sizeof(Vertex), offset = 0;
-        p.context->IASetVertexBuffers(0,1,item.mesh->vertices.GetAddressOf(),&stride,&offset);
-        p.context->IASetIndexBuffer(item.mesh->indices.Get(),DXGI_FORMAT_R32_UINT,0);
-        const auto& texture = item.material.texture ? item.material.texture : p.white;
-        p.context->PSSetShaderResources(0,1,texture->view.GetAddressOf()); p.context->PSSetSamplers(0,1,texture->sampler.GetAddressOf());
-        p.context->DrawIndexed(item.mesh->count,0,0); ++p.stats.draws; p.stats.triangles += item.mesh->count/3;
+    const auto start=std::chrono::steady_clock::now(); auto& p=*impl_; p.stats={};
+    const auto& environment=p.environment;
+    const auto view=XMMatrixLookAtLH(XMVectorSet(camera.eye.x,camera.eye.y,camera.eye.z,1),XMVectorSet(camera.target.x,camera.target.y,camera.target.z,1),XMVectorSet(0,1,0,0));
+    const float aspect=float(p.renderWidth)/float(p.renderHeight), tangent=std::tan(camera.fov*.5f);
+    const auto projection=XMMatrixPerspectiveFovLH(camera.fov,aspect,camera.nearPlane,camera.farPlane);
+    const auto sunDirection=XMVector3Normalize(XMVectorSet(-.5f,1,-.6f,0));
+    const auto center=XMVectorSet(camera.target.x,0,camera.target.z,1);
+    const auto lightView=XMMatrixLookAtLH(XMVectorAdd(center,XMVectorScale(sunDirection,60)),center,XMVectorSet(0,1,0,0));
+    const auto lightVP=lightView*XMMatrixOrthographicLH(60,60,.1f,140);
+    struct Frame { XMFLOAT4X4 viewProjection,lightViewProjection; XMFLOAT4 sunDirection; Color sun,ambient,fog; XMFLOAT4 eyeFogStart,effects; } frame{};
+    static_assert(sizeof(Frame)==224);
+    XMStoreFloat4x4(&frame.lightViewProjection,XMMatrixTranspose(lightVP)); XMStoreFloat4(&frame.sunDirection,sunDirection);
+    frame.sun=environment.sun; frame.ambient=environment.ambient; frame.fog=environment.sky;
+    frame.eyeFogStart={camera.eye.x,camera.eye.y,camera.eye.z,environment.fogStart};
+    frame.effects={environment.fogEnd,environment.enabled && environment.shadows ? 1.0f : 0.0f,environment.enabled ? 1.0f : 0.0f,0};
+    struct Instance { XMFLOAT4X4 world,normal; Color color; XMFLOAT4 material; };
+    static_assert(sizeof(Instance)==160);
+    struct Batch { MeshHandle mesh; TextureHandle texture; bool twoSided=false,mirrored=false; std::vector<Instance> data; UINT offset=0; };
+    using Key=std::tuple<std::uintptr_t,std::uintptr_t,bool,bool>;
+    std::map<Key,Batch> visible,casters;
+    auto append=[&](auto& batches,const RenderItem& item,const TextureHandle& texture,bool mirrored,const Instance& value) {
+        auto& batch=batches[{reinterpret_cast<std::uintptr_t>(item.mesh.get()),reinterpret_cast<std::uintptr_t>(texture.get()),item.material.doubleSided,mirrored}];
+        batch.mesh=item.mesh; batch.texture=texture; batch.twoSided=item.material.doubleSided; batch.mirrored=mirrored; batch.data.push_back(value);
+    };
+    for(const auto& item:items) {
+        if(!item.mesh) continue;
+        Instance value{}; std::copy_n(item.world.values.begin(),16,&value.world._11);
+        const auto matrix=XMLoadFloat4x4(&value.world); const auto determinant=XMVectorGetX(XMMatrixDeterminant(matrix));
+        XMStoreFloat4x4(&value.normal,std::abs(determinant)>1e-12f ? XMMatrixTranspose(XMMatrixInverse(nullptr,matrix)) : matrix);
+        value.color=item.material.color;
+        value.material={item.material.alphaCutoff,item.material.alphaMode==AlphaMode::Mask ? 1.0f : 0.0f,item.material.unlit ? 1.0f : 0.0f,item.material.doubleSided ? 1.0f : 0.0f};
+        const auto& texture=item.material.texture ? item.material.texture : p.white;
+        const auto localCenter=item.mesh->center;
+        const auto worldCenter=XMVector3TransformCoord(XMVectorSet(localCenter.x,localCenter.y,localCenter.z,1),matrix);
+        XMFLOAT3 position; XMStoreFloat3(&position,XMVector3TransformCoord(worldCenter,view));
+        const float radius=item.mesh->radius*std::sqrt(XMVectorGetX(XMVector3LengthSq(matrix.r[0]))+XMVectorGetX(XMVector3LengthSq(matrix.r[1]))+XMVectorGetX(XMVector3LengthSq(matrix.r[2])));
+        if(position.z+radius>=camera.nearPlane && position.z-radius<=camera.farPlane &&
+            std::abs(position.x)<=position.z*tangent*aspect+radius*std::sqrt(1+tangent*tangent*aspect*aspect) &&
+            std::abs(position.y)<=position.z*tangent+radius*std::sqrt(1+tangent*tangent)) append(visible,item,texture,determinant<0,value);
+        if(frame.effects.y!=0 && !item.material.unlit && XMVectorGetX(XMVector3Length(XMVectorSubtract(worldCenter,center)))<50+radius)
+            append(casters,item,texture,determinant<0,value);
     }
+    std::vector<Instance> data;
+    for(auto* batches:{&casters,&visible}) for(auto& [key,batch]:*batches) { (void)key; batch.offset=UINT(data.size()); data.insert(data.end(),batch.data.begin(),batch.data.end()); }
+    if(data.size()>UINT_MAX/sizeof(Instance)) throw std::runtime_error("Too many rendering instances");
+    if(!data.empty()) {
+        if(data.size()>p.instanceCapacity) {
+            p.instances.Reset(); p.instanceCapacity=UINT(data.size());
+            D3D11_BUFFER_DESC desc{}; desc.ByteWidth=p.instanceCapacity*sizeof(Instance); desc.Usage=D3D11_USAGE_DYNAMIC;
+            desc.BindFlags=D3D11_BIND_VERTEX_BUFFER; desc.CPUAccessFlags=D3D11_CPU_ACCESS_WRITE;
+            check(p.device->CreateBuffer(&desc,nullptr,&p.instances),"instance buffer");
+        }
+        D3D11_MAPPED_SUBRESOURCE mapped{}; check(p.context->Map(p.instances.Get(),0,D3D11_MAP_WRITE_DISCARD,0,&mapped),"map instances");
+        std::memcpy(mapped.pData,data.data(),data.size()*sizeof(Instance)); p.context->Unmap(p.instances.Get(),0);
+    }
+    ID3D11ShaderResourceView* empty[2]={nullptr,nullptr}; p.context->PSSetShaderResources(0,2,empty);
+    p.context->OMSetBlendState(nullptr,nullptr,0xffffffff);
+    p.context->IASetInputLayout(p.layout.Get()); p.context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    p.context->VSSetShader(p.vertexShader.Get(),nullptr,0);
+    p.context->VSSetConstantBuffers(0,1,p.constants.GetAddressOf()); p.context->PSSetConstantBuffers(0,1,p.constants.GetAddressOf());
+    auto draw=[&](auto& batches,bool shadow) {
+        for(auto& [key,batch]:batches) {
+            (void)key;
+            p.context->RSSetState(shadow ? p.shadowRaster.Get() : batch.twoSided ? (batch.mirrored ? p.rasterDoubleMirrored.Get() : p.raster.Get()) : (batch.mirrored ? p.rasterMirrored.Get() : p.rasterBack.Get()));
+            ID3D11Buffer* buffers[]={batch.mesh->vertices.Get(),p.instances.Get()}; UINT strides[]={sizeof(Vertex),sizeof(Instance)},offsets[]={0,0};
+            p.context->IASetVertexBuffers(0,2,buffers,strides,offsets); p.context->IASetIndexBuffer(batch.mesh->indices.Get(),DXGI_FORMAT_R32_UINT,0);
+            p.context->PSSetShaderResources(0,1,batch.texture->view.GetAddressOf()); p.context->PSSetSamplers(0,1,batch.texture->sampler.GetAddressOf());
+            p.context->DrawIndexedInstanced(batch.mesh->count,UINT(batch.data.size()),0,0,batch.offset);
+            if(shadow) ++p.stats.shadowDraws;
+            else { ++p.stats.draws; p.stats.instances+=batch.data.size(); p.stats.triangles+=batch.mesh->count/3*batch.data.size(); }
+        }
+    };
+    if(frame.effects.y!=0) {
+        p.context->OMSetRenderTargets(0,nullptr,p.shadowDepth.Get()); p.context->ClearDepthStencilView(p.shadowDepth.Get(),D3D11_CLEAR_DEPTH,1,0);
+        D3D11_VIEWPORT shadowViewport{0,0,2048,2048,0,1}; p.context->RSSetViewports(1,&shadowViewport);
+        XMStoreFloat4x4(&frame.viewProjection,XMMatrixTranspose(lightVP)); p.context->UpdateSubresource(p.constants.Get(),0,nullptr,&frame,0,0);
+        p.context->PSSetShader(p.shadowPixel.Get(),nullptr,0); draw(casters,true);
+    }
+    const float clear[]={environment.enabled ? environment.sky.r : .025f,environment.enabled ? environment.sky.g : .035f,environment.enabled ? environment.sky.b : .06f,1};
+    p.context->OMSetRenderTargets(1,p.color.GetAddressOf(),p.depth.Get()); p.context->ClearRenderTargetView(p.color.Get(),clear); p.context->ClearDepthStencilView(p.depth.Get(),D3D11_CLEAR_DEPTH,1,0);
+    D3D11_VIEWPORT viewport{0,0,float(p.renderWidth),float(p.renderHeight),0,1}; p.context->RSSetViewports(1,&viewport);
+    XMStoreFloat4x4(&frame.viewProjection,XMMatrixTranspose(view*projection)); p.context->UpdateSubresource(p.constants.Get(),0,nullptr,&frame,0,0);
+    p.context->PSSetShader(p.pixelShader.Get(),nullptr,0);
+    if(frame.effects.y!=0) { p.context->PSSetShaderResources(1,1,p.shadowView.GetAddressOf()); p.context->PSSetSamplers(1,1,p.shadowSampler.GetAddressOf()); }
+    draw(visible,false);
     if(overlay) {
         p.context->OMSetRenderTargets(1,p.color.GetAddressOf(),nullptr);
         ComPtr<ID3D11Resource> resource; overlay->view->GetResource(&resource);
-        ComPtr<ID3D11Texture2D> texture; check(resource.As(&texture),"overlay texture");
-        D3D11_TEXTURE2D_DESC description{}; texture->GetDesc(&description);
-        const float scale=std::min({1.0f,float(p.renderWidth)/float(description.Width),float(p.renderHeight)/float(description.Height)});
-        D3D11_VIEWPORT panel{0,0,float(description.Width)*scale,float(description.Height)*scale,0,1};
-        p.context->RSSetViewports(1,&panel); p.context->RSSetState(p.raster.Get());
+        ComPtr<ID3D11Texture2D> texture; check(resource.As(&texture),"overlay texture"); D3D11_TEXTURE2D_DESC description{}; texture->GetDesc(&description);
+        const float scale=std::min({p.canvasOverlay ? 100.0f : 1.0f,float(p.renderWidth)/float(description.Width),float(p.renderHeight)/float(description.Height)});
+        D3D11_VIEWPORT panel{p.canvasOverlay ? (p.renderWidth-description.Width*scale)*.5f : 0,p.canvasOverlay ? (p.renderHeight-description.Height*scale)*.5f : 0,description.Width*scale,description.Height*scale,0,1};
+        p.context->RSSetViewports(1,&panel); p.context->RSSetState(p.raster.Get()); p.context->OMSetBlendState(p.overlayBlend.Get(),nullptr,0xffffffff);
         p.context->IASetInputLayout(nullptr); p.context->VSSetShader(p.screenVertex.Get(),nullptr,0); p.context->PSSetShader(p.screenPixel.Get(),nullptr,0);
-        p.context->PSSetShaderResources(0,1,overlay->view.GetAddressOf()); p.context->PSSetSamplers(0,1,p.screenSampler.GetAddressOf());
-        p.context->Draw(3,0);
+        p.context->PSSetShaderResources(0,1,overlay->view.GetAddressOf()); p.context->PSSetSamplers(0,1,p.screenSampler.GetAddressOf()); p.context->Draw(3,0);
     }
-    p.context->OMSetRenderTargets(1,p.back.GetAddressOf(),nullptr);
-    p.context->RSSetState(p.raster.Get());
-    viewport.Width = float(p.width); viewport.Height = float(p.height); p.context->RSSetViewports(1,&viewport);
+    p.context->OMSetBlendState(nullptr,nullptr,0xffffffff); p.context->OMSetRenderTargets(1,p.back.GetAddressOf(),nullptr); p.context->RSSetState(p.raster.Get());
+    viewport.Width=float(p.width); viewport.Height=float(p.height); p.context->RSSetViewports(1,&viewport);
     p.context->IASetInputLayout(nullptr); p.context->VSSetShader(p.screenVertex.Get(),nullptr,0); p.context->PSSetShader(p.screenPixel.Get(),nullptr,0);
-    p.context->PSSetShaderResources(0,1,p.targetView.GetAddressOf()); p.context->PSSetSamplers(0,1,p.screenSampler.GetAddressOf());
-    p.context->Draw(3,0); p.context->PSSetShaderResources(0,1,&none);
-    p.stats.cpuMilliseconds = std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-start).count();
+    p.context->PSSetShaderResources(0,1,p.targetView.GetAddressOf()); p.context->PSSetSamplers(0,1,p.screenSampler.GetAddressOf()); p.context->Draw(3,0);
+    p.context->PSSetShaderResources(0,2,empty);
+    p.stats.cpuMilliseconds=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-start).count();
 }
 void Renderer::present() {
     auto& p = *impl_;

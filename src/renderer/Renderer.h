@@ -23,7 +23,12 @@ struct Material {
 struct RenderItem { MeshHandle mesh; Material material; Matrix world; };
 struct Camera { Vec3 eye{4,3,-6}, target{}; float nearPlane = 0.1f, farPlane = 200, fov = 0.8f; };
 struct RenderConfig { bool vsync = true; float scale = 1; };
-struct RenderStats { std::uint64_t draws = 0, triangles = 0; double cpuMilliseconds = 0; };
+struct Environment {
+    bool enabled=false, shadows=true;
+    Color sky{0.25f,0.36f,0.4f,1}, sun{1.1f,0.95f,0.72f,1}, ambient{0.3f,0.4f,0.48f,1};
+    float fogStart=24, fogEnd=70;
+};
+struct RenderStats { std::uint64_t draws = 0, triangles = 0, instances = 0, shadowDraws = 0; double cpuMilliseconds = 0; };
 class Renderer {
 public:
     Renderer(void* nativeWindow, int width, int height, const std::filesystem::path& shader, RenderConfig config = {});
@@ -38,6 +43,8 @@ public:
     int renderWidth() const;
     int renderHeight() const;
     RenderStats stats() const;
+    void setEnvironment(const Environment& environment);
+    void setCanvasOverlay(bool value);
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
