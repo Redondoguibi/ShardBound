@@ -183,6 +183,15 @@ o contrato anterior. Catálogos usam a revisão do registry para evitar cópias
 repetidas; a UI reutiliza texturas quando os pixels não mudam. Contrato:
 [25-COMBATANTS-LOOT-AND-RUNTIME-CACHES.md](25-COMBATANTS-LOOT-AND-RUNTIME-CACHES.md).
 
+A revisão de qualidade acrescenta iluminação, sombras, névoa, instancing e
+descarte fora da câmera; cenário com materiais próprios, casas e vegetação;
+canvas com HUD, título, pausa e mapa; mira pelo cursor, câmera suavizada,
+buffer de ataque e feedback visual/sonoro. O inventário tem grade 4×3, filtros,
+comparação entre cópias com atributos persistidos e seleção separada de equipar.
+As APIs de apresentação são genéricas e as regras continuam em módulos `.sl`.
+O estudo do personagem ficou editável para o autor, sem integração no runtime.
+Contratos e limites: [26-PLAYABLE-QUALITY-PASS.md](26-PLAYABLE-QUALITY-PASS.md).
+
 ## Build e execução
 
 Requisitos: Visual Studio 2022 com C++ x64 e Windows SDK, CMake >= 3.25, Ninja,
@@ -205,12 +214,13 @@ ctest --preset debug
 Builds, dependências locais e caches são ignorados pelo Git. Bibliotecas serão
 adicionadas somente na etapa em que forem utilizadas.
 
-Validação em 2026-10-07: builds MSVC Debug/Release concluídos; 29/29 testes CTest
+Validação em 2026-10-08: builds MSVC Debug/Release concluídos; 30/30 testes CTest
 aprovados em cada configuração. Incluem pixels na GPU (recorte alfa, profundidade
 e faces duplas), galeria dos três assets por script, ciclo adventure com
 salto/combate/viagem/morte/loot/equipamento/save, variantes de inimigo, coleta com
 capacidade cheia/hook rejeitado, encontros reconciliados e caches, extensão real
-por mod, scripts/mods, Jolt,
+por mod, menus/pausa, comparação e paginação do inventário, mira/projeção,
+sombras/instancing, scripts/mods, Jolt,
 PCM offline, gameplay, componentes/migrações, saves/órfãos, DLLs reais e CLI. Input de interação foi sintetizado; gamepad físico
 e qualidade audível no dispositivo não foram avaliados manualmente.
 O hub e o mapa foram conferidos por readback real de D3D11. O autor confirmou a

@@ -60,12 +60,17 @@ entity Brute from Enemy:
     .trigger = 2
     .reach = 2.2
     .drops = ["adventure:HeavyBlade"]
+entity SceneryMarker:
+    .version = 1
 entity Block:
     Assets:
         .model = "core:solid"
 entity Tree:
     Assets:
         .model = "core:tree"
+entity Pine:
+    Assets:
+        .model = "core:pine"
 entity Waystone:
     Assets:
         .model = "core:waystone"

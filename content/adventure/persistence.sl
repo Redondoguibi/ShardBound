@@ -77,12 +77,19 @@ on_loaded():
         state.encounters = []
     sync_world_content()
     build_combat_visuals()
+    configure_presentation()
+    paused = false
+    title_open = false
+    pause_game(false)
+    damage_labels = []
+    attack_buffer = 0
     ensure_equipment()
     if equipped_item() != null:
         spec = weapon_definition()
         set_model(blade, spec.model)
         set_scale(blade, spec.visual_scale)
         set_tint(blade, spec.tint)
+    inventory_filter = 0
     selected_item = 0
     selected_destination = 0
     map_open = false
@@ -92,9 +99,11 @@ on_loaded():
     refresh_hud()
 
 on_saved():
-    notice = "Jogo salvo. F9 para carregar."
+    notice = "Jogo salvo."
     refresh_hud()
 
 on_save_diagnostic(loading, message):
-    notice = "Aviso ao acessar o save. Detalhes no log."
+    notice = "Não foi possível salvar. Tente novamente."
+    if loading:
+        notice = "Não foi possível carregar. Seu progresso atual foi mantido."
     refresh_hud()

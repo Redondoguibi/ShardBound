@@ -67,6 +67,9 @@ Para criar mods, comece pelo [Guia oficial de modding](docs/modding/README.md).
 Primeiro ciclo jogável da Etapa 13: [abrigo, floresta e combate](content/adventure/README.md).
 Após `./tools/build.ps1 debug`, execute `./build/debug/game.exe`.
 Inclui WASD/salto, mapa/waystones, quatro armas, três tipos de inimigo, loot
-persistente no chão, morte e save/load.
+persistente no chão, morte e save/load. A revisão atual adiciona iluminação
+e sombras, abrigo detalhado, materiais em pixel art, mira pelo cursor, câmera
+suave, menu inicial, pausa, inventário e mapa clicáveis.
+Veja [a revisão de apresentação](docs/26-PLAYABLE-QUALITY-PASS.md).
 A [galeria de assets](examples/asset-gallery/README.md) permanece disponível com
 `--mods examples/asset-gallery`. A Etapa 13 completa continua em desenvolvimento.

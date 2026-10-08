@@ -31,6 +31,7 @@ func collect_loot():
                 if weapon:
                     create_equipment(data.item)
                 give_item(hero, data.item, 1)
+                play_sound("core:pickup")
                 destroy(loot)
                 notice = "Item coletado: " + spec.name
                 emit_event("adventure:collected", [data.item])

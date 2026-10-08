@@ -7,7 +7,8 @@ func block_at(where, scale, color, solid):
     return piece
 
 func shelter(x, z):
-    block_at(vec3(x, 1.3, z), vec3(2, 1.3, 1.7), vec3(0.68, 0.49, 0.3), true)
+    wall = block_at(vec3(x, 1.3, z), vec3(2, 1.3, 1.7), vec3(0.58, 0.45, 0.29), true)
+    set_model(wall, "core:plaster")
     block_at(vec3(x, 2.9, z), vec3(2.4, 0.3, 2.1), vec3(0.26, 0.38, 0.42), false)
     block_at(vec3(x, 0.85, z - 1.72), vec3(0.5, 0.85, 0.03), vec3(0.18, 0.14, 0.12), false)
     block_at(vec3(x + 1.1, 1.5, z - 1.73), vec3(0.35, 0.35, 0.04), vec3(0.95, 0.8, 0.44), false)
@@ -77,7 +78,9 @@ func sync_world_content():
 
 func build_world():
     sync_world_content()
-    block_at(vec3(0, 0.016, 17), vec3(1.8, 0.01, 21), vec3(0.53, 0.46, 0.32), false)
+    road = block_at(vec3(0, 0.016, 17), vec3(1.8, 0.01, 21), vec3(0.53, 0.46, 0.32), false)
+    road.name = "adventure_legacy_road"
+    road.active = false
     for x in [-4, 4]:
         block_at(vec3(x, 0.25, 12), vec3(0.8, 0.25, 0.8), vec3(0.55, 0.6, 0.59), true)
     hero = spawn(Actor, get_definition("Worlds", "adventure:Main").start)

@@ -1,12 +1,21 @@
+func update_aim():
+    if state.attack > 0 or map_open or inventory_open or paused:
+        return
+    point = aim_position()
+    if point != null and distance_xz(hero.position, point) > 0.2:
+        facing = direction(hero.position, point)
+
 func begin_attack():
     if state.attack > 0 or health(hero) <= 0 or equipped_item() == null:
         return false
+    update_aim()
     spec = weapon_definition()
     validate_weapon(spec)
     state.attack = spec.windup
     state.winding = true
     state.swing = spec
     state.aim = vec3(facing.x, 0, facing.z)
+    play_sound("core:swing")
     return true
 
 func strike_target(target, amount):
@@ -22,6 +31,7 @@ func strike_target(target, amount):
         impact_position = vec3(hit.target.position.x, hit.target.position.y, hit.target.position.z)
         impact_time = 0.18
         play_sound("core:hit")
+        floating_damage(impact_position, applied, get_velocity(hero).y < 0 and not is_grounded(hero))
         if has_component(hit.target, Sentinel):
             hit_brain = get_component(hit.target, Sentinel)
             hit_brain.flash = 0.18
@@ -112,12 +122,16 @@ func enemy_tick(foe, delta):
     set_component(foe, Sentinel, brain)
 
 func combat_tick(delta):
+    attack_buffer = countdown(attack_buffer, delta)
     state.attack = countdown(state.attack, delta)
     if state.winding and state.attack == 0:
         if health(hero) > 0:
             resolve_attack()
         state.winding = false
         state.attack = state.swing.recovery
+    if state.attack == 0 and attack_buffer > 0:
+        attack_buffer = 0
+        begin_attack()
     for foe in get_entities_with(Sentinel):
         enemy_tick(foe, delta)
     collect_loot()
@@ -139,8 +153,9 @@ func animate_hero(delta):
     walk_time = walk_time + delta
     motion = get_velocity(hero)
     speed = math_sqrt(motion.x * motion.x + motion.z * motion.z)
-    if speed > 0.1 and state.attack == 0:
+    if speed > 0.1 and state.attack == 0 and aim_position() == null:
         facing = vec3(motion.x / speed, 0, motion.z / speed)
+    update_aim()
     set_rotation(avatar, vec3(0, math_atan2(-facing.x, -facing.z), 0))
     animate_rig(avatar, speed, state.attack > 0)
     if not is_grounded(hero):

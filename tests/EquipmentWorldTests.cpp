@@ -75,6 +75,10 @@ save_game("instances")
         require(items().back().member("attributes",{}).member("damage",{}).number()==99,"Unavailable mod item lost attributes");
         run("orphan_equipped = equip_instance(list_at(state.items, 3))\nold_discovery = discovered(\"missing:Camp\")");
         require(!runtime.global("adventure","orphan_equipped").boolean() && runtime.global("adventure","old_discovery").boolean(),"Unavailable mod equipped or discovery lost");
+        run("inventory_open = true\nselected_item = 3\nrefresh_hud()\nui_orphan_visible = false\nfor command in canvas:\n    if command.kind == \"text\" and command.text == \"MOD INDISPONÍVEL\":\n        ui_orphan_visible = true");
+        require(runtime.global("adventure","ui_orphan_visible").boolean(),"Inventory does not explain an unavailable mod item");
+        run("selected_item = 2\nrefresh_hud()\nui_attribute_delta_visible = false\nfor command in canvas:\n    if command.kind == \"text\" and command.text == \"−6\":\n        ui_attribute_delta_visible = true\ninventory_open = false");
+        require(runtime.global("adventure","ui_attribute_delta_visible").boolean(),"Inventory comparison ignored persisted attributes of individual copies");
         // Reject malformed instance IDs before replacing the live world.
         auto data=SaveGame::inspect("user/equipment-saves/instances.json");
         auto& modules=std::get<Data::Object>(std::get<Data::Object>(data.value).at("state").value);
@@ -116,10 +120,10 @@ waystone EastCamp from NorthCamp:
         auto key=[&](Key value) { Event event; event.type=EventType::KeyDown; event.key=value; input.process(event); emit("on_update",{script::Value(.016)}); input.beginFrame(); event.type=EventType::KeyUp; input.process(event); input.beginFrame(); };
         key(Key::I); key(Key::Q); key(Key::E);
         require(state().member("equipped",{}).string()=="trailcraft:TrailBlade","Inventory cannot equip a modded weapon");
-        run("give_item(hero, \"trailcraft:TrailBlade\", 6)\nensure_equipment()");
-        for(int i=0;i<5;++i) key(Key::Q);
+        run("give_item(hero, \"trailcraft:TrailBlade\", 13)\nensure_equipment()");
+        for(int i=0;i<12;++i) key(Key::Q);
         key(Key::E);
-        require(state().member("equipped_uid",{}).number()==items()[6].member("uid",{}).number(),"Equipment beyond first inventory page cannot be selected");
+        require(state().member("equipped_uid",{}).number()==items()[13].member("uid",{}).number(),"Equipment beyond first inventory page cannot be selected");
         run("refresh_hud()");
         renderer.render(player.camera(),collectRenderItems(world),ui.texture()); auto pixels=renderer.readback();
         require(ui.texture() && renderer.stats().instances>0 && renderer.stats().triangles>0 && !pixels.empty(),"Expanded inventory failed to render");

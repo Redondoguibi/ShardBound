@@ -6,6 +6,7 @@ func explore_tick(delta):
         if stone != null:
             if distance_xz(hero.position, stone.position) <= entry.data.radius:
                 if not flag.active:
+                    play_sound("core:waystone")
                     notice = "Waystone descoberta: " + entry.data.name
                     emit_event("adventure:discovered", [entry.id])
                 flag.active = true
@@ -30,6 +31,7 @@ func travel_destination(id):
     if get_entity(spec.label) == null:
         notice = "Destino indisponivel neste mundo salvo."
         return false
+    play_sound("core:waystone")
     teleport(hero, spec.destination)
     state.attack = 0
     state.winding = false

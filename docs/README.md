@@ -58,3 +58,6 @@ Evitar transformar hipótese em decisão. Cada documento diferencia:
 ## Regra operacional
 
 A partir de agora, decisões técnicas tomadas durante o planejamento devem ser registradas no repositório no mesmo fluxo da conversa, em vez de ficarem apenas no chat.
+
+A revisão da experiência jogável (visual, interface, combate e câmera) está em
+[26-PLAYABLE-QUALITY-PASS.md](26-PLAYABLE-QUALITY-PASS.md).
