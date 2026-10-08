@@ -35,3 +35,8 @@ As fontes `.bbmodel` podem ser abertas e modificadas no formato Generic Model.
   O gerador reutiliza somente a geometria original de `solid.glb`.
 - Os modelos originais de árvore e waystone continuam disponíveis. A composição
   mistura árvores de copa e pinheiros e preserva os troncos de colisão.
+
+`explorer_concept.bbmodel` é um estudo editável interrompido a pedido do autor,
+que continuará o personagem. Mantém o rig existente e adiciona roupa/acessórios;
+as seis texturas `ranger_*` ficam em `textures/woodland`. Não há GLB desse estudo
+nem integração no jogo. `player.bbmodel` e `player.glb` permanecem como estavam.
