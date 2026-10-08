@@ -1,16 +1,16 @@
 {
   "name": "shardbound-blockbench",
-  "version": "0.3.2",
+  "version": "0.4.1",
   "description": "Edit local Blockbench Generic Models and run adapted MTools operations through MCP.",
   "author": {
     "name": "ShardBound"
   },
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
+  "mcpServers": null,
   "interface": {
     "displayName": "ShardBound Blockbench",
     "shortDescription": "Modelagem com Blockbench",
-    "longDescription": "Conecta diretamente ao ShardBound MCP local no Windows para inspecionar e editar Generic Models, executar ações adaptadas do MTools, consultar texturas e exportar modelos.",
+    "longDescription": "Conecta o ChatGPT ao Blockbench pelo Secure MCP Tunnel da OpenAI para inspecionar e editar Generic Models, executar ações adaptadas do MTools, consultar texturas e exportar modelos.",
     "developerName": "ShardBound",
     "category": "Developer Tools",
     "capabilities": [
@@ -18,5 +18,6 @@
       "Write"
     ],
     "defaultPrompt": "Inspecione meu Generic Model no Blockbench e mostre uma captura antes de editar."
-  }
+  },
+  "apps": "./.app.json"
 }

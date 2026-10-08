@@ -178,6 +178,16 @@ void bindGameplayApi(script::Runtime& runtime,World& world,PhysicsSystem& physic
     runtime.bind("entity_definition",native([&](const auto& a,const auto& at) {
         arity(a,1,at); return Value(world.get<IdentityComponent>(requireEntity(a[0],world,at)).definition);
     }));
+    runtime.bind("entity_visual",native([&](const auto& a,const auto& at) {
+        arity(a,1,at); const auto id=requireEntity(a[0],world,at);
+        const auto& transform=world.get<TransformComponent>(id).local;
+        const auto& model=world.get<ModelComponent>(id);
+        auto vec=[&](Vec3 v) { auto out=object(); out.setMember("x",Value(double(v.x)),at); out.setMember("y",Value(double(v.y)),at); out.setMember("z",Value(double(v.z)),at); return out; };
+        auto out=object(); out.setMember("model",Value(model.definition.str()),at);
+        out.setMember("position",vec(transform.position),at); out.setMember("scale",vec(transform.scale),at);
+        out.setMember("rotation",vec(transform.rotation),at); out.setMember("tint",vec({model.tint.r,model.tint.g,model.tint.b}),at);
+        out.setMember("physical",Value(physics.contains(id)),at); return out;
+    }));
     runtime.bind("math_floor",native([](const auto& a,const auto& at) { arity(a,1,at); return Value(std::floor(a[0].number(at))); }));
     runtime.bind("math_sin",native([](const auto& a,const auto& at) { arity(a,1,at); return Value(std::sin(number(a[0],at))); }));
     runtime.bind("math_sqrt",native([](const auto& a,const auto& at) { arity(a,1,at); const auto v=number(a[0],at); if(v<0) fail(at,"BRIDGE105","sqrt requires nonnegative input"); return Value(std::sqrt(double(v))); }));

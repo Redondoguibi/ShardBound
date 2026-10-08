@@ -7,11 +7,8 @@ func block_at(where, scale, color, solid):
     return piece
 
 func shelter(x, z):
-    wall = block_at(vec3(x, 1.3, z), vec3(2, 1.3, 1.7), vec3(0.58, 0.45, 0.29), true)
-    set_model(wall, "core:plaster")
-    block_at(vec3(x, 2.9, z), vec3(2.4, 0.3, 2.1), vec3(0.26, 0.38, 0.42), false)
-    block_at(vec3(x, 0.85, z - 1.72), vec3(0.5, 0.85, 0.03), vec3(0.18, 0.14, 0.12), false)
-    block_at(vec3(x + 1.1, 1.5, z - 1.73), vec3(0.35, 0.35, 0.04), vec3(0.95, 0.8, 0.44), false)
+    wall = block_at(vec3(x, 1.5, z), vec3(2, 1.5, 2), vec3(0.58, 0.45, 0.29), true)
+    wall.active = false
 
 func stone_at(label, where):
     stone = spawn(Waystone, where)

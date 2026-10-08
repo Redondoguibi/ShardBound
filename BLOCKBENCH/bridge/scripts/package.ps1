@@ -1,49 +1,20 @@
 param([switch]$BindCurrentMachine, [string]$RemoteUrl)
 $ErrorActionPreference = 'Stop'
-if ($BindCurrentMachine -and $RemoteUrl) { throw 'Escolha somente uma configuracao: local ou remota.' }
-if ($RemoteUrl) {
-    $remoteUri = [uri]$RemoteUrl
-    if (-not $remoteUri.IsAbsoluteUri -or $remoteUri.Scheme -ne 'https' -or $remoteUri.AbsolutePath -ne '/mcp' -or $remoteUri.Query -or $remoteUri.Fragment -or $remoteUri.UserInfo) {
-        throw 'RemoteUrl deve ser uma URL HTTPS terminada em /mcp, sem credenciais.'
-    }
-}
+if ($BindCurrentMachine -or $RemoteUrl) { throw 'Este pacote privado usa .app.json + Secure MCP Tunnel. Para um cliente stdio use .local/codex-config.toml, nao publique caminhos de maquina no plugin de conta.' }
 $bridgeRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$manifest = Get-Content -LiteralPath (Join-Path $bridgeRoot 'plugin.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$compat = Get-Content -LiteralPath (Join-Path $bridgeRoot '.codex-plugin/plugin.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$app = Get-Content -LiteralPath (Join-Path $bridgeRoot '.app.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($manifest.extensions.'com.openai'.apps -ne './.app.json' -or $compat.apps -ne './.app.json' -or $app.apps.shardbound_blockbench.required -ne $true -or $app.apps.shardbound_blockbench.id -notmatch '^asdk_app_[a-f0-9]{32}$') {
+    throw 'Vinculo de app ausente ou invalido. Registre a conexao Tunnel e use seu ID verificado.'
+}
+if ($manifest.version -ne $compat.version -or $manifest.name -ne $compat.name) { throw 'Manifests portatil/compat divergentes.' }
 $stage = Join-Path $bridgeRoot ('.local/package-' + [guid]::NewGuid().ToString('N'))
 $packageRoot = Join-Path $stage 'shardbound-blockbench'
 New-Item -ItemType Directory -Path $packageRoot -Force | Out-Null
-# Explicit allowlist: never package pairing credentials, local models or node_modules.
-$entries = @('.gitignore', '.codex-plugin', '.mcp.json', 'plugin.json', 'mcp.json', 'package.json', 'package-lock.json', 'README.md', 'MERGE-REVIEW.md', 'CHATGPT-DESKTOP.md', 'Install.ps1', 'Connect-ChatGPT.ps1', 'mcp', 'shared', 'plugin-src', 'plugin', 'scripts', 'skills', 'tests')
-foreach ($entry in $entries) {
-    Copy-Item -LiteralPath (Join-Path $bridgeRoot $entry) -Destination $packageRoot -Recurse
-}
-if ($BindCurrentMachine) {
-    # Private ChatGPT Desktop package: directly start the prepared local ShardBound MCP.
-    # Only local paths are serialized; pairing credentials remain in the original .local folder.
-    $nodePath = (Get-Command node -CommandType Application | Select-Object -First 1).Source
-    $mcpBinding = [ordered]@{
-        '$schema' = 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json'
-        mcpServers = [ordered]@{
-            shardbound_blockbench = [ordered]@{
-                type = 'stdio'
-                command = $nodePath
-                args = @((Join-Path $bridgeRoot 'mcp/server.mjs'))
-                cwd = $bridgeRoot
-            }
-        }
-    }
-    $json = $mcpBinding | ConvertTo-Json -Depth 8
-    [IO.File]::WriteAllText((Join-Path $packageRoot 'mcp.json'), $json, [Text.UTF8Encoding]::new($false))
-    $legacyBinding = [ordered]@{ mcpServers = [ordered]@{ shardbound_blockbench = [ordered]@{ command = $nodePath; args = $mcpBinding.mcpServers.shardbound_blockbench.args; cwd = $bridgeRoot } } }
-    [IO.File]::WriteAllText((Join-Path $packageRoot '.mcp.json'), ($legacyBinding | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
-    [IO.File]::WriteAllText((Join-Path $packageRoot 'DESKTOP-BINDING.md'), "This private Desktop package directly starts the prepared local ShardBound MCP at $bridgeRoot. Keep that folder in place. Pairing secrets remain local and are excluded from this archive.", [Text.UTF8Encoding]::new($false))
-}
-if ($RemoteUrl) {
-    $binding = @{ '$schema' = 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json'; mcpServers = @{ shardbound_blockbench = @{ type = 'streamable-http'; url = $RemoteUrl } } }
-    [IO.File]::WriteAllText((Join-Path $packageRoot 'mcp.json'), ($binding | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
-    $legacy = @{ mcpServers = @{ shardbound_blockbench = @{ type = 'http'; url = $RemoteUrl } } }
-    [IO.File]::WriteAllText((Join-Path $packageRoot '.mcp.json'), ($legacy | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
-    [IO.File]::WriteAllText((Join-Path $packageRoot 'DESKTOP-BINDING.md'), 'This optional package uses an HTTPS MCP endpoint. The default private ChatGPT Desktop workflow uses local stdio instead.', [Text.UTF8Encoding]::new($false))
-}
+$entries = @('.gitignore', '.codex-plugin', '.app.json', '.mcp.json', 'plugin.json', 'mcp.json', 'package.json', 'package-lock.json', 'README.md', 'CHATGPT-DESKTOP.md', 'INTEGRATION-AUDIT.md', 'TOOLS-REFERENCE.md', 'Install.ps1', 'Install-ChatGPT-Desktop-Plugin.ps1', 'Status-ChatGPT-Desktop-Plugin.ps1', 'Status-ChatGPT.ps1', 'Disconnect-ChatGPT.ps1', 'Connect-ChatGPT.ps1', 'mcp', 'shared', 'plugin-src', 'plugin', 'scripts', 'skills', 'tests')
+foreach ($entry in $entries) { Copy-Item -LiteralPath (Join-Path $bridgeRoot $entry) -Destination $packageRoot -Recurse }
+[IO.File]::WriteAllText((Join-Path $packageRoot 'DESKTOP-BINDING.md'), 'This private account plugin binds the registered ShardBound OpenAI Tunnel app through .app.json. Node and Blockbench run on the owner PC. Secrets remain in the original local .local directory. Run Install-ChatGPT-Desktop-Plugin.ps1 there.', [Text.UTF8Encoding]::new($false))
 $archive = Join-Path $stage 'shardbound-blockbench.zip'
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -56,13 +27,11 @@ try {
 } finally { $outputZip.Dispose() }
 $zip = [IO.Compression.ZipFile]::OpenRead($archive)
 try {
-    if ($zip.Entries | Where-Object { $_.FullName.Contains('\') }) { throw 'Archive member paths must use forward slashes.' }
-    $names = @($zip.Entries | ForEach-Object { $_.FullName.Replace('\', '/') })
-    foreach ($required in @('plugin.json', 'mcp.json', '.mcp.json', '.codex-plugin/plugin.json', 'mcp/server.mjs', 'README.md')) {
+    $names = @($zip.Entries | ForEach-Object { $_.FullName })
+    if ($names | Where-Object { $_.Contains('\') }) { throw 'ZIP paths must use forward slashes.' }
+    foreach ($required in @('plugin.json', '.app.json', 'mcp.json', '.mcp.json', '.codex-plugin/plugin.json', 'mcp/server.mjs', 'mcp/audit.mjs', 'skills/blockbench/SKILL.md')) {
         if ($names -notcontains ('shardbound-blockbench/' + $required)) { throw "Archive missing $required" }
     }
-    if ($names | Where-Object { $_ -match '/(node_modules|\.local|outputs|\.reference)/|chatgpt-password|codex-config|config\.json$' }) {
-        throw 'Archive includes private or generated runtime files.'
-    }
+    if ($names | Where-Object { $_ -match '/(node_modules|\.local|outputs|\.reference)/|chatgpt-password|codex-config|config\.json$|\.dpapi$' }) { throw 'Archive includes private/generated files.' }
 } finally { $zip.Dispose() }
 Write-Output "Source package verified: $archive"

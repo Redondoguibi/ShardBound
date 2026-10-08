@@ -61,7 +61,7 @@ entity Brute from Enemy:
     .reach = 2.2
     .drops = ["adventure:HeavyBlade"]
 entity SceneryMarker:
-    .version = 1
+    .version = 2
 entity Block:
     Assets:
         .model = "core:solid"

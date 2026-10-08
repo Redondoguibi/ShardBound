@@ -8,12 +8,15 @@ Use the real tools exposed by the `shardbound_blockbench` MCP. Start with
 editing; use the returned `project_id` and `expected_revision` for edits.
 Only Generic Model (`free`) is supported.
 
-For this private Desktop plugin, the MCP is local stdio on the owner's Windows
-machine. It does not require Cloudflare, a remote MCP URL, OAuth, or Secure MCP
-Tunnel for normal ChatGPT Desktop use.
+This private account plugin requires its registered ShardBound MCP connection.
+ChatGPT reaches the Windows stdio server through the OpenAI Secure MCP Tunnel.
+The owner runs Install-ChatGPT-Desktop-Plugin.ps1 or Connect-ChatGPT.ps1 locally.
+The account plugin and a local Codex MCP configuration are different integrations.
 
-If tools are absent, report that the Desktop host did not start/discover the
-local MCP. If `status` reports `connected: false`, ask the user to open
+If tools are absent, state that this session did not expose the connection's tools.
+Do not infer a Node spawn failure from that alone. Have the owner inspect the
+account connection and Status-ChatGPT-Desktop-Plugin.ps1 diagnostics.
+If `status` reports `connected: false`, ask the user to open
 Blockbench, load the paired `.local/shardbound_bridge.js`, and open a Generic
 Model. Never ask for pairing tokens, API keys, OAuth tokens, or passwords.
 

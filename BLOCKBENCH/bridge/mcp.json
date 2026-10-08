@@ -1,11 +1,4 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
-  "mcpServers": {
-    "shardbound_blockbench": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["${PLUGIN_ROOT}/mcp/server.mjs"],
-      "cwd": "${PLUGIN_ROOT}"
-    }
-  }
+  "mcpServers": {}
 }

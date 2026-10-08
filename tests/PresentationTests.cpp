@@ -8,6 +8,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 using namespace game;
 void require(bool ok,const char* message) { if(!ok) throw std::runtime_error(message); }
 int main(int argc,char**) {
@@ -31,7 +32,30 @@ int main(int argc,char**) {
             if(argc>1) { std::filesystem::create_directories("user/previews"); std::ofstream f(std::string("user/previews/")+name+".ppm",std::ios::binary); f<<"P6\n1280 720\n255\n"; for(size_t i=0;i<pixels.size();i+=4) f.write(reinterpret_cast<const char*>(pixels.data()+i),3); }
             std::cout<<name<<": "<<renderer.stats().draws<<" draws / "<<renderer.stats().instances<<" instances, "<<renderer.stats().cpuMilliseconds<<" ms render CPU\n";
         };
-        emit("on_start"); auto hero=player.entity();
+        auto source=[&](const char* path) { std::ifstream file(path); require(bool(file),"Missing presentation fixture"); std::ostringstream out; out<<file.rdbuf(); return out.str(); };
+        // Reproduce a real v1 world, then load it through the current content migration.
+        const auto currentScenery=source("content/adventure/scenery.sl");
+        const auto currentWorld=source("content/adventure/world.sl");
+        run(source("tests/fixtures/world-v1.sl")+"\n"+source("tests/fixtures/scenery-v1.sl"));
+        emit("on_start");
+        run("state.gold = 37\ndiscovery(\"adventure:Forest\").active = true\nlist_at(state.items, 0).level = 7\nsave_game(\"scenery_v1\")");
+        require(extension.process().empty(),"Legacy presentation save failed");
+        run(currentWorld+"\n"+currentScenery.substr(currentScenery.find("@Globals")));
+        run("load_game(\"scenery_v1\")"); require(extension.process().empty(),"Legacy scenery could not migrate");
+        auto hero=player.entity();
+        require(world.find("adventure_scenery_v2") && !world.find("adventure_scenery_v1"),"Scenery marker did not migrate");
+        require(value("state").member("gold",{}).number()==37,"Visual migration changed currency");
+        run("migration_discovery = discovered(\"adventure:Forest\")\nmigration_level = list_at(state.items, 0).level");
+        require(value("migration_discovery").boolean() && value("migration_level").number()==7,"Visual migration changed discoveries or equipment");
+        run("list_at(state.items, 0).level = 1\nstate.gold = 0");
+        for(auto id:world.entities()) {
+            if(world.get<NameComponent>(id).name!="adventure_scenery_block") continue;
+            const auto& t=world.get<TransformComponent>(id).local;
+            require(t.rotation.x==0 && t.rotation.y==0 && t.rotation.z==0,"Official blocks have arbitrary rotations");
+            if(t.position.y==-.5f) require(t.scale.x==.5f && t.scale.y==.5f && t.scale.z==.5f,"Terrain is not made of unit blocks");
+        }
+        physics.teleport(hero,{0,1,17}); for(int i=0;i<30;++i) { player.move(0,0); physics.step(1.0f/60); }
+        require(physics.grounded(hero),"Migrated visual terrain lost its physical ground"); physics.teleport(hero,{0,1.1f,0});
         require(world.entities().size()<3000,"Official scenery exceeds the save/mod headroom budget");
         const auto count=world.entities().size(); run("configure_presentation()\nconfigure_presentation()"); require(world.entities().size()==count,"Scenery migration is not idempotent");
         emit("on_ready"); require(ui.paused(),"Title screen failed to pause the simulation"); capture("title");

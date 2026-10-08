@@ -73,7 +73,7 @@ function Get-RuntimeApiKey {
 }
 
 function Get-NodeExecutable {
-    $node = Get-Command node -ErrorAction Stop
+    $node = Get-Command node -CommandType Application -ErrorAction Stop | Select-Object -First 1
     return $node.Source
 }
 
@@ -82,16 +82,45 @@ function Get-McpCommand {
     # backslashes are escape characters. Native Windows paths such as
     # C:\Program Files\... therefore break into an invalid executable.
     #
-    # Use "node" from PATH plus an encoded file:// URL loaded via -e. The URL
-    # contains no raw spaces/backslashes, so this is stable on Windows even
-    # when the repository lives under "Program Files" or another spaced path.
-    $null = Get-NodeExecutable
+    # Resolve Node now instead of depending on the detached runtime's PATH.
+    # Single quotes are consumed by tunnel-client's command parser, not a shell.
+    $nodePath = (Get-NodeExecutable).Replace('\', '/')
     $server = Join-Path $script:BridgeRoot 'mcp\server.mjs'
     if (-not (Test-Path -LiteralPath $server)) { throw "MCP server nao encontrado: $server" }
 
     $serverUri = ([System.Uri]$server).AbsoluteUri
     $tick = [char]96
-    return "node -e import($tick$serverUri$tick)"
+    $code = 'import(' + $tick + $serverUri + $tick + ')'
+    return (Quote-McpArgument $nodePath) + ' -e ' + (Quote-McpArgument $code)
+}
+
+function Quote-McpArgument([string]$Value) {
+    $single = [string][char]39
+    $double = [string][char]34
+    $escapedQuote = $single + $double + $single + $double + $single
+    return $single + $Value.Replace($single, $escapedQuote) + $single
+}
+
+function Get-SafeTunnelStatus {
+    $client = Get-TunnelClient
+    $raw = (& $client runtimes status $script:TunnelAlias --json 2>$null | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0) { throw 'Nao foi possivel consultar o runtime ShardBound.' }
+    $native = $raw | ConvertFrom-Json
+    $safe = [ordered]@{ checkedAt = (Get-Date).ToUniversalTime().ToString('o') }
+    foreach ($field in @('process_running', 'healthy', 'ready', 'runtime_state', 'tunnel_id')) {
+        $safe[$field] = $native.$field
+    }
+    $safe.pid = $native.process.pid
+    $safe.log_path = $native.process.log_path
+    try {
+        $health = Invoke-RestMethod -Uri $native.health_details_url -TimeoutSec 5
+        $safe.control_plane = $health.components.'control-plane'
+        $safe.mcp = $health.components.mcp
+        $safe.external_proxy_enabled = $health.components.cloudflared.details.enabled
+    } catch { $safe.health_error = $_.Exception.Message }
+    Ensure-LocalDirectory
+    [IO.File]::WriteAllText((Join-Path $script:LocalDir 'tunnel-status-safe.json'), ($safe | ConvertTo-Json -Depth 9), [Text.UTF8Encoding]::new($false))
+    return [pscustomobject]$safe
 }
 
 function Assert-TunnelId([string]$TunnelId) {

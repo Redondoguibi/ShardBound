@@ -4048,9 +4048,9 @@
 
   // shared/tools.mjs
   var number = external_exports.number().finite().min(-1e6).max(1e6);
-  var vec3 = external_exports.tuple([number, number, number]);
-  var vec2 = external_exports.tuple([number, number]);
-  var uvRect = external_exports.tuple([number, number, number, number]);
+  var vec3 = external_exports.array(number).length(3);
+  var vec2 = external_exports.array(number).length(2);
+  var uvRect = external_exports.array(number).length(4);
   var key = external_exports.string().min(1).max(100).regex(/^[a-zA-Z0-9_-]+$/).refine((v) => !["__proto__", "constructor", "prototype"].includes(v));
   var id = external_exports.string().min(1).max(100);
   var name = external_exports.string().min(1).max(160);
@@ -4282,10 +4282,10 @@
         y: external_exports.string().min(1).max(500).default("0"),
         z: external_exports.string().min(1).max(500).default("v"),
         scale: bounded(-1e3, 1e3, 1),
-        uRange: external_exports.tuple([number, number]).default([0, 6.283185307179586]),
+        uRange: vec2.default([0, 6.283185307179586]),
         uDivs: bounded(2, 128, 32).refine(Number.isInteger),
         uWrap: external_exports.boolean().default(true),
-        vRange: external_exports.tuple([number, number]).default([0, 6.283185307179586]),
+        vRange: vec2.default([0, 6.283185307179586]),
         vDivs: bounded(2, 128, 16).refine(Number.isInteger),
         vWrap: external_exports.boolean().default(true),
         vClose: external_exports.boolean().default(true),
@@ -4370,7 +4370,7 @@
             id,
             vertices: external_exports.array(key).default([]),
             faces: external_exports.array(key).default([]),
-            edges: external_exports.array(external_exports.tuple([key, key])).default([])
+            edges: external_exports.array(external_exports.array(key).length(2)).default([])
           }).strict()
         ).max(100).default([])
       }).strict()

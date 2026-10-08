@@ -32,6 +32,8 @@ for name in ("grass", "earth", "plaster", "roof", "stone"):
                 value = 190 if y % 8 == 7 or (x + (y // 8 % 2) * 8) % 16 == 15 else rng.choice((222, 228, 234))
             elif name == "stone":
                 value = 165 if y % 16 == 15 or (x + (y // 16 % 2) * 16) % 32 == 31 else rng.choice((213, 218, 223))
+            if name in ("grass", "earth", "plaster") and (x == 0 or y == 0):
+                value -= 28
             image.putpixel((x, y), (value, value, value, 255))
     image.save(textures / f"{name}.png")
     png = io.BytesIO()

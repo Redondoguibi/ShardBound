@@ -52,5 +52,8 @@ try {
     $release.tag_name | Set-Content -LiteralPath (Join-Path $script:LocalDir 'tunnel-client-version.txt') -Encoding ASCII
     Write-Output "Instalado e verificado: $($release.tag_name) -> $script:TunnelClientPath"
 } finally {
-    Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue
+    $resolvedTemp = [IO.Path]::GetFullPath($temp)
+    $tempParent = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'
+    if (-not $resolvedTemp.StartsWith($tempParent, [StringComparison]::OrdinalIgnoreCase) -or (Split-Path $resolvedTemp -Leaf) -notlike 'shardbound-tunnel-*') { throw 'Unsafe temporary cleanup path.' }
+    Remove-Item -LiteralPath $resolvedTemp -Recurse -Force -ErrorAction SilentlyContinue
 }

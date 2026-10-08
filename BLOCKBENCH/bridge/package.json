@@ -1,6 +1,6 @@
 {
   "name": "shardbound-blockbench-bridge",
-  "version": "0.3.2",
+  "version": "0.4.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -23,14 +23,10 @@
     "chatgpt:start": "powershell -NoProfile -ExecutionPolicy Bypass -File Connect-ChatGPT.ps1",
     "chatgpt:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File Disconnect-ChatGPT.ps1",
     "chatgpt:status": "powershell -NoProfile -ExecutionPolicy Bypass -File Status-ChatGPT.ps1",
-    "chatgpt:verify": "powershell -NoProfile -ExecutionPolicy Bypass -File Status-ChatGPT.ps1 -Verify",
-    "chatgpt:legacy:start": "node scripts/chatgpt.mjs start",
-    "chatgpt:legacy:stop": "node scripts/chatgpt.mjs stop",
-    "chatgpt:legacy:status": "node scripts/chatgpt.mjs status",
-    "chatgpt:legacy:verify": "node scripts/verify-chatgpt.mjs",
+    "chatgpt:verify": "powershell -NoProfile -ExecutionPolicy Bypass -File Status-ChatGPT-Desktop-Plugin.ps1 -RequireChatHost",
     "test:blockbench": "node scripts/test-blockbench.mjs",
     "package": "powershell -NoProfile -File scripts/package.ps1",
-    "package:desktop": "powershell -NoProfile -File scripts/package.ps1 -BindCurrentMachine"
+    "package:desktop": "powershell -NoProfile -File scripts/package.ps1"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",

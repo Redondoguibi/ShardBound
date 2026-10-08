@@ -1,9 +1,11 @@
 import { z } from 'zod';
 
 const number = z.number().finite().min(-1e6).max(1e6);
-export const vec3 = z.tuple([number, number, number]);
-const vec2 = z.tuple([number, number]);
-const uvRect = z.tuple([number, number, number, number]);
+// Homogeneous fixed-length arrays publish an object-valued JSON Schema items.
+// Tuple items arrays are not accepted by every ChatGPT tool-schema validator.
+export const vec3 = z.array(number).length(3);
+const vec2 = z.array(number).length(2);
+const uvRect = z.array(number).length(4);
 const key = z
   .string()
   .min(1)
@@ -286,10 +288,10 @@ export const mtools = {
         y: z.string().min(1).max(500).default('0'),
         z: z.string().min(1).max(500).default('v'),
         scale: bounded(-1000, 1000, 1),
-        uRange: z.tuple([number, number]).default([0, 6.283185307179586]),
+        uRange: vec2.default([0, 6.283185307179586]),
         uDivs: bounded(2, 128, 32).refine(Number.isInteger),
         uWrap: z.boolean().default(true),
-        vRange: z.tuple([number, number]).default([0, 6.283185307179586]),
+        vRange: vec2.default([0, 6.283185307179586]),
         vDivs: bounded(2, 128, 16).refine(Number.isInteger),
         vWrap: z.boolean().default(true),
         vClose: z.boolean().default(true),
@@ -400,7 +402,7 @@ export const tools = {
                 id,
                 vertices: z.array(key).default([]),
                 faces: z.array(key).default([]),
-                edges: z.array(z.tuple([key, key])).default([]),
+                edges: z.array(z.array(key).length(2)).default([]),
               })
               .strict(),
           )

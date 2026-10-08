@@ -100,9 +100,7 @@ if (config) {
         if (health.publicUrl)
           ok(`Remote MCP URL configured: ${health.publicUrl}/mcp`);
         else
-          warn(
-            'Remote ChatGPT MCP URL is not configured. Codex/local MCP still works.',
-          );
+          ok('Loopback bridge configured. The OpenAI Tunnel does not require publicUrl; use Status-ChatGPT-Desktop-Plugin.ps1 to verify the Chat connection.');
       }
     } catch {
       const free = await new Promise((resolve) => {
