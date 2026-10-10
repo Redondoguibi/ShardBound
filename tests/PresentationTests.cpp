@@ -34,30 +34,53 @@ int main(int argc,char**) {
         };
         auto source=[&](const char* path) { std::ifstream file(path); require(bool(file),"Missing presentation fixture"); std::ostringstream out; out<<file.rdbuf(); return out.str(); };
         // Reproduce a real v1 world, then load it through the current content migration.
-        const auto currentScenery=source("content/adventure/scenery.sl");
-        const auto currentWorld=source("content/adventure/world.sl");
-        run(source("tests/fixtures/world-v1.sl")+"\n"+source("tests/fixtures/scenery-v1.sl"));
-        emit("on_start");
-        run("state.gold = 37\ndiscovery(\"adventure:Forest\").active = true\nlist_at(state.items, 0).level = 7\nsave_game(\"scenery_v1\")");
-        require(extension.process().empty(),"Legacy presentation save failed");
-        run(currentWorld+"\n"+currentScenery.substr(currentScenery.find("@Globals")));
-        run("load_game(\"scenery_v1\")"); require(extension.process().empty(),"Legacy scenery could not migrate");
+        const auto legacyRoot=std::filesystem::path("user/presentation-v1");
+        std::filesystem::create_directories(legacyRoot);
+        std::filesystem::copy("content/adventure",legacyRoot,std::filesystem::copy_options::recursive|std::filesystem::copy_options::overwrite_existing);
+        { std::ofstream file(legacyRoot/"world.sl"); file<<source("tests/fixtures/world-v1.sl"); }
+        { std::ofstream file(legacyRoot/"scenery.sl"); file<<source("tests/fixtures/scenery-v1.sl"); }
+        {
+            World legacyWorld; PhysicsSystem legacyPhysics(legacyWorld); PlayerController legacyPlayer(legacyWorld,legacyPhysics);
+            script::Runtime legacy; bindRuntimeApi(legacy,legacyWorld,assets); bindGameplayApi(legacy,legacyWorld,legacyPhysics,legacyPlayer,input,audio,assets);
+            Components legacyComponents; SaveGame legacySaves("user/presentation-saves",legacyWorld,legacyPhysics,legacyPlayer,assets);
+            legacySaves.setMods({{"adventure","0.1.0"}});
+            ExtensionBridge legacyExtension(legacy,legacyWorld,legacyComponents,legacySaves); GameUi legacyUi(legacy,renderer);
+            legacy.load("adventure",legacyRoot,"main.sl"); const auto errors=legacy.emit("on_start");
+            if(!errors.empty()) throw DiagnosticError(errors.front());
+            legacy.execute("adventure", "@Globals\nstate.gold = 37\ndiscovery(\"adventure:Forest\").active = true\nlist_at(state.items, 0).level = 7\npreserved = block_at(vec3(-7, 0.16, -3), vec3(2.13, 0.16, 1.83), vec3(0.25, 0.29, 0.29), false)\npreserved.name = \"mod_decoration\"\npreserved.active = false\nsave_game(\"scenery_v1\")");
+            require(legacyExtension.process().empty(),"Legacy presentation save failed");
+        }
+        run("load_game(\"scenery_v1\")");
+        const auto migrationErrors=extension.process(); if(!migrationErrors.empty()) throw DiagnosticError(migrationErrors.front());
         auto hero=player.entity();
         require(world.find("adventure_scenery_v2") && !world.find("adventure_scenery_v1"),"Scenery marker did not migrate");
+        require(bool(world.find("mod_decoration")),"Visual migration removed named extension decoration");
         require(value("state").member("gold",{}).number()==37,"Visual migration changed currency");
         run("migration_discovery = discovered(\"adventure:Forest\")\nmigration_level = list_at(state.items, 0).level");
         require(value("migration_discovery").boolean() && value("migration_level").number()==7,"Visual migration changed discoveries or equipment");
         run("list_at(state.items, 0).level = 1\nstate.gold = 0");
         for(auto id:world.entities()) {
+            const auto& definition=world.get<IdentityComponent>(id).definition;
+            const auto& name=world.get<NameComponent>(id).name;
+            require(!((definition=="adventure:Block" || definition=="adventure:Pine") && name==definition && !physics.contains(id)),"Obsolete official decoration survived visual migration");
             if(world.get<NameComponent>(id).name!="adventure_scenery_block") continue;
             const auto& t=world.get<TransformComponent>(id).local;
             require(t.rotation.x==0 && t.rotation.y==0 && t.rotation.z==0,"Official blocks have arbitrary rotations");
-            if(t.position.y==-.5f) require(t.scale.x==.5f && t.scale.y==.5f && t.scale.z==.5f,"Terrain is not made of unit blocks");
+            if(t.position.y==-1) require(t.scale.x==1 && t.scale.y==1 && (t.scale.z==1 || t.scale.z==.5f),"Terrain is not made of regular blocks");
         }
         physics.teleport(hero,{0,1,17}); for(int i=0;i<30;++i) { player.move(0,0); physics.step(1.0f/60); }
         require(physics.grounded(hero),"Migrated visual terrain lost its physical ground"); physics.teleport(hero,{0,1.1f,0});
+        // Walk the existing route and collide with a house using the actual controller and physics.
+        for(int i=0;i<540;++i) { player.move(0.573462f,0.819232f); physics.step(1.0f/60); }
+        require(world.get<TransformComponent>(hero).local.position.z>35 && physics.grounded(hero),"Hub/forest route has a collision gap or obstruction");
+        physics.teleport(hero,{-7,1.1f,-6.5f});
+        for(int i=0;i<90;++i) { player.move(0.573462f,0.819232f); physics.step(1.0f/60); }
+        require(world.get<TransformComponent>(hero).local.position.z< -5.25f,"House collision does not match its front wall");
+        physics.teleport(hero,{0,1.1f,0}); player.move(0,0);
         require(world.entities().size()<3000,"Official scenery exceeds the save/mod headroom budget");
         const auto count=world.entities().size(); run("configure_presentation()\nconfigure_presentation()"); require(world.entities().size()==count,"Scenery migration is not idempotent");
+        run("scenery_root.name = \"adventure_scenery_building\"\nconfigure_presentation()");
+        require(world.entities().size()==count && world.find("adventure_scenery_v2") && !world.find("adventure_scenery_building"),"Interrupted scenery build could not recover without duplication");
         emit("on_ready"); require(ui.paused(),"Title screen failed to pause the simulation"); capture("title");
         click(640,310); require(!ui.paused() && !value("title_open").boolean(),"Title mouse button failed");
         run("notice_time = 0\nnotice = \"\"\nlast_notice = \"\"\nanimate_hero(0)"); capture("hub");
@@ -65,7 +88,10 @@ int main(int argc,char**) {
         run("state.combat = 5"); emit("on_fixed_update",{script::Value(1.0)});
         require(value("state").member("combat",{}).number()==5,"Paused scripts advanced combat timers"); capture("pause");
         key(Key::Escape); require(!ui.paused(),"Escape did not resume");
+        run("state.attack = 0.04\nstate.winding = false\nattack_buffer = 0.14");
         key(Key::I); require(value("inventory_open").boolean(),"Inventory did not open");
+        emit("on_fixed_update",{script::Value(0.05)});
+        require(value("state").member("attack",{}).number()==0 && !value("state").member("winding",{}).boolean(),"Buffered attack started behind inventory");
         run("give_item(hero, ForestSword, 1)\ngive_item(hero, HeavyBlade, 1)\ngive_item(hero, TrailKnife, 2)\ngive_item(hero, IronSword, 12)\nensure_equipment()");
         const auto originalEquipped=value("state").member("equipped_uid",{}).number();
         click(290,240); require(value("selected_item").number()==1 && value("state").member("equipped_uid",{}).number()==originalEquipped,"Selecting an inventory card equipped it prematurely");
@@ -106,6 +132,7 @@ int main(int argc,char**) {
         run("save_game(\"presentation\")"); require(extension.process().empty(),"Scenery save failed");
         run("load_game(\"presentation\")"); require(extension.process().empty(),"Scenery restore failed");
         require(world.entities().size()==count,"Save duplicated official decoration");
+        require(requireEntity(value("scenery_root"),world,{})==world.find("adventure_scenery_v2"),"Scene root was not rebound after restoring a save");
         run("take_item(hero, IronSword, 1)\nensure_equipment()\ninventory_open = true\nrefresh_hud()\nempty_feedback = false\nfor command in canvas:\n    if command.kind == \"text\" and command.text == \"Sem arma equipada\":\n        empty_feedback = true");
         require(value("empty_feedback").boolean(),"Empty equipment still displays a fallback weapon as equipped");
         // Transparent canvas must leave the world visible; overlapping shapes retain source-over alpha.

@@ -45,6 +45,7 @@ func handle_input():
                 menu_selected = 0
         refresh_hud()
     if paused:
+        attack_buffer = 0
         menu_input()
         return
     canvas_input()
@@ -60,6 +61,8 @@ func handle_input():
         map_open = false
         selected_item = 0
         inventory_filter = 0
+    if map_open or inventory_open:
+        attack_buffer = 0
     if action_pressed("Jump") and not map_open and not inventory_open:
         jump(get_definition("Entities", Actor).jump)
     if action_pressed("Attack") and not map_open and not inventory_open:
