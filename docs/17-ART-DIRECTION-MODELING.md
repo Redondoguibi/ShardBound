@@ -2,6 +2,19 @@
 
 Este documento registra regras visuais/técnicas importantes para modelos oficiais e mods.
 
+## Prioridade reafirmada pelo autor em 2026-10-09
+
+A identidade deve continuar claramente construída com cubos/cuboids, próxima
+de Minecraft. Melhorar a apresentação não autoriza trocar essa linguagem por
+detalhes finos, superfícies orgânicas ou uma ambientação visual diferente.
+No cenário comum, usar volumes alinhados, escala de bloco legível, bordas
+ortogonais e texturas pixel art. Geometria livre continua sendo exceção.
+
+A prioridade atual é corrigir funcionamento, controles, colisões, estabilidade
+e legibilidade dos sistemas existentes. Não ampliar catálogo de itens, inimigos,
+regiões, lore ou progressão como substituto dessas correções. O mapa existente
+deve ser preservado e o personagem fica a cargo do autor.
+
 ## Princípio geral
 
 O jogo usa GLB/GLTF como formato técnico principal, mas isso **não significa uma direção de modelagem realista ou high-poly**.

@@ -68,8 +68,8 @@ de arma e um slot equipado. Regiões/destinos/armas são extensíveis por mods.
 Cada cópia possui UID, nível, raridade e atributos persistidos; não há sorteio
 de atributos, armaduras, catálogo amplo, streaming ou campanha. O limite
 atual é 256 instâncias e 63 waystones no catálogo. Saves antigos são migrados.
-A apresentação recebeu uma revisão com materiais em pixel art, casas, pinheiros
-autorais no Blockbench, iluminação, sombras, HUD e menus. A direção visual
+A apresentação usa materiais em pixel art, volumes em cubos/cuboids, casas
+simples, árvores originais do autor, iluminação, sombras, HUD e menus. A direção visual
 e as poses procedurais ainda precisam de refinamento e avaliação jogando.
 O importador continua sem skinning/clips glTF; a pose rígida opera sobre partes
 nomeadas. Ainda não há partículas completas ou medição de desempenho
@@ -93,3 +93,13 @@ melhoria; para o intervalo, um valor menor significa um ataque mais rápido.
 Itens de mods ausentes conservam identidade e atributos, mas não podem ser
 equipados. Itens empilhados mostram sua quantidade. Não foram adicionados slots
 de armadura, venda ou descarte; continuam valendo os contratos de equipamento.
+
+## Prioridade atual (2026-10-09)
+
+Corrigir funcionamento, estabilidade, colisões e legibilidade preservando a
+identidade em cubos. A correção v2 mantém áreas, encontros, itens e destinos;
+usa grade regular no piso/caminho e volumes alinhados, com menos detalhes finos.
+Saves da apresentação v1 recebem essa correção ao carregar. Casas têm colisão
+compatível com o volume visível; seus interiores não fazem parte do espaço
+jogável. Abrir mapa/inventário/pausa cancela ataques aguardando no buffer.
+O personagem fica sob responsabilidade do autor.

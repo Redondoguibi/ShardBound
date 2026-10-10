@@ -9,6 +9,12 @@ O estado executável permanece em [18-IMPLEMENTATION-STATUS.md](18-IMPLEMENTATIO
 
 ## Prioridade das decisões
 
+Atualização do autor em 2026-10-09: priorizar funcionamento e qualidade dos
+sistemas já presentes, preservando a identidade em cubos de Minecraft. O mapa
+atual foi considerado adequado; o acabamento não deve mudar sua identidade
+nem motivar expansão de conteúdo. O personagem permanece sob responsabilidade
+do autor. A regra visual está detalhada em 17-ART-DIRECTION-MODELING.
+
 A referência principal é **Minecraft Dungeons II (Minecraft Dungeons 2)**,
 especialmente exploração, combate, equipamentos e estética. As decisões
 explícitas do autor sobre ShardBound prevalecem sobre comportamentos da referência.

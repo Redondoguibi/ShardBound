@@ -192,6 +192,15 @@ As APIs de apresentação são genéricas e as regras continuam em módulos `.sl
 O estudo do personagem ficou editável para o autor, sem integração no runtime.
 Contratos e limites: [26-PLAYABLE-QUALITY-PASS.md](26-PLAYABLE-QUALITY-PASS.md).
 
+Em 2026-10-09, o autor reafirmou identidade em cubos e prioridade de funcionamento
+sobre expansão de conteúdo. A correção v2 simplifica casas, alinha a decoração,
+usa grade de blocos no piso/caminho e restaura as árvores originais. A montagem
+respeita o orçamento de execução dos scripts. A migração de cenário compara
+assinaturas visuais exatas; referência do grupo decorativo é restaurada no load.
+Ataques ainda no buffer são cancelados ao abrir inventário/mapa/pausa. O teste
+de apresentação cobre save real v1, preservação de dados, travessia entre
+regiões e colisão com casas. As decisões estão em 17 e 22; contratos em 26.
+
 ## Build e execução
 
 Requisitos: Visual Studio 2022 com C++ x64 e Windows SDK, CMake >= 3.25, Ninja,
@@ -214,7 +223,7 @@ ctest --preset debug
 Builds, dependências locais e caches são ignorados pelo Git. Bibliotecas serão
 adicionadas somente na etapa em que forem utilizadas.
 
-Validação em 2026-10-08: builds MSVC Debug/Release concluídos; 30/30 testes CTest
+Validação em 2026-10-09: builds MSVC Debug/Release concluídos; 30/30 testes CTest
 aprovados em cada configuração. Incluem pixels na GPU (recorte alfa, profundidade
 e faces duplas), galeria dos três assets por script, ciclo adventure com
 salto/combate/viagem/morte/loot/equipamento/save, variantes de inimigo, coleta com

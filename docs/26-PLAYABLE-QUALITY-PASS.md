@@ -64,11 +64,11 @@ alvo vertical, e deslocamentos acima de dez unidades reposicionam a câmera.
 O ataque aceita um clique até 140 ms antes do fim da recuperação. Um clique
 no mapa/inventário não pode iniciar ataque ao fechar o painel.
 
-A decoração usa o marcador persistente `adventure_scenery_v1` para não duplicar
-objetos no load. Saves anteriores recebem o cenário novo preservando o jogador,
-equipamento, encontros, waystones e dados de mods ausentes. O caminho visual
-legado é identificado por sua posição oficial exata e desativado. As colisões
-existentes das casas e troncos permanecem; pequenos adereços são decorativos.
+A decoração atual usa o marcador persistente `adventure_scenery_v2` para não
+duplicar objetos no load. A v1 foi substituída pela correção de identidade
+descrita abaixo. Saves anteriores preservam jogador, equipamento, encontros,
+waystones e dados de mods ausentes. As colisões das casas acompanham o volume
+retangular visível; troncos e piso físico continuam presentes.
 
 A gravação atômica mantém o save original ao falhar e tenta novamente, por no
 máximo 80 ms, apenas para conflitos transitórios de compartilhamento/bloqueio.
@@ -115,3 +115,53 @@ células/categorias vazias não mudam equipamento. O teste da extensão real de
 conteúdo também equipa uma cópia na segunda página da grade e confere a diferença
 entre atributos persistidos de duas cópias e a indicação de mod ausente.
 Fechar o painel com Escape e clicar no mesmo frame não inicia um ataque.
+
+## Correção de identidade e funcionamento (2026-10-09)
+
+Direção reafirmada pelo autor: preservar a construção em cubos, manter o mapa
+existente e priorizar funcionamento e acabamento dos sistemas atuais. O
+personagem fica com o autor; esta correção não acrescenta regiões, armas,
+inimigos, progressão ou lore.
+
+O cenário usa piso em cubos regulares de duas unidades, com recorte da última
+fileira para coincidir com o limite das regiões. Caminhos e praças usam a mesma
+grade; casas possuem poucos cuboids e telhados com três degraus de meia unidade.
+Peças comuns permanecem alinhadas aos eixos. Vegetação fina inclinada, pedras
+rotacionadas e fachadas com muitos frisos foram removidas. Árvores e waystone
+do autor voltam à composição oficial. Isso é apresentação do cenário existente;
+não foi criado sistema de mineração/construção ou mundo voxel editável.
+
+A v2 dá nomes próprios às peças decorativas e as agrupa sob um marcador na
+origem. A remoção da v1 compara apenas definições/nome padrão, ausência de corpo
+físico e assinatura exata de modelo, posição, rotação, escala e tint. Não depende
+de IDs ou ordem de entidades, que mudam no load. Peças nomeadas por extensões ou
+com aparência modificada não são removidas por essa comparação. Os modelos
+originais não são regravados. O esquema do save continua v1.
+
+O marcador só recebe o nome de versão concluída ao terminar a montagem. Uma
+montagem interrompida é identificada pelo nome temporário e suas peças próprias
+são removidas antes de tentar novamente, sem duplicar cenário. O load também
+reatribui a referência do grupo decorativo ao novo mundo restaurado.
+
+`entity_visual(entity)` é uma consulta genérica de modelo/transform/tint,
+`physical` e `signature`; não modifica entidades. A assinatura é o ID do modelo
+em UTF-8 hexadecimal, seguido dos bits float32 de posição, rotação, escala e
+tint, em ordem XYZ. Serve à comparação de apresentação, não à identidade da
+entidade. A tabela histórica pode ser reproduzida com
+`python tools/record-scenery-v1-signatures.py build/release/user/presentation-saves/scenery_v1.json`
+após executar o teste de apresentação com as fontes v1 congeladas em
+`tests/fixtures/`.
+
+A montagem foi simplificada para respeitar o orçamento de instruções da
+linguagem, sem aumentar seu limite. Abrir inventário, mapa ou pausa cancela
+ataques ainda aguardando no buffer; golpes já iniciados mantêm seu ciclo.
+
+O teste de apresentação agora também gera um save real com as fontes v1,
+carrega-o pela implementação atual, verifica remoção da decoração antiga,
+preservação de ouro/nível/descobertas e de decoração nomeada por extensões,
+idempotência, orientação dos blocos, piso físico, travessia do caminho e colisão
+com a frente das casas. A aprovação visual final continua pertencendo ao autor.
+
+Validação em 2026-10-09: 30/30 testes CTest em Debug e Release, com capturas
+reais de D3D11. Controles/travessia foram exercitados por input e controlador
+sintetizados; esta verificação não equivale a uma sessão manual completa.

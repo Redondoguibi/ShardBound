@@ -33,8 +33,9 @@ As fontes `.bbmodel` podem ser abertas e modificadas no formato Generic Model.
   cubos unitários com texturas originais de 32×32, reproduzíveis por
   `python tools/create-scenery-materials.py` (Pillow). PNGs em `textures/woodland`.
   O gerador reutiliza somente a geometria original de `solid.glb`.
-- Os modelos originais de árvore e waystone continuam disponíveis. A composição
-  mistura árvores de copa e pinheiros e preserva os troncos de colisão.
+- Os modelos originais de árvore e waystone são usados na composição oficial.
+  Desde a correção de identidade de 2026-10-09, o pinheiro continua disponível
+  como asset, mas não substitui a árvore do autor no cenário.
 
 `explorer_concept.bbmodel` é um estudo editável interrompido a pedido do autor,
 que continuará o personagem. Mantém o rig existente e adiciona roupa/acessórios;
