@@ -70,6 +70,20 @@ int main(int argc,char**) {
         }
         physics.teleport(hero,{0,1,17}); for(int i=0;i<30;++i) { player.move(0,0); physics.step(1.0f/60); }
         require(physics.grounded(hero),"Migrated visual terrain lost its physical ground"); physics.teleport(hero,{0,1.1f,0});
+        // Real keyboard input, package tuning and recreated save body must give a jump of two author tree blocks.
+        for(int i=0;i<30;++i) physics.step(1.0f/60);
+        const auto takeoff=world.get<TransformComponent>(hero).local.position.y;
+        key(Key::Space);
+        require(physics.velocity(hero).y>0,"Space did not initiate the configured jump");
+        float jumpHeight=0; int landedFrame=0;
+        for(int i=1;i<=90;++i) {
+            player.move(0,0); physics.step(1.0f/60);
+            jumpHeight=std::max(jumpHeight,world.get<TransformComponent>(hero).local.position.y-takeoff);
+            if(physics.grounded(hero)) { landedFrame=i; break; }
+        }
+        require(std::abs(jumpHeight-2*16*.038f)<.025f,"Player jump does not reach two author tree blocks");
+        require(landedFrame>=40 && landedFrame<=45,"Player jump is too floaty or falls too quickly");
+        std::cout<<"Jump: "<<jumpHeight<<" units, "<<landedFrame<<" frames airborne at 60 Hz\n";
         // Walk the existing route and collide with a house using the actual controller and physics.
         for(int i=0;i<540;++i) { player.move(0.573462f,0.819232f); physics.step(1.0f/60); }
         require(world.get<TransformComponent>(hero).local.position.z>35 && physics.grounded(hero),"Hub/forest route has a collision gap or obstruction");

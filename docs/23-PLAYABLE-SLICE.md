@@ -70,6 +70,7 @@ Ausência de mods mantém a preservação de órfãos da Etapa 12.
 | API | Contrato |
 | --- | --- |
 | `jump(speed)` | Impulso vertical positivo, false quando não permitido. |
+| `set_gravity_factor(entity,factor)` | Multiplicador finito não negativo da gravidade Jolt (-9,81), somente corpo dinâmico. Transitório: reaplicar após recriar corpo ou carregar save. |
 | `is_grounded(entity)` | Sondas físicas com alcance extra de 0,06 e normal Y > 0,6. |
 | `get_velocity(entity)` / `set_velocity(entity,vec3)` | Velocidade do corpo existente; valores finitos. |
 | `teleport(entity,vec3)` | Sincroniza corpo/Transform e zera velocidade imediatamente. |
@@ -110,3 +111,21 @@ crítico só na queda, morte/perda única, save/load, parâmetros modificados po
 outro pacote, pixels reais de GPU e smoke da Application em Debug/Release.
 Esse ciclo não equivale à conclusão do jogo inteiro: animações finais, UI final,
 streaming, catálogo amplo e otimização representativa continuam trabalhos futuros.
+
+## Ajuste de salto — 2026-10-09
+
+A referência de bloco para o salto é o cubo da árvore original do autor em
+`assets/core/models/tree.glb`: 16 unidades de autoria, aplicado com escala
+0,038 no cenário, resulta em 0,608 unidade de mundo por bloco. O piso decorativo
+de duas unidades não define essa medida. O salto deve elevar os pés em dois
+blocos da árvore: 1,216 unidade de mundo.
+
+`Actor.jump = 7.19` é a velocidade inicial vertical e
+`Actor.gravity_factor = 2.03873598` aplica aproximadamente 20 unidades/s² de
+gravidade ao jogador. Os valores consideram o passo físico de 60 Hz e o
+amortecimento do corpo; o ciclo completo dura aproximadamente 0,7 segundo.
+A gravidade dos outros corpos permanece no padrão. Os campos continuam
+alteráveis por mods; `jump(speed)` mantém seu contrato anterior de velocidade.
+O pacote reaplica o fator ao criar o jogador e em `on_loaded`, sem alterar o
+esquema v1 do save. As restrições de apoio/vida/menus e o crítico durante a
+queda permanecem iguais.

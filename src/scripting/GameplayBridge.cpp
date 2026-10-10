@@ -51,6 +51,9 @@ void bindGameplayApi(script::Runtime& runtime,World& world,PhysicsSystem& physic
     runtime.bind("add_box",native([&](const auto& a,const auto& at) {
         arity(a,3,at); physics.attachBox(requireEntity(a[0],world,at),vector(a[1],at),a[2].boolean(at)); return Value{};
     }));
+    runtime.bind("set_gravity_factor",native([&](const auto& a,const auto& at) {
+        arity(a,2,at); physics.setGravityFactor(requireEntity(a[0],world,at),number(a[1],at)); return Value{};
+    }));
     runtime.bind("set_player",native([&](const auto& a,const auto& at) {
         arity(a,2,at); player.possess(requireEntity(a[0],world,at),number(a[1],at)); return Value{};
     }));

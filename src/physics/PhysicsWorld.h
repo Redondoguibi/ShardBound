@@ -13,6 +13,7 @@ public:
     Vec3 position(BodyId id) const;
     Vec3 velocity(BodyId id) const;
     void setVelocity(BodyId id,Vec3 velocity);
+    void setGravityFactor(BodyId id,float factor);
     void setPosition(BodyId id,Vec3 position);
     bool grounded(BodyId id,Vec3 halfExtent) const;
     bool clearPath(BodyId from,BodyId to) const;

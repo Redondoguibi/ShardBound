@@ -55,6 +55,7 @@ on_loaded():
     restored = get_save_state()
     state = restored
     hero = get_entity_by_key(state.hero_key)
+    set_gravity_factor(hero, get_definition("Entities", Actor).gravity_factor)
     avatar = get_entity_by_key(state.avatar_key)
     blade = get_entity_by_key(state.blade_key)
     if not record_has(state, "equipment_schema"):

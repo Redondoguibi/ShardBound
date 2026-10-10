@@ -70,6 +70,10 @@ void PhysicsWorld::setVelocity(BodyId id,Vec3 v) {
     if(!finite(v)) throw DiagnosticError({"PHYS104","Non-finite velocity"});
     impl_->physics.GetBodyInterface().SetLinearVelocity(impl_->require(id),JPH::Vec3(v.x,v.y,v.z));
 }
+void PhysicsWorld::setGravityFactor(BodyId id,float factor) {
+    if(!std::isfinite(factor) || factor<0) throw DiagnosticError({"PHYS104","Gravity factor must be finite and non-negative"});
+    impl_->physics.GetBodyInterface().SetGravityFactor(impl_->require(id),factor);
+}
 void PhysicsWorld::step(float delta) {
     if(!std::isfinite(delta) || delta<=0 || delta>0.25f) throw DiagnosticError({"PHYS105","Invalid physics timestep"});
     if(impl_->physics.Update(delta,int(std::ceil(delta*60)),&impl_->allocator,&impl_->jobs)!=JPH::EPhysicsUpdateError::None) throw DiagnosticError({"PHYS106","Physics update capacity exceeded"});

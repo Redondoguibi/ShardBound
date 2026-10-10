@@ -3,7 +3,10 @@
 entity Actor:
     .max_health = 100
     .speed = 4
-    .jump = 6
+    ? Author tree cubes: 16 model units * 0.038 world scale = 0.608.
+    ? Jump rises two of these blocks (1.216), tuned for the 60 Hz Jolt step.
+    .jump = 7.19
+    .gravity_factor = 2.03873598
 entity Enemy:
     .visual = "adventure:Explorer"
     .body = vec3(0.4, 1, 0.3)

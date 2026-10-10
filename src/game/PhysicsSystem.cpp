@@ -21,6 +21,11 @@ PhysicsSystem::Box PhysicsSystem::description(EntityId entity) const { return re
 void PhysicsSystem::swapState(PhysicsSystem& other) noexcept { physics_.swapState(other.physics_); bodies_.swap(other.bodies_); }
 Vec3 PhysicsSystem::velocity(EntityId entity) const { return physics_.velocity(require(entity).body); }
 void PhysicsSystem::setVelocity(EntityId entity,Vec3 velocity) { physics_.setVelocity(require(entity).body,velocity); }
+void PhysicsSystem::setGravityFactor(EntityId entity,float factor) {
+    const auto& entry=require(entity);
+    if(!entry.description.dynamic) throw DiagnosticError({"GAME104","Gravity factor requires a dynamic body"});
+    physics_.setGravityFactor(entry.body,factor);
+}
 bool PhysicsSystem::grounded(EntityId entity) const { const auto& e=require(entity); return e.description.dynamic && physics_.grounded(e.body,e.description.halfExtent); }
 bool PhysicsSystem::clearPath(EntityId from,EntityId to) const { return physics_.clearPath(require(from).body,require(to).body); }
 void PhysicsSystem::teleport(EntityId entity,Vec3 position) {

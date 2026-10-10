@@ -86,6 +86,7 @@ func build_world():
     stats = get_definition("Entities", Actor)
     set_health(hero, stats.max_health)
     set_player(hero, stats.speed)
+    set_gravity_factor(hero, stats.gravity_factor)
     avatar = spawn(Explorer, vec3(0, -1, 0))
     avatar.name = "player_visual"
     set_parent(avatar, hero)

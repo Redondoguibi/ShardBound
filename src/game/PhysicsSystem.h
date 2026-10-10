@@ -12,6 +12,7 @@ public:
     bool contains(EntityId entity) const;
     Vec3 velocity(EntityId entity) const;
     void setVelocity(EntityId entity,Vec3 velocity);
+    void setGravityFactor(EntityId entity,float factor);
     bool grounded(EntityId entity) const;
     bool clearPath(EntityId from,EntityId to) const;
     void teleport(EntityId entity,Vec3 position);

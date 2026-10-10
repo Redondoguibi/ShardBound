@@ -1,5 +1,6 @@
 #include "game/PlayerController.h"
 #include "platform/InputSystem.h"
+#include "core/Diagnostic.h"
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -31,6 +32,14 @@ int main() {
         physics.teleport(actor,{0,1,0});
         player.setEnabled(false); require(!player.jump(6),"Disabled jump accepted"); player.move(1,0); require(physics.velocity(actor).x==0,"Disabled actor moves"); player.setEnabled(true);
         world.add(actor,HealthComponent{0,100}); require(!player.jump(6),"Dead actor jumps"); world.get<HealthComponent>(actor).current=100;
+        bool rejected=false;
+        try { physics.setGravityFactor(actor,-1); } catch(const DiagnosticError&) { rejected=true; }
+        require(rejected,"Negative gravity factor accepted");
+        auto fallingBox=box({5,6,0},{.3f,.3f,.3f},true);
+        physics.setGravityFactor(actor,3.26197757f);
+        physics.teleport(actor,{0,6,0}); physics.step(1.0f/60);
+        require(physics.velocity(actor).y<-.52f && physics.velocity(actor).y>-.55f,"Per-body gravity was not applied");
+        require(physics.velocity(fallingBox).y<-.15f && physics.velocity(fallingBox).y>-.18f,"Player gravity changed other bodies");
         physics.teleport(actor,{0,6,0}); require(!physics.grounded(actor) && physics.velocity(actor).y==0,"Teleport retained support/velocity");
         auto wall=box({0,4,2},{1,4,.25f},false); auto target=box({0,6,4},{.3f,.3f,.3f},true);
         require(!physics.clearPath(actor,target),"Sight crosses wall"); world.destroy(wall); physics.step(1.0f/60); require(physics.clearPath(actor,target),"Clear sight rejected");

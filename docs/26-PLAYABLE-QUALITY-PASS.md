@@ -165,3 +165,17 @@ com a frente das casas. A aprovação visual final continua pertencendo ao autor
 Validação em 2026-10-09: 30/30 testes CTest em Debug e Release, com capturas
 reais de D3D11. Controles/travessia foram exercitados por input e controlador
 sintetizados; esta verificação não equivale a uma sessão manual completa.
+
+
+## Salto na escala do autor — 2026-10-09
+
+A altura do salto usa dois cubos da árvore original do autor, e não dois cubos
+do piso decorativo: 2 × 16 × 0,038 = 1,216 unidade de mundo acima do ponto de
+saída. A gravidade individual do jogador é aproximadamente 20 unidades/s²,
+com impulso 7,19 e duração aproximada de 0,7 segundo. A configuração é reaplicada
+ao carregar saves antigos; os demais corpos conservam sua gravidade.
+O teste de apresentação usa Espaço e física real após a migração de save,
+mede altura/duração e mantém as verificações de travessia e colisão.
+
+Validação do salto: altura medida de 1,21839 unidade e 42 passos a 60 Hz
+(0,7 segundo); 30/30 testes CTest passaram tanto em Debug quanto em Release.
