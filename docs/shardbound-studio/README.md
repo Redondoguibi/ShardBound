@@ -19,6 +19,9 @@
 - **Definido (blocos):** grande parte do cenário do ShardBound será construída com blocos, como na referência visual de Minecraft Dungeons II; **não** incluir mecânica de jogador colocar, quebrar, minerar ou construir com blocos como requisito do plugin.
 - **Definido (escopo):** ferramentas visuais **sem editor de dados de gameplay** (dano, vida, IA etc.); criar **novo plugin**, não evoluir obrigatoriamente o antigo.
 - **Definido (VFX):** criar partículas do zero no Blockbench; preview com **aparência idêntica à do jogo** como meta técnica a validar; exportar **GLB acompanhado de arquivos auxiliares** de eventos e efeitos.
+- **Definido (player):** animações gerais do jogador são criadas **no próprio projeto de criação do player**, sem uma categoria/projeto separado exclusivamente para animações.
+- **Definido (som sincronizado):** inserir **sons nos keyframes da timeline**, assim como partículas, com eventos de reprodução durante animações.
+- **Definido (efeitos avançados):** incluir **rastros de armas, flashes, efeitos de brilho** e outros VFX, mesmo quando a implementação técnica não usar partículas tradicionais. Para o criador, todos pertencem às ferramentas integradas de efeitos.
 - **Definido (skins):** skins no formato **Minecraft**, inclusive PNG 64×64, camadas e UV.
 - **Definido (flechas):** flecha padrão compartilhada pelas armas que usam flechas, com possibilidade de personalização por mods.
 - **Preferência ainda não congelada:** o autor inclinou-se a **formato editável próprio** para o projeto do Studio.
