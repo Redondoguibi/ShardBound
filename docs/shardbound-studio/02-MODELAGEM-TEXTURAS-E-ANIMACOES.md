@@ -59,23 +59,71 @@ Comportamentos mínimos desejados:
 
 **Proposta:** incluir template próprio do ShardBound com esses grupos e suporte visual a layers/UV no padrão de skin definido futuramente. Resolução padrão, formato aceito, variante de braço fino, camadas externas e regras de troca de skin estão **em aberto**. Criar/editar a skin não implica trocar automaticamente o personagem do jogo sem suporte do runtime.
 
-## 5. Armaduras e equipamentos
+## 5. Armas: editor com player de referência (definido)
 
-**Definido:** armaduras e armas devem ser criáveis no plugin, com texturas/animações.
+**Definido:** enquanto modela uma espada ou outra arma, o criador deverá ter um **local no Blockbench com um modelo padrão do player, sem skin**, no qual poderá:
 
-**Proposta:** armaduras por grupo ou peça de corpo (cabeça, tronco, braços, pernas) e pontos de encaixe nomeados para itens; ao equipar, a peça acompanha a pasta correspondente do player. Esse processo deve continuar visualmente baseado em grupos, não em pintura de pesos.
+- Ajustar a posição da arma na mão e o modo de empunhadura;
+- Ajustar posições/poses de partes do player — **inclusive partes que não estão diretamente envolvidas com a arma**;
+- Criar e revisar **animações de ataque e outras ações no mesmo ambiente** de edição.
 
-**Proposta:** presets distintos para arma corpo a corpo e arma de longa distância, com grupo de empunhadura e marcadores visuais para efeitos/projéteis. Marcadores não são ossos editados separadamente; são auxiliares de posição.
+**Regra:** o player de referência é uma ferramenta de autoria/preview; não deve ser copiado como geometria adicional para dentro do arquivo final de cada espada. **Em aberto:** o contrato para dividir/exportar animações do personagem versus animações da arma, aplicar overrides e combinar com animações base do player. Não inventar uma semântica definitiva antes do projeto técnico.
 
-**Em aberto:** como compatibilizar diferentes modelos de jogador, proporções alternativas, trocas de skin, armaduras e animações de armas.
+**Proposta:** usar um painel contextual ou ambiente de preview com template oficial de player e pastas editáveis durante a edição da arma. A UI específica ainda não foi decidida.
 
-## 6. Monstros, itens e blocos
+**Proposta coerente com o requisito geral:** suportar no mesmo fluxo armas corpo a corpo e de longa distância, com marcadores auxiliares de empunhadura/posição de efeitos/projéteis. Esses marcadores não constituem ossos separados.
 
-- **Monstros:** grupos próprios, animações de locomoção/ataque/idle e eventos sincronizados. Comportamento de IA é responsabilidade do runtime/scripts.
-- **Itens/armas:** geometria, textura, origem, animações e pontos de encaixe. Estatísticas e regras devem permanecer integradas ao sistema de definições do jogo.
-- **Blocos:** faces/UV, orientação, possíveis estados e animações de grupos; colisão deve ser validada no jogo. Criar modelos de blocos **não** significa que existe um sistema de mundo voxel editável no jogo.
+## 6. Armaduras: sobreposição por pastas (definido)
 
-## 7. Validação desejada (proposta)
+**Definido:** as peças de armadura são **colocadas por cima do modelo do jogador** e seguem os movimentos das partes correspondentes do corpo; não substituem visualmente braços, pernas ou o corpo base no fluxo definido.
+
+**Definido:** a armadura é **organizada por pastas/grupos** para as regiões do corpo, inclusive braço esquerdo e direito. Exemplos de grupos, **não nomes finais obrigatórios**:
+
+```text
+Armadura
+├── cabeça/
+├── tronco/
+├── braço_esquerdo/
+├── braço_direito/
+├── perna_esquerda/
+└── perna_direita/
+```
+
+**Definido:** oferecer ferramenta de encaixe/preview semelhante à de armas usando o modelo do player de referência. **Ao contrário do editor de armas, não é necessário criar poses do player para armaduras.** O autor pode optar por animações da armadura.
+
+**Em aberto:** como essas animações opcionais se somam ao movimento corporal, visuais de peças individuais/conjuntos, espessura/offset de sobreposição, compatibilidade com skins e variantes corporais.
+
+**Proposta de implementação:** atrelar grupos da armadura aos grupos correspondentes do personagem por nomes/mapeamento estável, com offsets locais. O autor continua manipulando pastas e cubos, sem skinning por pesos.
+
+## 7. Monstros, modelos compostos e blocos
+
+### Monstros: hierarquia sem restrições de anatomia
+
+**Definido:** **liberdade completa** para o autor montar qualquer hierarquia de grupos. Não exigir humanoide, seis membros ou outro rig obrigatório. Pastas podem representar caudas, asas, várias cabeças, tentáculos, estruturas abstratas etc.
+
+**Proposta:** oferecer templates de conveniência, mas nunca tornar esses templates obrigatórios nem limitar o número/tipo de grupos por anatomia fixa. Restrições técnicas de performance e limites de tamanho poderão existir, mas não podem proibir hierarquias arbitrárias por tipo de monstro.
+
+IA, física e comportamento de combate permanecem no ShardBound, não surgem automaticamente a partir de uma pasta.
+
+### Projetos de um ou vários modelos relacionados
+
+**Definido:** suportar **ambos** — projeto com um único objeto e projeto com vários modelos independentes relacionados, conforme o tipo de criação.
+
+Exemplos **ilustrativos**: arco + flecha; criatura + objeto segurado; cajado + projétil visual. **Em aberto:** o agrupamento final, IDs, divisão em GLBs e modo de carregar submodelos. Um conjunto de modelos independentes **não** é o mesmo que um único modelo com muitas pastas.
+
+### Blocos de composição de cenários
+
+**Definido como direção de conteúdo:** a maior parte dos cenários do ShardBound será construída de **blocos**, com Minecraft Dungeons II como referência para a linguagem de cenários.
+
+O editor precisa favorecer autoria de blocos/cubos e elementos modulares usados em composição de cenários; não restringir a categoria a meros objetos decorativos isolados.
+
+**Ainda em aberto:** blocos colocáveis/removíveis por jogador, edição de terreno em runtime, mineração, quebra, grade de encaixe e eventuais estados interativos. Não afirmar que esses sistemas já existem.
+
+## 8. Compatibilidade com GeckoLib — escopo fechado
+
+**Definido:** o plugin deve reproduzir **a experiência de autoria** de pastas, cubos, pivôs e timeline que o criador conhece. **Não há requisito de importar/exportar arquivos no formato GeckoLib**. A exportação é voltada para os contratos do ShardBound.
+
+## 9. Validação desejada (proposta)
 
 Conferir grupos sem nomes, pivôs inconsistentes, animações que referenciam grupos removidos, nomes duplicados, textura ausente, UV fora da imagem, escala inesperada, clips sem duração válida e frames de efeito associados a pontos inexistentes.
 
