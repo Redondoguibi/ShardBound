@@ -64,7 +64,7 @@ De acordo com `docs/14-ASSET-PIPELINE.md`, `docs/modding/03-ASSETS-AND-MODELS.md
 - Modelos: projetos com objeto único ou modelos independentes relacionados, conforme o caso.
 - Blocos: componentes da construção visual do cenário; **não** incluir colocação, mineração ou quebra pelo jogador.
 - GeckoLib: familiaridade da interface, não compatibilidade de formatos.
-- Partículas criadas **do zero** no editor, por keyframes; GLB exportado com **arquivos auxiliares**.
+- Partículas criadas **do zero** no editor, por keyframes; **sons também em keyframes**, além de **rastros, flashes e brilhos**; GLB exportado com **arquivos auxiliares**.
 - Preview deve ter aparência **idêntica à do ShardBound**; comprovar isso na fase de integração.
 - Skins no padrão Minecraft, com **PNG 64×64**, UV, camadas e braços aplicáveis.
 - Flecha padrão compartilhada pelas armas que usam flechas, com personalização possível por mods.
@@ -96,12 +96,12 @@ A separação de fases deve ser explícita: **editor funcionando no Blockbench**
 Construir, testar e aperfeiçoar dentro do Blockbench:
 
 - Modelagem por cubos, pastas, pivôs, textura/UV e timeline familiar ao fluxo GeckoLib;
-- Criação de skin no padrão Minecraft (PNG 64×64), item, arma melee/ranged, bloco de cenário, armadura e monstro;
-- **Editor contextual de armas melee e ranged com player padrão sem skin**, empunhadura ajustável e animações do jogador de correr, pular, atacar/disparar com a arma na mão, no mesmo ambiente;
+- Criação de **player com animações gerais no próprio projeto do player** (sem categoria separada para animar o jogador), skin no padrão Minecraft (PNG 64×64), item, arma melee/ranged, bloco de cenário, armadura e monstro;
+- **Editor contextual de armas melee e ranged com player padrão sem skin**, empunhadura ajustável e animações do jogador de correr, pular, atacar/disparar com a arma na mão, no mesmo ambiente. **As animações gerais sem arma permanecem no projeto de criação do player**;
 - **Preview/edição de armadura** sobre o corpo, vinculada a pastas por regiões corporais, sem exigir poses do player; animações próprias opcionais;
 - **Hierarquias inteiramente livres** para monstros;
 - Projetos de um modelo ou vários modelos independentes relacionados;
-- **Editor completo para criar partículas do zero** e trilhas de efeitos, sons e eventos por frame integradas à animação;
+- **Editor completo para criar partículas do zero**, **rastros de armas, flashes e brilhos**, além de **sons e eventos em keyframes da timeline**, tudo integrado à animação;
 - Validação, persistência do projeto editável (**formato próprio preferido, ainda sem extensão final**) e exportação de **GLB acompanhado de arquivos de efeitos/eventos** em contratos versionados;
 - Exemplos, testes de UI, preview com meta de **fidelidade visual idêntica** ao jogo e testes de salvar/reabrir o projeto; comparação direta com o runtime na fase B.
 - Não configurar estatísticas ou regras de gameplay. Reutilizar flechas padrão, personalizáveis por mods.
@@ -116,7 +116,7 @@ Somente após o editor estar construído, desenvolver/testar:
 - Reprodução de hierarquias de grupos e clips;
 - Composição de clips de armas com animações do player;
 - Equipamentos que seguem grupos do player, com animações opcionais;
-- Partículas e eventos vinculados a frames e partes móveis;
+- Partículas, rastros/flashes/brilhos, **sons e eventos** vinculados a frames e partes móveis;
 - Carregamento de modelos relacionados e blocos usados na montagem de cenários;
 - Validação de compatibilidade, integração aos mods/registries e performance.
 
@@ -130,9 +130,9 @@ Somente após o editor estar construído, desenvolver/testar:
 
 ## 6. Critérios de aceite por fase
 
-**Fase A — plugin:** validar armas melee/ranged com player de referência e clips de **corrida, pulo, ataque/disparo com arma equipada**; skin PNG 64×64 estilo Minecraft; armaduras por pastas; monstros livres; múltiplos modelos; blocos de cenário; partículas **criadas do zero** com keyframes e preview. Confirmar salvar/reabrir e exportar GLB com arquivos acompanhantes, sem exigir execução in-game nesta fase.
+**Fase A — plugin:** validar a criação do **player e de suas animações gerais no mesmo projeto**, sem categoria de animação separada; armas melee/ranged com player de referência e clips de **corrida, pulo, ataque/disparo com arma equipada**; skin PNG 64×64 estilo Minecraft; armaduras por pastas; monstros livres; múltiplos modelos; blocos de cenário; partículas **criadas do zero**, **rastros/flashes/brilhos** e **eventos de som** com keyframes e preview. Confirmar salvar/reabrir e exportar GLB com arquivos acompanhantes, sem exigir execução in-game nesta fase.
 
-**Fase B — integração ao jogo:** os testes abaixo continuam como metas quando o runtime for implementado, incluindo **comparar efeitos no Blockbench e no jogo** para confirmar visual idêntico. Sua existência não bloqueia o aceite da fase A.
+**Fase B — integração ao jogo:** os testes abaixo continuam como metas quando o runtime for implementado, incluindo **sincronização de sons**, reprodução de rastros/flashes/brilhos e **comparação de efeitos no Blockbench e no jogo** para confirmar visual idêntico. Sua existência não bloqueia o aceite da fase A.
 
 ### Testes integrados futuros
 
