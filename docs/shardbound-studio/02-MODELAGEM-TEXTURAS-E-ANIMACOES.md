@@ -30,7 +30,7 @@ Em documentação de importadores glTF, "bone", "joint" ou "node" podem designar
 
 ## 2. Modelagem e pintura
 
-- **Definido:** criar conteúdo usando cubos/cuboids, com textura e UV via ferramentas familiares do Blockbench. **Definido:** a criação de efeitos/partículas do zero também deve ocorrer dentro do plugin e seu preview deve corresponder visualmente ao jogo.
+- **Definido:** criar conteúdo usando cubos/cuboids, com textura e UV via ferramentas familiares do Blockbench. **Definido:** a criação de efeitos/partículas do zero também deve ocorrer dentro do plugin e seu preview deve corresponder visualmente ao jogo. **Definido:** incluir outros efeitos visuais (rastros de armas, flashes e brilho) e **sons na timeline**, mesmo quando tecnicamente não se tratar de emissores de partículas.
 - **Definido por padrão do jogo:** estética blocada/pixel art; geometria especial não cúbica pode existir como exceção visual.
 - **Definido:** modelos exportáveis em GLB/GLTF com preferência por GLB e texturas embutidas.
 - **Proposta:** presets de UV/tamanhos de textura sem fixar universalmente uma única resolução.
@@ -47,7 +47,7 @@ Comportamentos mínimos desejados:
 - Keyframes de **posição, rotação e escala dos grupos**.
 - Pivôs e transformações locais previsíveis.
 - Duração, looping e reprodução de preview.
-- Trilhas/eventos para partículas, sons e outros efeitos sincronizados (ver documento 03).
+- Trilhas/eventos para **partículas, sons e efeitos visuais avançados** sincronizados (ver documento 03). Sons têm keyframes/eventos específicos, assim como partículas.
 
 **Proposta:** reutilizar o editor de animação existente do Blockbench e suas trilhas de efeitos quando compatíveis. Não prometer suporte a todos os formatos de expressão/interpolação do GeckoLib sem validação. Definir um subconjunto executável e diagnosticar o resto.
 
@@ -58,6 +58,8 @@ Comportamentos mínimos desejados:
 **Fatos do projeto atual:** `assets/core/models/player.bbmodel` contém seis grupos `Head`, `Body`, `LeftArm`, `RightArm`, `LeftLeg`, `RightLeg`. O jogo já referencia a geometria blocada do player clássico de Minecraft, mas usa assets próprios. O documento `assets/core/models/README.md` registra exportação em escala 1/16 **para aqueles personagens**, não uma regra geral já fechada para todo asset.
 
 **Definido (2026-10-12):** criar skins **iguais às skins do Minecraft** quanto ao formato de autoria: suporte a **PNG 64×64**, layout UV, **camadas externas** e variantes de braço padrão/fino. O modelo de referência do editor pode ser próprio do ShardBound, sem redistribuir texturas de outros jogos. A aplicação da skin ao player em runtime será integrada posteriormente.
+
+**Definido (nova decisão de 2026-10-12):** o **próprio projeto de criação do player** inclui a autoria de suas animações gerais, como idle, caminhar, correr, pular e outras que o modelador desejar. **Não criar categoria exclusiva para animações do jogador**. O autor prefere trabalhar no mesmo projeto do player. Isso não altera o requisito de animar as ações com uma arma equipada no editor de armas.
 
 ## 5. Armas: editor com player de referência (definido)
 
