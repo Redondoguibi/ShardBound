@@ -37,6 +37,20 @@
 | 12 | Pergunta sobre armaduras avançadas | **RETIRADA.** O autor considerou a pergunta sem sentido. Não reabrir sem um problema concreto de implementação. Vale apenas o contrato já fechado: armaduras sobrepostas, por pastas, acompanhando o corpo; animações opcionais. |
 | 13 | Armas de longa distância | **DEFINIDO — Sim.** Mesmo editor contextual com **player de referência** e animações do jogador junto à arma, adaptado a arcos e demais armas ranged. |
 
+## 2.1 Três decisões complementares — 2026-10-12
+
+Estas três perguntas foram **respondidas** pelo autor e não devem ser repetidas.
+
+| Nova questão | Resposta do autor | Requisito registrado |
+| --- | --- | --- |
+| Projeto separado só para animações do jogador? | **Não.** "É mais fácil ter isso junto com o projeto de criar o player." | **DEFINIDO:** animações gerais do player são criadas **no mesmo projeto de criação/modelagem do player**; não introduzir categoria separada exclusiva para animações de jogador. Continua existindo o editor contextual de armas para animar ações com elas equipadas. |
+| Sons na timeline? | **Sim.** | **DEFINIDO:** inserir/referenciar **sons em keyframes de animação**, com sincronização de eventos de áudio assim como ocorre com partículas, dentro da mesma sessão. |
+| Efeitos além de partículas? | **Sim.** | **DEFINIDO:** suportar **rastros de armas, flashes, brilhos e outros efeitos visuais** dentro das ferramentas de efeitos. Mesmo quando um efeito exigir outro mecanismo técnico (material emissivo, faixa geométrica, luz, etc.), não obrigar o autor a tratar essa diferença como um fluxo de criação desconectado. |
+
+**Distinção técnica, não nova pergunta:** partículas são uma maneira de renderizar VFX, não a única. Trilhas contínuas, flashes de material, brilho emissivo e efeitos de luz podem utilizar implementações diferentes. A interface de efeitos deve abstrair isso. Todos os efeitos devem manter a meta de **preview visualmente idêntico ao jogo** e a exportação **GLB com arquivos auxiliares** definidos anteriormente.
+
+**Regra anti-repetição:** não perguntar novamente se o player exige categoria separada de animação, se sons podem ter keyframes ou se VFX incluem efeitos não-partícula. Os três pontos estão fechados.
+
 ## 3. Desdobramentos de design que NÃO exigem perguntar novamente
 
 ### Armas corpo a corpo e de longa distância
@@ -71,7 +85,7 @@ As escolhas abaixo são parte do trabalho de especificação/implementação. **
 
 ## 5. Regra para as próximas conversas
 
-1. **Não repetir** as perguntas 1–6, 9–13, nem as 7 decisões anteriores.
+1. **Não repetir** as perguntas 1–6, 9–13, as 7 decisões anteriores, **nem as três decisões complementares da seção 2.1**.
 2. **Não perguntar** sobre colocação/quebra de blocos, deformação por pesos, compatibilidade de arquivos GeckoLib ou substituir o player por armadura — esses assuntos já foram resolvidos para este plugin.
 3. As únicas incertezas expressamente indicadas pelo autor nesta rodada são a **preferência ainda não definitiva por um formato próprio de projeto** (7) e o **destino operacional da exportação** (8); a segunda pode ter padrão seguro sem nova pergunta.
 4. Se uma futura ambiguidade técnica surgir, apresentar **uma proposta concreta com trade-offs e alternativa para o autor escrever sua opinião**, e só perguntar se a decisão realmente bloquear trabalho.
