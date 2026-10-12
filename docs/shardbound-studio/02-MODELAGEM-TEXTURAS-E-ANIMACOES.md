@@ -69,7 +69,7 @@ Comportamentos mínimos desejados:
 
 **Regra:** o player de referência é ferramenta de autoria/preview; não precisa ser copiado como geometria adicional para o arquivo visual final de cada arma. **Já definido:** o animador cria as ações do player segurando aquela arma; não se trata apenas de animar a espada isoladamente. **A resolver tecnicamente:** contrato para dividir/exportar os canais do personagem versus os da arma, aplicar sobrescritas e combinar clips quando necessário. Não substituir esse requisito por animações procedurais automáticas sem consentimento.
 
-**Proposta:** usar um painel contextual ou ambiente de preview com template oficial de player e pastas editáveis durante a edição da arma. A UI específica ainda não foi decidida.
+**Definido:** usar um ambiente contextual com player de referência para armas **corpo a corpo e de longa distância**. O autor animará também as pastas do player com a arma em mãos. **Ainda é uma escolha técnica** como organizar a interface desse ambiente dentro do Blockbench.
 
 **Definido:** usar o **mesmo editor de referência com player** também para armas de longa distância. **Proposta técnica:** marcadores de empunhadura e origem visual de efeitos/projéteis; esses marcadores não são ossos separados.
 
