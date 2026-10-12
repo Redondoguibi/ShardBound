@@ -18,14 +18,15 @@ A meta é que criadores possam **modelar, texturizar, animar, incluir efeitos e 
 
 | Tipo | Requisito confirmado | Ferramentas específicas propostas |
 | --- | --- | --- |
-| Skin do player | Criar/editar **skins no padrão Minecraft** | PNG 64×64, UV, camadas de skin e preview no humanoide de referência |
+| Skin/modelo do player | Criar/editar player e **skins no padrão Minecraft**, incluindo **suas animações gerais dentro do mesmo projeto** | PNG 64×64, UV, camadas, preview e clips como idle, caminhada, corrida, pulo e outros; **não criar categoria separada para animações do player** |
 | Item genérico | Criar modelos de itens | Poses de exibição, escala e ponto de encaixe |
 | Arma corpo a corpo | Criar e animar armas melee **com o player de referência visível** | Player padrão sem skin, ajuste na mão e animações completas do player **correndo, pulando e atacando com a arma equipada**, no mesmo editor |
 | Arma de longa distância | Criar e animar armas ranged **com o mesmo editor contextual de player** | Animações de uso, corrida, pulo, disparo e outras ações pertinentes; pontos visuais de saída de projéteis e efeitos |
 | Bloco | Criar blocos que compõem grande parte do cenário do ShardBound | Cubos e módulos de cenário, orientação, variantes e referências de colisão; **não** incluir mecânica de colocação/quebra pelo jogador |
 | Armadura | Criar peças **sobrepostas** ao player, organizadas em pastas por parte do corpo | Editor com player de referência, encaixe por braço esquerdo/direito etc.; animações opcionais, sem exigir poses do player |
 | Monstro | Criar mobs/criaturas animados com **hierarquia de grupos totalmente livre** | Clips e efeitos por grupo, sem exigir forma humanoide ou estrutura fixa |
-| Partículas/VFX | **Criar efeitos do zero** | Editor completo de parâmetros/texturas/emissores, keyframes e **preview de aparência idêntica ao jogo** |
+| Partículas/VFX | **Criar efeitos do zero** e efeitos avançados | Editor de partículas, **rastros de armas, flashes, brilhos** e outros efeitos visuais, com keyframes e **preview de aparência idêntica ao jogo** |
+| Sons sincronizados | **Associar sons a frames da timeline** | Escolher/referenciar áudio, marcar instantes de disparo e exportar eventos vinculados ao clip |
 
 **Definido:** todos os tipos devem contemplar texturas; animações devem estar disponíveis sempre que fizerem sentido (não necessariamente obrigatórias para blocos/skins).
 
@@ -43,7 +44,7 @@ A meta é que criadores possam **modelar, texturizar, animar, incluir efeitos e 
 2. Modelar com cubos/cuboids e organizar em pastas/grupos.
 3. Pintar texturas e configurar UVs, preferencialmente em baixa resolução/pixel art.
 4. Criar clips com keyframes para grupos na timeline.
-5. No mesmo projeto e sessão, criar/selecionar partículas e associá-las a frames, com sons e eventos quando desejado.
+5. No mesmo projeto e sessão, criar partículas **do zero** e efeitos avançados, associando-os a frames; **sons também têm keyframes/eventos na timeline**.
 6. Validar escala, IDs, referências e compatibilidade.
 7. Exportar o conjunto para o ShardBound, sem separar manualmente texturas do modelo.
 
@@ -55,13 +56,15 @@ A meta é que criadores possam **modelar, texturizar, animar, incluir efeitos e 
 
 **Armaduras:** fornecer um contexto semelhante para verificar como as peças se encaixam sobre o player. As peças acompanham os grupos correspondentes do corpo, organizados por pastas (inclusive braços esquerdo e direito). **Não exigir edição de poses do player no fluxo de armadura**; permitir animações da armadura quando o criador desejar.
 
+**Projeto do jogador:** as **animações gerais do player** (idle, caminhada, corrida, pulo e outras) são editadas **dentro do próprio projeto de criação do player**, sem criar uma categoria exclusiva para animações. Este fluxo complementa o editor contextual de armas, que permite animar as ações do jogador com a arma equipada; não o substitui.
+
 **A definir tecnicamente:** quais canais/clips do player pertencem ao pacote exportado da arma e como serão combinados com animações base. **Já está decidido:** o editor contextual também vale para armas de longa distância.
 
 ## 5. Requisitos de experiência do usuário
 
 - Familiaridade com o Outliner do Blockbench: grupos, subgrupos, cubos e pivôs.
 - A timeline visual não deve exigir escrever código para declarar um efeito em certo frame.
-- Ao animar uma espada, por exemplo, o autor precisa poder adicionar partículas **criadas do zero** a **essa mesma animação**, sem abrir um projeto desconectado.
+- Ao animar uma espada, por exemplo, o autor precisa poder adicionar partículas **criadas do zero**, rastros, flashes, brilhos e **sons com keyframes próprios na mesma timeline**, sem abrir um projeto desconectado.
 - Presets/templates para reduzir erros repetitivos ao criar mods.
 - Mensagens de erro claras para referências/formatos não suportados.
 - **Definido:** pré-visualização de efeitos e partículas com **aparência idêntica** à execução no ShardBound. A compatibilidade visual ainda precisará ser construída e testada tecnicamente, sobretudo após integração.
