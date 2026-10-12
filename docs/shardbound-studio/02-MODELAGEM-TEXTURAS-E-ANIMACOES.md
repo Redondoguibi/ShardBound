@@ -30,7 +30,7 @@ Em documentação de importadores glTF, "bone", "joint" ou "node" podem designar
 
 ## 2. Modelagem e pintura
 
-- **Definido:** criar conteúdo usando cubos/cuboids, com textura e UV via ferramentas familiares do Blockbench.
+- **Definido:** criar conteúdo usando cubos/cuboids, com textura e UV via ferramentas familiares do Blockbench. **Definido:** a criação de efeitos/partículas do zero também deve ocorrer dentro do plugin e seu preview deve corresponder visualmente ao jogo. **Definido:** incluir outros efeitos visuais (rastros de armas, flashes e brilho) e **sons na timeline**, mesmo quando tecnicamente não se tratar de emissores de partículas.
 - **Definido por padrão do jogo:** estética blocada/pixel art; geometria especial não cúbica pode existir como exceção visual.
 - **Definido:** modelos exportáveis em GLB/GLTF com preferência por GLB e texturas embutidas.
 - **Proposta:** presets de UV/tamanhos de textura sem fixar universalmente uma única resolução.
@@ -47,7 +47,7 @@ Comportamentos mínimos desejados:
 - Keyframes de **posição, rotação e escala dos grupos**.
 - Pivôs e transformações locais previsíveis.
 - Duração, looping e reprodução de preview.
-- Trilhas/eventos para partículas, sons e outros efeitos sincronizados (ver documento 03).
+- Trilhas/eventos para **partículas, sons e efeitos visuais avançados** sincronizados (ver documento 03). Sons têm keyframes/eventos específicos, assim como partículas.
 
 **Proposta:** reutilizar o editor de animação existente do Blockbench e suas trilhas de efeitos quando compatíveis. Não prometer suporte a todos os formatos de expressão/interpolação do GeckoLib sem validação. Definir um subconjunto executável e diagnosticar o resto.
 
@@ -57,21 +57,25 @@ Comportamentos mínimos desejados:
 
 **Fatos do projeto atual:** `assets/core/models/player.bbmodel` contém seis grupos `Head`, `Body`, `LeftArm`, `RightArm`, `LeftLeg`, `RightLeg`. O jogo já referencia a geometria blocada do player clássico de Minecraft, mas usa assets próprios. O documento `assets/core/models/README.md` registra exportação em escala 1/16 **para aqueles personagens**, não uma regra geral já fechada para todo asset.
 
-**Proposta:** incluir template próprio do ShardBound com esses grupos e suporte visual a layers/UV no padrão de skin definido futuramente. Resolução padrão, formato aceito, variante de braço fino, camadas externas e regras de troca de skin estão **em aberto**. Criar/editar a skin não implica trocar automaticamente o personagem do jogo sem suporte do runtime.
+**Definido (2026-10-12):** criar skins **iguais às skins do Minecraft** quanto ao formato de autoria: suporte a **PNG 64×64**, layout UV, **camadas externas** e variantes de braço padrão/fino. O modelo de referência do editor pode ser próprio do ShardBound, sem redistribuir texturas de outros jogos. A aplicação da skin ao player em runtime será integrada posteriormente.
+
+**Definido (nova decisão de 2026-10-12):** o **próprio projeto de criação do player** inclui a autoria de suas animações gerais, como idle, caminhar, correr, pular e outras que o modelador desejar. **Não criar categoria exclusiva para animações do jogador**. O autor prefere trabalhar no mesmo projeto do player. Isso não altera o requisito de animar as ações com uma arma equipada no editor de armas.
 
 ## 5. Armas: editor com player de referência (definido)
 
-**Definido:** enquanto modela uma espada ou outra arma, o criador deverá ter um **local no Blockbench com um modelo padrão do player, sem skin**, no qual poderá:
+**Definido:** enquanto modela uma espada **ou uma arma de longa distância**, o criador deverá ter um **local no Blockbench com um modelo padrão do player, sem skin**, no qual poderá:
 
 - Ajustar a posição da arma na mão e o modo de empunhadura;
 - Ajustar posições/poses de partes do player — **inclusive partes que não estão diretamente envolvidas com a arma**;
-- Criar e revisar **animações de ataque e outras ações no mesmo ambiente** de edição.
+- Criar e revisar **animações de corrida, pulo, ataque, disparo e outras ações com a arma equipada** no **mesmo ambiente/timeline**. As ações pertinentes dependem do tipo de arma, mas o editor contextual é compartilhado entre melee e ranged.
 
-**Regra:** o player de referência é uma ferramenta de autoria/preview; não deve ser copiado como geometria adicional para dentro do arquivo final de cada espada. **Em aberto:** o contrato para dividir/exportar animações do personagem versus animações da arma, aplicar overrides e combinar com animações base do player. Não inventar uma semântica definitiva antes do projeto técnico.
+**Regra:** o player de referência é ferramenta de autoria/preview; não precisa ser copiado como geometria adicional para o arquivo visual final de cada arma. **Já definido:** o animador cria as ações do player segurando aquela arma; não se trata apenas de animar a espada isoladamente. **A resolver tecnicamente:** contrato para dividir/exportar os canais do personagem versus os da arma, aplicar sobrescritas e combinar clips quando necessário. Não substituir esse requisito por animações procedurais automáticas sem consentimento.
 
-**Proposta:** usar um painel contextual ou ambiente de preview com template oficial de player e pastas editáveis durante a edição da arma. A UI específica ainda não foi decidida.
+**Definido:** usar um ambiente contextual com player de referência para armas **corpo a corpo e de longa distância**. O autor animará também as pastas do player com a arma em mãos. **Ainda é uma escolha técnica** como organizar a interface desse ambiente dentro do Blockbench.
 
-**Proposta coerente com o requisito geral:** suportar no mesmo fluxo armas corpo a corpo e de longa distância, com marcadores auxiliares de empunhadura/posição de efeitos/projéteis. Esses marcadores não constituem ossos separados.
+**Definido:** usar o **mesmo editor de referência com player** também para armas de longa distância. **Proposta técnica:** marcadores de empunhadura e origem visual de efeitos/projéteis; esses marcadores não são ossos separados.
+
+**Definido:** armas de longa distância **que usam flechas** compartilham uma **flecha padrão**, sem exigir a criação de um modelo de flecha para cada arma. Mods poderão contornar/personalizar/substituir esse comportamento. A lógica do projétil permanece no jogo; o plugin não configura dano, velocidade de projétil ou combate.
 
 ## 6. Armaduras: sobreposição por pastas (definido)
 
@@ -117,13 +121,17 @@ Exemplos **ilustrativos**: arco + flecha; criatura + objeto segurado; cajado + p
 
 O editor precisa favorecer autoria de blocos/cubos e elementos modulares usados em composição de cenários; não restringir a categoria a meros objetos decorativos isolados.
 
-**Ainda em aberto:** blocos colocáveis/removíveis por jogador, edição de terreno em runtime, mineração, quebra, grade de encaixe e eventuais estados interativos. Não afirmar que esses sistemas já existem.
+**Definido:** **não** incluir como requisito deste plugin blocos colocáveis/quebráveis pelo jogador, mineração ou construção em gameplay. O objetivo é **produzir blocos usados para montar o mundo/cenários**. Detalhes técnicos como tamanho, orientação e grade de encaixe podem ser projetados internamente; não reabrir a questão de mecânicas Minecraft com o autor.
 
 ## 8. Compatibilidade com GeckoLib — escopo fechado
 
 **Definido:** o plugin deve reproduzir **a experiência de autoria** de pastas, cubos, pivôs e timeline que o criador conhece. **Não há requisito de importar/exportar arquivos no formato GeckoLib**. A exportação é voltada para os contratos do ShardBound.
 
-## 9. Validação desejada (proposta)
+## 9. Formato editável — preferência provisória
+
+O autor manifestou preferência por **um formato próprio de projeto** do ShardBound Studio, sem decisão definitiva da extensão ou do schema. A ferramenta deverá continuar funcionando dentro do Blockbench, preservando grupos, cubos, animações e metadados ao salvar/reabrir. A exportação para o jogo utilizará GLB **acompanhado de arquivos de efeitos/eventos**.
+
+## 10. Validação desejada (proposta)
 
 Conferir grupos sem nomes, pivôs inconsistentes, animações que referenciam grupos removidos, nomes duplicados, textura ausente, UV fora da imagem, escala inesperada, clips sem duração válida e frames de efeito associados a pontos inexistentes.
 
