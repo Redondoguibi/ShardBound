@@ -15,9 +15,10 @@ Projeto: crystal_blade
 Animation: attack_1
   Rotação da pasta blade:  0.00s, 0.20s, 0.40s...
   Partículas:             0.20s -> crystal_sparks em blade_tip
-  Som:                    0.20s -> swing
-  Evento visual:          0.28s -> trail_on
-  Evento visual:          0.40s -> trail_off
+  Som:                    0.20s -> swing (evento na timeline)
+  Evento visual:          0.28s -> trail_on (início do rastro)
+  Evento visual:          0.40s -> trail_off (fim do rastro)
+  Flash:                  0.40s -> crystal_flash
 ```
 
 Os tempos e IDs acima são **exemplos**, não convenções definitivas.
@@ -48,7 +49,7 @@ Os tempos e IDs acima são **exemplos**, não convenções definitivas.
 
 ## 3. Editor de partículas
 
-**Definido como capacidade desejada:** criar partículas e efeitos com o plugin, inclusive vinculados a modelos animados.
+**Definido:** criar partículas e efeitos do zero com o plugin, inclusive vinculados a modelos animados. **Também são definidos os keyframes de sons e os efeitos visuais não limitados a partículas**, como rastros de armas, flashes e efeitos de brilho.
 
 **Definido (2026-10-12):** **editor completo para criar partículas do zero dentro do Blockbench**, não apenas seleção de efeitos prontos. Deve permitir autoria visual dos parâmetros dos próprios efeitos, incluindo textura/sprite, escala, cor, opacidade, duração, quantidade, velocidade, emissão, gravidade opcional, rotação e comportamento ao longo do tempo. A lista exata de propriedades poderá evoluir na implementação.
 
@@ -56,7 +57,17 @@ Os tempos e IDs acima são **exemplos**, não convenções definitivas.
 
 **Definido:** os efeitos continuam associados a grupos/locators e keyframes da **mesma sessão** de animação do modelo. A criação do editor ocorre na fase do plugin; a execução in-game é integrada depois.
 
-## 4. Exportação: limites e opções
+## 4. Trilhas de áudio e outros efeitos visuais — definido
+
+**Sons sincronizados:** o autor quer **inserir sons em frames determinados da timeline**, com o mesmo fluxo visual usado para efeitos de partículas. Cada keyframe aponta para um recurso de áudio e indica quando reproduzi-lo. O editor deverá permitir configurar o evento na **mesma sessão** do modelo/clip. **Proposta técnica:** os arquivos de som poderão ser recursos externos referenciados pelo ID, sem exigir embutir bytes de áudio no GLB.
+
+**VFX avançados:** o autor também quer criar **rastros de armas, flashes e brilhos**, além das partículas tradicionais. O editor deve reuni-los no mesmo fluxo de efeitos. Nem todo efeito precisa ser tecnicamente um emissor de partículas: um **rastro contínuo** pode ser representado por geometria/faixa temporal; um **flash** por uma alteração temporária de cor/material/luz; um **brilho** por material emissivo ou composição luminosa. Essas são **opções de implementação**, não uma exigência de mecanismos específicos.
+
+**Definido:** possibilitar marcação de início, fim ou disparo desses efeitos por keyframes em animações de modelo, arma, player e entidades quando aplicável, e manter o preview com aparência correspondente ao jogo.
+
+**Limites técnicos:** a reprodução efetiva desses efeitos, sons e VFX pelo ShardBound será integrada após o plugin. O formato de cada parâmetro/evento precisa ser validado e versionado; não declarar suporte runtime já pronto.
+
+## 5. Exportação: limites e opções
 
 **Fato técnico:** GLB/glTF padrão é adequado a geometria, nós/transformações, materiais, imagens e animações compatíveis. **Não possui um contrato universal de execução para sistemas de partículas e eventos de gameplay.** É necessário definir metadados próprios e implementá-los no ShardBound.
 
@@ -80,7 +91,7 @@ Vantagens: eventos legíveis, validação independente, VFX reutilizáveis e evo
 
 O arquivo GLB permanece responsável pelos elementos suportados pelo seu formato (geometria, texturas embutidas, nós e animações compatíveis); os arquivos acompanhantes registram eventos e parâmetros de VFX específicos do ShardBound. A possibilidade técnica de `extras` no glTF não é a solução escolhida para o contrato principal.
 
-## 5. Exemplo de contrato proposto, não implementado
+## 6. Exemplo de contrato proposto, não implementado
 
 ```json
 {
@@ -105,7 +116,7 @@ O arquivo GLB permanece responsável pelos elementos suportados pelo seu formato
 - Um evento em grupo removido/inexistente deve produzir erro objetivo.
 - A exportação deve preservar determinismo de ordem entre eventos coincidentes.
 
-## 6. Comportamento em runtime a especificar
+## 7. Comportamento em runtime a especificar
 
 1. Avaliar animações com clocks consistentes, velocidades/loops e transições.
 2. Disparar eventos **uma vez quando o tempo atravessar o keyframe**, inclusive sob quedas de FPS, sem perdê-los nem duplicá-los.
@@ -115,8 +126,8 @@ O arquivo GLB permanece responsável pelos elementos suportados pelo seu formato
 6. Carregar texturas de partículas separadamente quando necessário, mesmo que o modelo utilize texturas embutidas.
 7. Definir claramente o que é client-side visual e o que depende da lógica do jogo.
 
-## 7. Critério de aceite proposto
+## 8. Critério de aceite proposto
 
-**Fase plugin:** criar uma espada com duas pastas, textura, player de referência e clips de correr, pular e atacar com a espada; adicionar no próprio Blockbench partículas criadas do zero em um keyframe, visualizar fielmente, salvar/reabrir e exportar GLB com arquivos acompanhantes **sem editar JSON manualmente**.
+**Fase plugin:** criar uma espada com duas pastas, textura, player de referência e clips de correr, pular e atacar; adicionar **partículas criadas do zero**, um **evento de som** e um **rastro ou flash** em keyframes específicos da mesma timeline. Conferir preview visual, salvar/reabrir e exportar GLB com arquivos acompanhantes **sem editar JSON manualmente**.
 
-**Fase de integração posterior:** importar no ShardBound e comprovar que os efeitos executados têm **aparência idêntica** ao preview e estão sincronizados com movimentos e eventos do player/arma, inclusive em condições de FPS variável.
+**Fase de integração posterior:** importar no ShardBound e comprovar que **partículas, rastros/flashes e sons sincronizados** funcionam nos frames definidos e que a aparência visual é **idêntica** ao preview (respeitando as condições de renderização previstas), inclusive com FPS variável.
