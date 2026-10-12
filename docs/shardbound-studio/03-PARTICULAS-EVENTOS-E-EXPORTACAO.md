@@ -22,6 +22,14 @@ Animation: attack_1
 
 Os tempos e IDs acima são **exemplos**, não convenções definitivas.
 
+### Contexto de animação com player de referência
+
+**Definido em 2026-10-11:** a autoria de animações de armas acontece em um ambiente no Blockbench onde o criador pode ver o **player padrão sem skin**, posicionar a arma na mão e animar o ataque alterando também poses do jogador. Os **eventos de partículas permanecem na mesma sessão/timeline** dessa animação, com a possibilidade de se prender à espada, à mão ou a outro ponto configurado.
+
+**Em aberto:** o modo exato de exportar uma timeline que altera partes do player e partes da arma (clips separados, canais vinculados, composição ou outra representação). Uma futura implementação deve manter o vínculo temporal dos efeitos sem copiar a geometria visual do player para todo GLB de arma.
+
+**Definido para armaduras:** o preview serve principalmente para encaixar peças sobre o player e acompanhar os grupos corporais; não requer poses manuais do player nesse fluxo. Animações opcionais das próprias peças podem ter eventos de VFX, sujeitos ao contrato do runtime.
+
 ## 2. Como o vínculo funcionaria
 
 **Proposta técnica:** cada clip possui uma lista ordenada de eventos. Um evento referencia:
