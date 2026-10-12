@@ -26,7 +26,7 @@ Os tempos e IDs acima são **exemplos**, não convenções definitivas.
 
 **Definido em 2026-10-11:** a autoria de animações de armas acontece em um ambiente no Blockbench onde o criador pode ver o **player padrão sem skin**, posicionar a arma na mão e animar o ataque alterando também poses do jogador. Os **eventos de partículas permanecem na mesma sessão/timeline** dessa animação, com a possibilidade de se prender à espada, à mão ou a outro ponto configurado.
 
-**Em aberto:** o modo exato de exportar uma timeline que altera partes do player e partes da arma (clips separados, canais vinculados, composição ou outra representação). Uma futura implementação deve manter o vínculo temporal dos efeitos sem copiar a geometria visual do player para todo GLB de arma.
+**Definido:** o criador deve poder animar também **corrida, pulo e ataque com a espada na mão**, além de outras ações pertinentes. **A especificar tecnicamente:** o modo exato de exportar timelines que alteram partes do player e da arma (clips separados, canais vinculados, composição ou outra representação). Uma futura implementação deve manter o vínculo temporal dos efeitos sem copiar a geometria visual do player para todo GLB de arma.
 
 **Definido para armaduras:** o preview serve principalmente para encaixar peças sobre o player e acompanhar os grupos corporais; não requer poses manuais do player nesse fluxo. Animações opcionais das próprias peças podem ter eventos de VFX, sujeitos ao contrato do runtime.
 
@@ -50,17 +50,17 @@ Os tempos e IDs acima são **exemplos**, não convenções definitivas.
 
 **Definido como capacidade desejada:** criar partículas e efeitos com o plugin, inclusive vinculados a modelos animados.
 
-**Proposta:** painel "Particle Editor" dentro do Blockbench, com edição de textura/sprite, escala, cor, opacidade, duração, quantidade, velocidade, emissão, gravidade opcional, rotação e curva temporal. Usar preview da cena do Blockbench se a API permitir implementar pré-visualização fiel.
+**Definido (2026-10-12):** **editor completo para criar partículas do zero dentro do Blockbench**, não apenas seleção de efeitos prontos. Deve permitir autoria visual dos parâmetros dos próprios efeitos, incluindo textura/sprite, escala, cor, opacidade, duração, quantidade, velocidade, emissão, gravidade opcional, rotação e comportamento ao longo do tempo. A lista exata de propriedades poderá evoluir na implementação.
 
-A fidelidade da pré-visualização deve ser validada contra o runtime real. Efeitos de materiais emissivos, transparência e iluminação dinâmica dependem do renderer.
+**Definido:** a pré-visualização de partículas/efeitos no Blockbench deve ter **aparência idêntica à do jogo**. Isso é uma meta de fidelidade a ser tecnicamente implementada e validada depois contra o runtime ShardBound, não uma funcionalidade atualmente verificada. Materiais, partículas, transparência, iluminação e ordem de renderização devem ter regras visuais compartilhadas/equivalentes. Não reduzir silenciosamente a exigência a uma aproximação sem informar a diferença.
 
-**Em aberto:** se o editor de partículas cria os próprios efeitos completamente ou inicialmente apenas referencia efeitos definidos em assets separados. A experiência final deve permitir autoria integrada; o nível de entrega por fase é uma escolha de roadmap.
+**Definido:** os efeitos continuam associados a grupos/locators e keyframes da **mesma sessão** de animação do modelo. A criação do editor ocorre na fase do plugin; a execução in-game é integrada depois.
 
 ## 4. Exportação: limites e opções
 
 **Fato técnico:** GLB/glTF padrão é adequado a geometria, nós/transformações, materiais, imagens e animações compatíveis. **Não possui um contrato universal de execução para sistemas de partículas e eventos de gameplay.** É necessário definir metadados próprios e implementá-los no ShardBound.
 
-### Alternativa A — GLB + arquivos auxiliares (preferência proposta; ainda não aprovada)
+### Exportação adotada — GLB + arquivos auxiliares (definido)
 
 ```text
 crystal_blade/
@@ -74,13 +74,11 @@ O exportador faz isso **em um único clique**. Os arquivos auxiliares não devem
 
 Vantagens: eventos legíveis, validação independente, VFX reutilizáveis e evolução do contrato sem alterar geometria. Desvantagem: múltiplos arquivos físicos.
 
-### Alternativa B — Metadados dentro do GLB (em aberto)
+### Limites dessa escolha
 
-O glTF permite campos `extras` ou extensões customizadas. Poderíamos armazenar trilhas e declarações de VFX no próprio GLB. **Isso não faz os efeitos funcionarem em viewers genéricos**: somente leitores que conheçam a extensão do ShardBound conseguirão executá-los. O pipeline deve preservar ou extrair esses metadados.
+**Definido:** a saída pode ter **múltiplos arquivos relacionados**, gerados automaticamente em um comando. Não há exigência de armazenar dados de partículas literalmente nos bytes de um único GLB. O nome, a estrutura das pastas e o **schema final** dos auxiliares continuam decisões técnicas a especificar.
 
-Vantagens: asset autocontido; desvantagens: compatibilidade, versionamento e depuração.
-
-**Não decidido:** formato final da exportação de partículas. A conversa só confirmou que efeitos devem viajar **associados ao modelo**, não necessariamente dentro dos bytes do `.glb`.
+O arquivo GLB permanece responsável pelos elementos suportados pelo seu formato (geometria, texturas embutidas, nós e animações compatíveis); os arquivos acompanhantes registram eventos e parâmetros de VFX específicos do ShardBound. A possibilidade técnica de `extras` no glTF não é a solução escolhida para o contrato principal.
 
 ## 5. Exemplo de contrato proposto, não implementado
 
@@ -119,4 +117,6 @@ Vantagens: asset autocontido; desvantagens: compatibilidade, versionamento e dep
 
 ## 7. Critério de aceite proposto
 
-Criar uma espada com duas pastas, textura e clip `attack_1`; adicionar no próprio Blockbench um keyframe de partícula na ponta; exportar; importar no ShardBound; reproduzir o golpe e verificar que a partícula aparece na posição e no instante corretos, sem precisar editar JSON manualmente.
+**Fase plugin:** criar uma espada com duas pastas, textura, player de referência e clips de correr, pular e atacar com a espada; adicionar no próprio Blockbench partículas criadas do zero em um keyframe, visualizar fielmente, salvar/reabrir e exportar GLB com arquivos acompanhantes **sem editar JSON manualmente**.
+
+**Fase de integração posterior:** importar no ShardBound e comprovar que os efeitos executados têm **aparência idêntica** ao preview e estão sincronizados com movimentos e eventos do player/arma, inclusive em condições de FPS variável.
