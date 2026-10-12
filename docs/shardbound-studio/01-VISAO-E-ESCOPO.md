@@ -18,22 +18,24 @@ A meta é que criadores possam **modelar, texturizar, animar, incluir efeitos e 
 
 | Tipo | Requisito confirmado | Ferramentas específicas propostas |
 | --- | --- | --- |
-| Skin do player | Criar/editar skins | Template do jogador, pintura, UV e pré-visualização no humanoide |
+| Skin do player | Criar/editar **skins no padrão Minecraft** | PNG 64×64, UV, camadas de skin e preview no humanoide de referência |
 | Item genérico | Criar modelos de itens | Poses de exibição, escala e ponto de encaixe |
-| Arma corpo a corpo | Criar e animar armas melee **com o player de referência visível** | Player padrão sem skin, ajuste na mão, poses do player e animação do ataque no mesmo contexto |
-| Arma de longa distância | Criar e animar armas ranged | Editor contextual com player de referência (extensão proposta), empunhadura, animações de uso/recarga e origem visual de projéteis |
-| Bloco | Criar blocos que compõem grande parte do cenário do ShardBound | Cubos e módulos de cenário, orientação, possíveis variantes e referências de colisão; colocação/remoção ainda indefinidas |
+| Arma corpo a corpo | Criar e animar armas melee **com o player de referência visível** | Player padrão sem skin, ajuste na mão e animações completas do player **correndo, pulando e atacando com a arma equipada**, no mesmo editor |
+| Arma de longa distância | Criar e animar armas ranged **com o mesmo editor contextual de player** | Animações de uso, corrida, pulo, disparo e outras ações pertinentes; pontos visuais de saída de projéteis e efeitos |
+| Bloco | Criar blocos que compõem grande parte do cenário do ShardBound | Cubos e módulos de cenário, orientação, variantes e referências de colisão; **não** incluir mecânica de colocação/quebra pelo jogador |
 | Armadura | Criar peças **sobrepostas** ao player, organizadas em pastas por parte do corpo | Editor com player de referência, encaixe por braço esquerdo/direito etc.; animações opcionais, sem exigir poses do player |
 | Monstro | Criar mobs/criaturas animados com **hierarquia de grupos totalmente livre** | Clips e efeitos por grupo, sem exigir forma humanoide ou estrutura fixa |
-| Partículas/VFX | Criar efeitos visuais | Editor de parâmetros, texturas, emissores e preview |
+| Partículas/VFX | **Criar efeitos do zero** | Editor completo de parâmetros/texturas/emissores, keyframes e **preview de aparência idêntica ao jogo** |
 
 **Definido:** todos os tipos devem contemplar texturas; animações devem estar disponíveis sempre que fizerem sentido (não necessariamente obrigatórias para blocos/skins).
 
 **Definido:** projetos podem conter um único modelo ou vários modelos independentes relacionados, conforme o conteúdo. A estrutura de exportação e as regras para vínculo entre modelos continuam em aberto.
 
-**Definido (direção do mundo):** a maior parte dos cenários do jogo será composta por blocos, tendo Minecraft Dungeons II como referência de construção visual. **Não foi decidido** se o jogador poderá colocar, remover ou modificar blocos em runtime.
+**Definido:** a maior parte dos cenários do jogo será composta por blocos, tendo Minecraft Dungeons II como referência de construção visual. **Não** projetar editor de construção/mineração ou blocos colocáveis/quebráveis pelo jogador; a categoria diz respeito à autoria de **elementos do cenário**.
 
-**Distinção técnica:** uma arma visual e o comportamento de combate da arma não são a mesma coisa. Dano, cooldown, projétil, colisão/hitbox e efeitos de gameplay continuam dependentes das definições e dos sistemas do ShardBound. O plugin pode facilitar sua declaração, mas não define sozinho a lógica do jogo.
+**Definido:** o plugin **não** oferece edição de gameplay (dano, vida, velocidade, IA, estatísticas, lógica de ataque etc.). Ele se concentra em **modelos, skins, texturas, animações, efeitos e dados visuais**. A lógica de combate e as regras permanecem nos sistemas do ShardBound. Pontos visuais de origem de projéteis podem ser preparados no editor sem configurar sua lógica de gameplay.
+
+**Definido:** as **flechas padrão são compartilhadas** entre armas de longa distância que usam flechas; não exigir um modelo de flecha exclusivo por arma. Mods podem personalizar ou substituir essa escolha.
 
 ## 3. Fluxo de autoria desejado
 
@@ -45,24 +47,24 @@ A meta é que criadores possam **modelar, texturizar, animar, incluir efeitos e 
 6. Validar escala, IDs, referências e compatibilidade.
 7. Exportar o conjunto para o ShardBound, sem separar manualmente texturas do modelo.
 
-**Proposta:** o projeto editável permanece em `.bbmodel`; a exportação gera um `.glb` de modelo/texturas/animações e metadados associados. Arquivos, nomes e botão de exportação ainda exigem contrato.
+**Preferência ainda não final:** o autor inclinou-se a um **formato de projeto próprio** do ShardBound Studio, editável no Blockbench, em vez de obrigar um formato específico por categoria. Extensão e preservação de interoperabilidade com `.bbmodel` serão escolhas técnicas. **Definido:** a exportação usa **GLB com arquivos acompanhantes** para efeitos/eventos; não precisa colocar todos os dados dentro de um único GLB. Caminhos, schemas e nomes concretos ainda exigem contrato.
 
 ## 4. Editor contextual de armas e armaduras (definido)
 
-**Armas:** ao modelar uma espada, oferecer um local de edição/pré-visualização com um **modelo padrão do player sem skin**. Nele o autor pode posicionar a arma na mão, ajustar como ela é segurada, alterar posições/poses de partes do jogador (inclusive as que não estão diretamente ligadas à espada) e **animar o ataque nesse mesmo local**. O player serve de referência para autoria, não significa embutir sua geometria visual em cada arma exportada.
+**Armas (melee e ranged):** ao modelar uma espada, arco ou outra arma, oferecer um local de edição/pré-visualização com **modelo padrão do player sem skin**. Nele o autor posiciona a arma na mão, ajusta como ela é segurada e pode animar **corrida, pulo, ataque, disparo e ações pertinentes com a arma equipada**, movendo pastas do jogador inclusive as não diretamente ligadas à arma. Tudo ocorre no **mesmo editor/timeline**. O player é referência de autoria; não significa embutir sua geometria em cada arma exportada.
 
 **Armaduras:** fornecer um contexto semelhante para verificar como as peças se encaixam sobre o player. As peças acompanham os grupos correspondentes do corpo, organizados por pastas (inclusive braços esquerdo e direito). **Não exigir edição de poses do player no fluxo de armadura**; permitir animações da armadura quando o criador desejar.
 
-**Em aberto:** quais animações do player são reutilizáveis entre armas e como animações customizadas de arma interagem com as animações base do personagem. A extensão do mesmo editor contextual a todas as armas de longa distância é proposta, por consistência, mas ainda merece validação.
+**A definir tecnicamente:** quais canais/clips do player pertencem ao pacote exportado da arma e como serão combinados com animações base. **Já está decidido:** o editor contextual também vale para armas de longa distância.
 
 ## 5. Requisitos de experiência do usuário
 
 - Familiaridade com o Outliner do Blockbench: grupos, subgrupos, cubos e pivôs.
 - A timeline visual não deve exigir escrever código para declarar um efeito em certo frame.
-- Ao animar uma espada, por exemplo, o autor precisa poder adicionar partículas a **essa mesma animação**, sem abrir um projeto desconectado.
+- Ao animar uma espada, por exemplo, o autor precisa poder adicionar partículas **criadas do zero** a **essa mesma animação**, sem abrir um projeto desconectado.
 - Presets/templates para reduzir erros repetitivos ao criar mods.
 - Mensagens de erro claras para referências/formatos não suportados.
-- Pré-visualização da animação e, idealmente, dos efeitos antes da exportação (**preview VFX proposto**, não confirmado tecnicamente).
+- **Definido:** pré-visualização de efeitos e partículas com **aparência idêntica** à execução no ShardBound. A compatibilidade visual ainda precisará ser construída e testada tecnicamente, sobretudo após integração.
 - Exportação reprodutível, sem alterações inesperadas nos originais.
 
 ## 6. Direção artística e integração
@@ -73,10 +75,16 @@ A meta é que criadores possam **modelar, texturizar, animar, incluir efeitos e 
 - **Alinhamento:** não importar texturas ou outros assets proprietários de Minecraft/Minecraft Dungeons como conteúdo oficial.
 - **Proposta:** nomes como "ShardBound Studio", "ShardBound Model" e "Particle Editor" são de trabalho, não marca final confirmada.
 
-## 7. Ordem de implementação (definida)
+## 7. Independência do plugin anterior e destino da exportação
+
+**Definido:** construir **um novo plugin ShardBound Studio**, e não usar o plugin/exportador Blockbench anterior como produto a ser evoluído. Isso não impede usar os contratos existentes do ShardBound como referência.
+
+**Não prioritário:** instalar automaticamente arquivos na pasta de um mod. **Proposta conservadora:** um comando de exportação salva o GLB e acompanhantes em uma pasta escolhida, sem editar mods ou scripts automaticamente. O autor não tomou decisão final sobre a automação da instalação e não precisa ser perguntado novamente agora.
+
+## 8. Ordem de implementação (definida)
 
 Primeiro implementar **todas as ferramentas de criação do plugin dentro do Blockbench**; depois integrar o conteúdo produzido ao runtime do ShardBound. O desenvolvimento pode definir schemas de exportação, criar exemplos e testes do editor antes da integração, mas **não deve afirmar** que animações, armaduras e VFX já funcionam no jogo nessa etapa.
 
-## 8. Fora do escopo já confirmado
+## 9. Fora do escopo já confirmado
 
 Não foi solicitado: editor de mapas completo, lógica de IA de monstros dentro do Blockbench, linguagem de programação visual completa ou substituição do sistema `.sl`. Esses recursos não devem ser presumidos.
