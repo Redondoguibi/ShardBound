@@ -29,6 +29,10 @@ Esta pasta registra a visão atual do projeto. Ela deve ser atualizada conforme 
 - [24-EQUIPMENT-AND-WORLD-CONTENT.md](24-EQUIPMENT-AND-WORLD-CONTENT.md) — instâncias, inventário, combate visual e mundo extensível.
 - [22-GAME-DIRECTION-AND-REFERENCES.md](22-GAME-DIRECTION-AND-REFERENCES.md) — preparação da etapa 13: decisões do autor, pesquisa de MCD II e limites ainda abertos.
 
+## ShardBound Studio (plugin Blockbench)
+
+- [shardbound-studio/README.md](shardbound-studio/README.md) — especificação do editor de modelos, skins, equipamentos, monstros, animações por grupos/pastas, partículas em keyframes, exportação e decisões pendentes.
+
 ## Documentação para modders
 
 O progresso verificável do código e as instruções de build estão em
