@@ -2,14 +2,14 @@
 
 ## 1. Separação de responsabilidades
 
-**Blockbench + plugin:** experiência de autoria, projetos `.bbmodel`, templates, cubos, pastas, pivôs, texturas/UV, clips, keyframes de eventos, parâmetros VFX, preview e exportação/validação.
+**Blockbench + plugin (novo):** ferramentas de autoria visual, formato editável próprio preferido (não congelado), templates, grupos, cubos, texturas/UV, animações do player com armas, editor completo de partículas do zero, eventos, preview visual idêntico ao jogo e exportação/validação. **Não inclui parâmetros de gameplay**.
 
 **Asset pipeline:** verificar estrutura, versões e dependências, converter/importar GLB e dados auxiliares, registrar assets públicos declarados, cache incremental e erros diagnósticos.
 
 **Runtime ShardBound:** renderizar modelos, aplicar animações hierárquicas, reproduzir efeitos, anexar armaduras/armas, executar eventos, resolver referências e integrar com gameplay/scripting.
 
 ```text
-Blockbench/ShardBound Studio (source .bbmodel)
+Blockbench/ShardBound Studio (projeto editável, formato próprio preferido)
    |
    v
 Export + validate
@@ -58,12 +58,18 @@ De acordo com `docs/14-ASSET-PIPELINE.md`, `docs/modding/03-ASSETS-AND-MODELS.md
 
 ## 3.1 Novas regras funcionais definidas em 2026-10-11
 
-- Armas: player padrão sem skin no ambiente de edição, posicionamento na mão, alterações de poses/partes do jogador e animações de ataque ali mesmo.
+- Armas melee/ranged: player padrão sem skin, posição na mão e **animações de corrida, pulo, ataque e disparo com a arma equipada** no mesmo editor.
 - Armaduras: sobreposição ao corpo do player, peças organizadas por grupos (inclusive lados esquerdo e direito), seguindo animação corporal; animações adicionais opcionais; sem exigir poses do player durante a autoria.
 - Monstros: grupos e hierarquias arbitrários, sem obrigar uma estrutura de seis membros.
 - Modelos: projetos com objeto único ou modelos independentes relacionados, conforme o caso.
-- Blocos: componentes recorrentes da arquitetura visual do cenário, não reduzidos a adereços.
+- Blocos: componentes da construção visual do cenário; **não** incluir colocação, mineração ou quebra pelo jogador.
 - GeckoLib: familiaridade da interface, não compatibilidade de formatos.
+- Partículas criadas **do zero** no editor, por keyframes; GLB exportado com **arquivos auxiliares**.
+- Preview deve ter aparência **idêntica à do ShardBound**; comprovar isso na fase de integração.
+- Skins no padrão Minecraft, com **PNG 64×64**, UV, camadas e braços aplicáveis.
+- Flecha padrão compartilhada pelas armas que usam flechas, com personalização possível por mods.
+- Sem formulários de dano, vida, velocidade, IA e outros parâmetros de gameplay.
+- Criar **outro plugin**, independente do exportador histórico.
 - Sequência: ferramentas do plugin primeiro; integração ao jogo posteriormente.
 
 **Nota:** essas regras são requisitos do produto ainda não implementados. Não são evidência de suporte no engine.
@@ -90,16 +96,17 @@ A separação de fases deve ser explícita: **editor funcionando no Blockbench**
 Construir, testar e aperfeiçoar dentro do Blockbench:
 
 - Modelagem por cubos, pastas, pivôs, textura/UV e timeline familiar ao fluxo GeckoLib;
-- Criação de skin, item, arma melee/ranged, bloco de cenário, armadura e monstro;
-- **Editor contextual de armas com player padrão sem skin**, empunhadura ajustável, poses do player e clips de ataque no mesmo ambiente;
+- Criação de skin no padrão Minecraft (PNG 64×64), item, arma melee/ranged, bloco de cenário, armadura e monstro;
+- **Editor contextual de armas melee e ranged com player padrão sem skin**, empunhadura ajustável e animações do jogador de correr, pular, atacar/disparar com a arma na mão, no mesmo ambiente;
 - **Preview/edição de armadura** sobre o corpo, vinculada a pastas por regiões corporais, sem exigir poses do player; animações próprias opcionais;
 - **Hierarquias inteiramente livres** para monstros;
 - Projetos de um modelo ou vários modelos independentes relacionados;
-- Editor/trilhas para partículas, sons e eventos por frame integrados à animação;
-- Validação, persistência `.bbmodel` e exportação em contratos propostos/versionados;
-- Exemplos, testes da UI, pré-visualização e reabertura/roundtrip do projeto.
+- **Editor completo para criar partículas do zero** e trilhas de efeitos, sons e eventos por frame integradas à animação;
+- Validação, persistência do projeto editável (**formato próprio preferido, ainda sem extensão final**) e exportação de **GLB acompanhado de arquivos de efeitos/eventos** em contratos versionados;
+- Exemplos, testes de UI, preview com meta de **fidelidade visual idêntica** ao jogo e testes de salvar/reabrir o projeto; comparação direta com o runtime na fase B.
+- Não configurar estatísticas ou regras de gameplay. Reutilizar flechas padrão, personalizáveis por mods.
 
-A divisão da fase A em versões menores e a profundidade do editor de partículas ainda estão **em aberto**. A intenção do autor é terminar o conjunto de ferramentas do plugin **antes** de implementar a integração completa ao runtime, não necessariamente fazer uma entrega pública única.
+A divisão da fase A em versões menores continua técnica; **não há dúvida sobre a profundidade do editor de partículas: ele deverá permitir criação do zero**. O autor quer concluir as ferramentas do plugin antes da integração com o runtime.
 
 ### Fase B — Integração posterior ao ShardBound
 
@@ -119,13 +126,13 @@ Somente após o editor estar construído, desenvolver/testar:
 
 ### Blocos — direção versus lacuna
 
-**Definido:** a maior parte do cenário do ShardBound utiliza **blocos** em estilo de construção semelhante a Minecraft Dungeons II. O plugin deve poder produzir esses blocos e peças modulares para o mundo. **Não decidido:** se o jogador coloca/remove/quebra blocos durante o gameplay. A escolha da ordem das fases não resolve essa questão.
+**Definido:** a maior parte do cenário do ShardBound utiliza blocos e peças modulares, com Minecraft Dungeons II como referência visual. **Definido:** não implementar colocação, remoção, quebra ou mineração de blocos pelo jogador como requisito do plugin; trata-se de autoria de cenário.
 
 ## 6. Critérios de aceite por fase
 
-**Fase A — plugin:** testar no próprio Blockbench criação/edição de armas com player de referência, posicionamento em mão, animação de ataque envolvendo pastas do player, armadura separada por pastas, hierarquia livre de monstro, modelos independentes relacionados, blocos de cenário e keyframes de efeitos. Confirmar salvar/reabrir/exportar projetos e validar diagnósticos **sem exigir execução in-game**.
+**Fase A — plugin:** validar armas melee/ranged com player de referência e clips de **corrida, pulo, ataque/disparo com arma equipada**; skin PNG 64×64 estilo Minecraft; armaduras por pastas; monstros livres; múltiplos modelos; blocos de cenário; partículas **criadas do zero** com keyframes e preview. Confirmar salvar/reabrir e exportar GLB com arquivos acompanhantes, sem exigir execução in-game nesta fase.
 
-**Fase B — integração ao jogo:** os testes abaixo continuam como metas para quando o runtime for implementado. Sua existência na documentação não bloqueia o aceite da fase A.
+**Fase B — integração ao jogo:** os testes abaixo continuam como metas quando o runtime for implementado, incluindo **comparar efeitos no Blockbench e no jogo** para confirmar visual idêntico. Sua existência não bloqueia o aceite da fase A.
 
 ### Testes integrados futuros
 
@@ -137,6 +144,10 @@ Somente após o editor estar construído, desenvolver/testar:
 - Um bloco animado e texturizado sem regressão de colisão.
 - Reimportação determinística, erros claros e nenhum dado aceito silenciosamente quando não suportado.
 
-## 7. Observação sobre ferramentas existentes
+## 7. Novo plugin — decidido
 
-O repositório já documenta fontes `.bbmodel` e um fluxo anterior de exportação Blockbench (`assets/core/models/README.md` menciona "plugin ShardBound Blockbench"). A implementação desse fluxo **não foi auditada aqui** para reutilização, migração ou compatibilidade. Investigar o existente antes de criar um plugin inteiramente novo, sem assumir que atende aos requisitos de timeline/VFX.
+**Definido:** o ShardBound Studio será **um novo plugin**, e não a evolução obrigatória do antigo exportador Blockbench. Os arquivos existentes no repositório podem servir para verificar contratos com o jogo, mas não alteram essa decisão.
+
+## 8. Destino operacional da exportação — padrão sugerido
+
+O autor não entendeu a pergunta sobre copiar arquivos diretamente a mods, e não precisa respondê-la agora. **Proposta conservadora:** ao exportar, escolher pasta de destino para o GLB e os arquivos acompanhantes, sem editar automaticamente scripts ou mods existentes. Só reconsiderar caso exista uma necessidade concreta.
