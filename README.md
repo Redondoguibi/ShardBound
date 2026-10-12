@@ -73,3 +73,11 @@ suave, menu inicial, pausa, inventário e mapa clicáveis.
 Veja [a revisão de apresentação](docs/26-PLAYABLE-QUALITY-PASS.md).
 A [galeria de assets](examples/asset-gallery/README.md) permanece disponível com
 `--mods examples/asset-gallery`. A Etapa 13 completa continua em desenvolvimento.
+
+
+## Jogando
+
+Para jogar o jogo, rode o comando no terminal:
+```
+.\build\release\game.exe
+```
