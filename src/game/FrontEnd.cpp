@@ -28,15 +28,15 @@ void FrontEnd::configureMods(std::vector<ModManifest> catalog,std::set<std::stri
 WorldRecord FrontEnd::createRecord(std::string name,std::string seed) {
     if(profiles_) {const auto errors=profiles_->issues();if(!errors.empty()) throw std::runtime_error(errors.front());}
     if(!definition_.maps.empty()) return storage_.create(std::move(name),"shardbound",definition_.maps.begin()->first,definition_,mods_);
-    if(definition_.generators.empty()) throw std::runtime_error("Ative um mod com gerador de mundo");
+    if(definition_.generators.empty()) throw std::runtime_error("Instale um mod com mapa ou gerador e um mod que crie o jogador");
     auto generator=definition_.generators.begin();std::advance(generator,generatorIndex_);return storage_.create(std::move(name),std::move(seed),generator->first,definition_,mods_);
 }
 WorldRecord FrontEnd::createMapTestRecord(const std::filesystem::path& source) {
     if(profiles_) {const auto errors=profiles_->issues();if(!errors.empty()) throw std::runtime_error(errors.front());}
     auto definition=definition_;
-    if(definition.maps.empty()) throw std::runtime_error("Ative o mod do mapa oficial para testar");
-    auto& [id,map]=*definition.maps.begin();
-    map=std::make_shared<FiniteMap>(FiniteMap::read(source,definition));
+    const auto id=definition.maps.empty()?std::string("editor:preview"):definition.maps.begin()->first;
+    auto map=std::make_shared<FiniteMap>(FiniteMap::read(source,definition));
+    definition.maps.insert_or_assign(id,map);
     const auto spawn=map->spawn();
     if(TerrainGenerator(definition,id,"shardbound").height(spawn.x,spawn.z)<1)
         throw std::runtime_error("O mapa precisa de chão no ponto inicial");
@@ -47,8 +47,8 @@ void FrontEnd::refreshProfile() {
     const auto errors=profiles_->issues();if(!errors.empty()) {definition_={};mods_.clear();message_=errors.front();return;}
     const auto selected=profiles_->selected();for(const auto& mod:selected) mods_[mod.id]=versionText(mod.version);
     // Selection is independent of generation: existing worlds keep their frozen definition.
-    if(std::none_of(selected.begin(),selected.end(),[](const auto& mod){return std::filesystem::exists(mod.root/"world.json");})) {message_="Ative um mod de geracao para criar mundos.";return;}
     definition_=WorldDefinition::load(selected);
+    if(definition_.maps.empty() && definition_.generators.empty()) message_="Instale um mod com mapa ou gerador para criar mundos.";
 }
 std::vector<std::string> FrontEnd::profileIds() const {std::vector<std::string> ids;if(!profiles_) return ids;for(const auto& m:profiles_->catalog()) ids.push_back(m.id);for(const auto& id:profiles_->enabled()) if(std::find(ids.begin(),ids.end(),id)==ids.end()) ids.push_back(id);return ids;}
 void FrontEnd::changedSettings(const GameSettings& old) {
@@ -232,7 +232,12 @@ void FrontEnd::draw() {
     commands_.clear();rectangle(0,0,1280,720,{15,23,22,250});rectangle(0,0,16,720,{122,155,88,255});
     text(100,65,1080,16,"S H A R D B O U N D",{159,191,131,255});
     text(100,110,1080,42,screen_==Screen::Mods && !profileWorld_.empty()?"Mods deste mundo":screenTitle(screen_));
-    if(screen_==Screen::Title) { text(100,180,1000,20,"Explore mundos de blocos gerados pela seed. Conteudo criado por mods.");button(1,100,280,440,66,"Jogar");button(2,100,364,440,66,"Configuracoes");button(3,100,448,440,66,"Sair");button(4,600,280,480,66,"Mods e perfis"); }
+    if(screen_==Screen::Title) {
+        const bool playable=!definition_.maps.empty() || !definition_.generators.empty();
+        text(100,180,1080,20,playable?"Escolha um mundo para jogar.":"Instale um mod com terreno e um mod que crie o jogador para comecar.");
+        button(1,100,280,440,66,"Jogar");button(2,100,364,440,66,"Configuracoes");
+        button(3,100,448,440,66,"Sair");button(4,600,280,480,66,"Mods e perfis");
+    }
     else if(screen_==Screen::Worlds) {
         for(size_t i=0;i<4 && page_*4+i<worlds_.size();++i) { const auto& w=worlds_[page_*4+i];button(100+int(i),100,205+int(i)*80,420,66,w.name+"  |  seed: "+w.seed);button(400+int(i),540,205+int(i)*80,130,66,"Mods");
             button(200+int(i)*3,690,205+int(i)*80,150,66,"Backup");button(201+int(i)*3,860,205+int(i)*80,150,66,"Restaurar");button(202+int(i)*3,1030,205+int(i)*80,150,66,"Limpar"); }
@@ -249,7 +254,7 @@ void FrontEnd::draw() {
             text(100,300,1080,20,"Seed (texto ou numero; vazia = aleatoria)");rectangle(100,336,1080,60,focus_==1 ? std::array<unsigned char,4>{43,68,53,255} : std::array<unsigned char,4>{28,41,36,255});text(120,349,1040,24,seed_+(focus_==1 ? "|" : ""));if(click_ && hit(100,336,1080,60)) { focus_=1;click_=false; }
             std::string generator="Nenhum gerador instalado";if(!definition_.generators.empty()) { auto g=definition_.generators.begin();std::advance(g,generatorIndex_);generator=g->second.name; }
             button(24,100,428,1080,56,"Gerador: "+generator);
-        } else text(100,315,1080,24,"Mapa: ShardBound");
+        } else text(100,315,1080,24,"Mapa: "+definition_.maps.begin()->first);
         button(20,100,550,480,60,"Criar e jogar");button(21,600,550,220,60,"Voltar");
         text(100,492,1080,16,"Mesma seed + mesmo gerador = mesmo terreno. TAB alterna os campos.");
     } else if(screen_==Screen::Settings) {

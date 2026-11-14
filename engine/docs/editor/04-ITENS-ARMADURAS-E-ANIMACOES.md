@@ -4,9 +4,11 @@
 
 ## Implementação disponível
 
-Em **Criar equipamento…**, escolha arma ou slot de armadura, configure o modelo e os atributos e publique o mod. Para armas, adicione golpes de chão e aéreos, ajuste a ordem e configure dano, alcance, largura, forma, tempo até acerto, recuperação e nome do clipe. Novos golpes recebem uma cópia dos atributos do primeiro golpe de chão e um clipe próprio por padrão. A prévia do volume mostra o alcance e a forma vistos de cima. Com o Studio ativo no Blockbench, use **Abrir golpe** ou **Abrir idle** para selecionar o clipe na linha do tempo do Blockbench. Exporte o pacote para vincular a animação ao equipamento.
+Em **Equipamentos**, clique em **Criar arma** ou escolha **Cabeça**, **Torso**, **Pernas** ou **Pés**. A aba abre o Blockbench com um modelo inicial texturizado sobre o jogador de referência. Modele, pinte e use **Salvar na engine** ou **Ctrl+S**. O equipamento aparece na lista da revisão atual. Selecione-o e clique em **Editar selecionado** para reabrir o projeto e salvar outra versão com o mesmo ID. Salve também o mapa para conservar essa revisão ao reabrir.
 
-A armadura recebe proteção, bônus de velocidade e bônus de vida máxima. As peças usam os encaixes por grupos do Studio e acompanham a animação do jogador. A opção de conceder o equipamento ao começar permite testá-lo em uma nova partida pelo inventário.
+Em armaduras, **Atributos** permite definir proteção, velocidade e vida máxima. As pastas da peça já vêm encaixadas nos grupos do corpo. A armadura acompanha as poses do jogador em jogo e o editor abre a peça sem clipes próprios.
+
+Em armas, **Atributos → Golpes e animação** permite ordenar os golpes de chão e aéreos e configurar dano, alcance, largura, forma, tempo até acerto e recuperação de cada um. **Animar clipe** abre o idle ou o golpe escolhido na linha do tempo do Blockbench, com a arma na mão do jogador de referência. **Ver área de acerto** mostra a forma e o alcance vistos de cima. O salvamento publica os atributos junto com o modelo e os clipes. Com **Disponível no inventário ao começar**, use **Testar no jogo** no mapa para experimentar o equipamento em uma nova partida.
 
 ## Escopo planejado para a autoria visual
 

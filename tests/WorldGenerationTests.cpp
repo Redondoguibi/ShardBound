@@ -121,7 +121,7 @@ int main() {
         check(storage.read(saved.id).definition.json()==loaded.json(),"Mod edits mutated existing world snapshot");
         auto missingDependency=addon;missingDependency.dependencies.clear();rejects([&]{WorldDefinition::load({baseMod,missingDependency});});
         addonData["generators"]["addon:flat"]["extends"]="addon:flat";write(addon.root/"world.json",addonData);rejects([&]{WorldDefinition::load({baseMod,addon});});
-        auto official=discoverMods("content");check(official.diagnostics.empty(),"Default mod discovery failed");
+        auto official=discoverMods("tests/fixtures/former-content");check(official.diagnostics.empty(),"Regression mod discovery failed");
         official.mods.push_back(readManifest("examples/worldgen-addons/gardens"));const auto example=WorldDefinition::load(official.mods);
         check(example.generators.contains("gardens:quiet") && example.generators.at("plains:gentle").structures.back().id=="gardens:extra_flowers","Shipped addon failed to extend official content");
         TerrainGenerator garden(example,"gardens:quiet","example");check(garden.biome(0,0)=="gardens:flower_field" && garden.decoration(1,1).empty(),"Shipped addon preset is not usable");

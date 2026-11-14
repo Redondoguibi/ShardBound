@@ -108,7 +108,7 @@ int main() {
             second.setCustom(id,AssetId("qa:index"),{1,Data{1.0}});second.destroy(id);check(second.entitiesWithCustom("qa:index").empty(),"Destroyed entity retained custom index");
         }
         WindowSystem window({"Mod platform acceptance",1280,720,true});Renderer renderer(window.nativeHandle(),1280,720,"assets/core/shaders/forward.hlsl",{false,1});
-        VirtualFileSystem vfs;AssetManager assets(vfs,renderer,"user/platform-cache");ModLoader loader(vfs,assets);const auto report=loader.load("content");check(report.diagnostics.empty(),"Content load failed");
+        VirtualFileSystem vfs;AssetManager assets(vfs,renderer,"user/platform-cache");ModLoader loader(vfs,assets);const auto report=loader.load("tests/fixtures/former-content");check(report.diagnostics.empty(),"Content load failed");
         auto definition=WorldDefinition::load(report.mods);auto& settings=definition.generators.at("plains:gentle");settings.relief=0;settings.noise.clear();settings.structures.clear();
         auto volumeJson=definition.json();volumeJson["generators"]["plains:gentle"]["voxel_rules"]=nlohmann::json::parse(R"([
             {"id":"plains:cave","block":"","replace":["plains:stone","plains:dirt","plains:grass"],"min_y":1,"max_y":2,"threshold":-1,"protect_spawn":false},
@@ -172,7 +172,7 @@ int main() {
         check(takeItem(world,actor,AssetId("qa:Blade"),1) && !takeItem(world,actor,AssetId("qa:Blade"),1),"Unique item copy not reserved");
         check(call("equip_instance",{actorValue,text("weapon"),item}).boolean(),"Instance not equipped");
         check(call("equipment_stat",{actorValue,text("damage"),Value(10.0)}).number()==54,"Equipment bonuses/affixes not combined");
-        runtime.load("foundation","content/foundation","equipment_stats.sl");
+        runtime.load("foundation","tests/fixtures/former-content/foundation","equipment_stats.sl");
         auto victim=world.create("victim");world.add(victim,HealthComponent{100,100});
         check(call("damage_from",{actorValue,entityValue(world,victim),Value(10.0)}).number()==54,"Foundation did not apply equipment bonuses to combat");
         world.destroy(victim);

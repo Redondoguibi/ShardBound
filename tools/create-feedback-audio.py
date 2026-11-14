@@ -5,7 +5,7 @@ import random
 import struct
 import wave
 
-root = Path(__file__).resolve().parent.parent / "assets/core/audio"
+root = Path(__file__).resolve().parent.parent / "tests/fixtures/legacy-core/audio"
 random.seed(927)
 for name, duration in [("swing", .18), ("waystone", .8), ("pickup", .3)]:
     values = []

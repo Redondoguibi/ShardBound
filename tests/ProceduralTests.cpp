@@ -32,8 +32,8 @@ void capture(Renderer& renderer,const std::filesystem::path& path) {
 int main() {
     try {
         WindowSystem window({"Procedural acceptance",1280,720,true});Renderer renderer(window.nativeHandle(),1280,720,"assets/core/shaders/forward.hlsl",{false,1});
-        VirtualFileSystem vfs;AssetManager assets(vfs,renderer,"user/procedural-cache");ModLoader loader(vfs,assets);const auto report=loader.load("content");
-        check(report.diagnostics.empty() && report.mods.size()==2,"Default content must be exactly the two official mods");
+        VirtualFileSystem vfs;AssetManager assets(vfs,renderer,"user/procedural-cache");ModLoader loader(vfs,assets);const auto report=loader.load("tests/fixtures/former-content");
+        check(report.diagnostics.empty() && report.mods.size()==2,"Regression fixture must contain two mods");
         const auto definition=WorldDefinition::load(report.mods);check(definition.generators.contains("plains:gentle"),"Plains generator missing");
         std::map<std::string,std::string> versions;for(const auto& m:report.mods) { const auto v=m.version.parts;versions[m.id]=std::to_string(v[0])+"."+std::to_string(v[1])+"."+std::to_string(v[2]); }
         TerrainGenerator a(definition,"plains:gentle","test-seed"),b(definition,"plains:gentle","test-seed"),c(definition,"plains:gentle","other-seed");
@@ -63,8 +63,8 @@ int main() {
         const auto testRoot=std::filesystem::path("user/procedural-tests")/unique;WorldStorage storage(testRoot/"worlds");
         const auto authoredMods=testRoot/"mods";
         std::filesystem::create_directories(authoredMods);
-        std::filesystem::copy("content/foundation",authoredMods/"foundation",std::filesystem::copy_options::recursive);
-        std::filesystem::copy("content/plains",authoredMods/"plains",std::filesystem::copy_options::recursive);
+        std::filesystem::copy("tests/fixtures/former-content/foundation",authoredMods/"foundation",std::filesystem::copy_options::recursive);
+        std::filesystem::copy("tests/fixtures/former-content/plains",authoredMods/"plains",std::filesystem::copy_options::recursive);
         AuthoredBlock authoredBlock;authoredBlock.mod="painted";authoredBlock.pixels.fill(0x397ac3);publishBlock(authoredMods,authoredBlock);
         AuthoredBlock modeledBlock;modeledBlock.mod="modeled";modeledBlock.pixels.fill(0x957455);
         modeledBlock.model="assets/core/models/cube.glb";publishBlock(authoredMods,modeledBlock);

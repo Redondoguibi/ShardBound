@@ -41,17 +41,19 @@ namespace {
 using game::FiniteMap;
 using game::WorldDefinition;
 namespace theme=game::editor;
-constexpr int inspector=294, toolbar=66, footer=30, gutter=18;
+constexpr int toolbar=66, footer=30, gutter=14;
 constexpr int tabSelectBase=3000,tabCloseBase=3100,tabLimit=32;
 constexpr UINT_PTR blockbenchTestTimer=42;
 enum Control { NewMap=101, OpenMap, SaveMap, ImportSave, LayerDown, LayerUp, Undo, Redo, TestMap, OpenBlockbench, Palette, CropX, CropZ, CropWidth, CropDepth, Filter, Structure, Rotation, Timeline, LinkRoom, NewBlock, Equipment, View3D, Props, PropScale, Ai, ExportMap, RegisterStructure, SyncStudio, ExportContent };
 enum LayoutControl { View2D=201, ProjectMenu, ApplyRegion, CancelRegion, SearchLabel,
     BrushTool, EraseTool, PickTool, FillTool, ResetCamera, Settings,
     LibraryPanel, PlacementPanel, HistoryPanel, HomeNew, HomeOpen, HomeMap, HomeBlocks, HomeGear, HomeAi,
-    BlocksCreate, GearCreate, AiStart, Start3D, GridToggle, CameraSpeed, ChooseBlockbench, LaunchBlockbench, ChooseBridge,
+    BlocksCreate, GearCreate, AiStart, Start3D, GridToggle, CameraSpeed, ChooseBlockbench, ChooseBridge,
     OpenBlockbenchFile, BlockbenchTab, ReloadBlockbench, NewTab, PreviousTabs, NextTabs, CloseTab, CycleTabs, ReverseTabs,
     BlockName, BlockSolid, BlockSave, BlockReturn, BlockEdit, BlockImport,
-    GearHead,GearChest,GearLegs,GearFeet,GearLibrary,GearEdit,GearAttributes,GearClip };
+    GearHead,GearChest,GearLegs,GearFeet,GearLibrary,GearEdit,GearAttributes,GearClip,GearImport,
+    FocusView,ResetPreferences,Help,RecentProjects,RecentOpen,ZoomSpeed,SaveAs,
+    ViewSettingLabel,GridSettingLabel,MovementSettingLabel,ZoomSettingLabel,BrushSize,BrushSizeLabel };
 enum class TerrainTool { Brush, Erase, Pick, Fill };
 enum class Page {Home,Map,Blocks,Gear,Ai,Settings,Blockbench,BlockModel};
 enum class MapPanel {Library,Placement,History};
@@ -94,6 +96,15 @@ COLORREF blockColor(std::string_view id) {
 
 class Editor {
 public:
+    bool mapShortcut(const MSG& message) {
+        if(message.message!=WM_KEYDOWN || page_!=Page::Map || (GetKeyState(VK_CONTROL)&0x8000) || (GetKeyState(VK_MENU)&0x8000)) return false;
+        wchar_t type[32]{};GetClassNameW(message.hwnd,type,int(std::size(type)));
+        if(std::wstring_view(type)==L"Edit" || std::wstring_view(type)==L"ComboBox") return false;
+        if(message.wParam=='B' || message.wParam=='R' || message.wParam=='I' || message.wParam=='G' || message.wParam=='F' || message.wParam==VK_ESCAPE) {
+            SendMessageW(window_,WM_KEYDOWN,message.wParam,message.lParam);return true;
+        }
+        return false;
+    }
     bool blockbenchInput(HWND target) const {
         return (blockbenchPane_ && blockbenchPane_->owns(target)) ||
             (currentTab_ && currentTab_->block && currentTab_->block->pane->owns(target));
@@ -126,25 +137,63 @@ public:
         case WM_MOUSEWHEEL: {
             POINT cursor{GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam)};ScreenToClient(window_,&cursor);
             const auto area=previewViewport();
-            if(PtInRect(&area,cursor)) zoom(GET_WHEEL_DELTA_WPARAM(wParam));
+            if(PtInRect(&area,cursor)) {zoom(GET_WHEEL_DELTA_WPARAM(wParam));updateHover(cursor);}
             return 0;
         }
         case WM_LBUTTONDOWN: case WM_RBUTTONDOWN:
+            if(message==WM_LBUTTONDOWN && onDivider({GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam)})) {
+                resizingPanel_=true;SetCapture(window_);return 0;
+            }
             beginCameraGesture(message==WM_LBUTTONDOWN,{GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam)});
             return 0;
         case WM_MOUSEMOVE:
+            if(resizingPanel_) {
+                RECT client{};GetClientRect(window_,&client);
+                inspectorWidth_=std::clamp(int(client.right)-GET_X_LPARAM(lParam),294,std::min(480,int(client.right)-650));
+                layout();return 0;
+            }
             if(cameraGesture_) updateCameraGesture({GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam)});
+            else updateHover({GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam)});
+            return 0;
+        case WM_MOUSELEAVE:
+            if(hoverCell_) {hoverCell_.reset();InvalidateRect(window_,nullptr,FALSE);}
             return 0;
         case WM_LBUTTONUP: case WM_RBUTTONUP:
+            if(resizingPanel_) {resizingPanel_=false;ReleaseCapture();saveSettings();return 0;}
             finishCameraGesture(message==WM_LBUTTONUP,{GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam)});
             return 0;
         case WM_CANCELMODE:
+            if(resizingPanel_) {resizingPanel_=false;if(GetCapture()==window_) ReleaseCapture();}
             cancelCameraGesture();
             return 0;
         case WM_CAPTURECHANGED:
+            resizingPanel_=false;
             cameraGesture_.reset();
             return 0;
+        case WM_SETCURSOR: {
+            POINT point{};GetCursorPos(&point);ScreenToClient(window_,&point);
+            if(LOWORD(lParam)==HTCLIENT && (resizingPanel_ || onDivider(point))) {
+                SetCursor(LoadCursorW(nullptr,IDC_SIZEWE));return TRUE;
+            }
+            return DefWindowProcW(window,message,wParam,lParam);
+        }
         case WM_COMMAND:
+            if(LOWORD(wParam)==BrushSize) {
+                if(HIWORD(wParam)==CBN_SELCHANGE) {
+                    const auto index=SendMessageW(GetDlgItem(window_,BrushSize),CB_GETCURSEL,0,0);
+                    if(index>=0 && index<3) brushSize_=int(index)*2+1;
+                    SetFocus(window_);refresh();
+                }
+                return 0;
+            }
+            if(LOWORD(wParam)==RecentProjects) {
+                if(HIWORD(wParam)==LBN_DBLCLK) command(RecentOpen);
+                return 0;
+            }
+            if(LOWORD(wParam)==Start3D || LOWORD(wParam)==GridToggle || LOWORD(wParam)==CameraSpeed || LOWORD(wParam)==ZoomSpeed) {
+                if(HIWORD(wParam)==CBN_SELCHANGE) changeSetting(LOWORD(wParam));
+                return 0;
+            }
             if(LOWORD(wParam)==GearLibrary) {
                 if(HIWORD(wParam)==LBN_DBLCLK) editSelectedEquipment();
                 if(HIWORD(wParam)==LBN_SELCHANGE) EnableWindow(GetDlgItem(window_,GearEdit),TRUE);
@@ -172,6 +221,14 @@ public:
             if(LOWORD(wParam)==Timeline) { if(HIWORD(wParam)==LBN_SELCHANGE) jumpToEdit();return 0; }
             command(LOWORD(wParam));return 0;
         case WM_KEYDOWN:
+            if(page_==Page::Map && !(GetKeyState(VK_CONTROL)&0x8000)) {
+                if(wParam=='B') {command(BrushTool);return 0;}
+                if(wParam=='R') {command(EraseTool);return 0;}
+                if(wParam=='I') {command(PickTool);return 0;}
+                if(wParam=='G') {command(FillTool);return 0;}
+                if(wParam=='F') {command(ResetCamera);return 0;}
+                if(wParam==VK_ESCAPE) {fillCorner_.reset();structureCorner_.reset();selectingStructure_=false;refresh(L"Seleção cancelada.");return 0;}
+            }
             if(page_==Page::Map && view3d_) {
                 if(wParam==VK_LEFT || wParam=='A') panCamera(-25,0);
                 if(wParam==VK_RIGHT || wParam=='D') panCamera(25,0);
@@ -191,6 +248,8 @@ public:
         case WM_APP+4:
             if(gearTest_) verifyEquipmentResult();else verifyBlockbenchResult();
             return 0;
+        case WM_APP+5:
+            verifyEmptyWorkspace();DestroyWindow(window);return 0;
         case WM_TIMER:
             if(wParam==blockbenchTestTimer) {
                 KillTimer(window_,blockbenchTestTimer);
@@ -238,6 +297,8 @@ public:
             verifyCameraGestures();
             verifyTimeline();
             verifyTabs();
+            verifyWorkspace();
+            verifyBrush();
             DestroyWindow(window);return 0;
         }
         case WM_DESTROY:
@@ -298,6 +359,14 @@ private:
     float pitch_=.88f,plantScale_=1,plantX_=0,plantY_=0;
     bool showGrid_=true;
     float cameraSpeed_=1;
+    float zoomSpeed_=1;
+    int inspectorWidth_=330;
+    bool resizingPanel_=false,focusView_=false;
+    int brushSize_=1;
+    std::optional<POINT> hoverCell_;
+    HWND tooltips_{};
+    std::vector<std::filesystem::path> recentProjects_;
+    std::filesystem::path settingsTestPath_;
     bool start3d_=false;
     Page page_=Page::Home;
     MapPanel panel_=MapPanel::Library;
@@ -319,6 +388,7 @@ private:
         std::string structure,model;
         int rotation=0;
         float x,z,orbit,distance,pitch,zoom,panX,panY;
+        int brush=1;
     };
     struct Tab;
     struct BlockDraft {
@@ -349,7 +419,7 @@ private:
     bool settingBlockFields_=false;
     std::vector<std::string> gearIds_;
     static constexpr int tabsLeft=164,tabsTop=20,tabHeight=39;
-    static constexpr int tabGap=2,minTabWidth=118,tabActionsWidth=120;
+    static constexpr int tabGap=2,minTabWidth=118,tabActionsWidth=330;
     HWND hoveredTab_{};
     POINT tabDown_{};
     bool movingTab_=false;
@@ -579,7 +649,7 @@ private:
         button(LayerDown,L"−");button(LayerUp,L"+");
         button(LinkRoom,L"Vincular interior…");button(RegisterStructure,L"Registrar seleção…");
         button(SyncStudio,L"Atualizar no Blockbench");button(ApplyRegion,L"Continuar");button(CancelRegion,L"Cancelar");
-        button(BrushTool,L"Pincel");button(EraseTool,L"Apagar");button(PickTool,L"Amostra");button(FillTool,L"Preencher");
+        button(BrushTool,L"Pincel · B");button(EraseTool,L"Apagar · R");button(PickTool,L"Amostra · I");button(FillTool,L"Área · G");
         button(ResetCamera,L"Enquadrar");
         button(NewTab,L"+");button(PreviousTabs,L"‹");button(NextTabs,L"›");button(ReloadBlockbench,L"Recarregar");
         button(LibraryPanel,L"Blocos");button(PlacementPanel,L"Colocação");button(HistoryPanel,L"Histórico");
@@ -589,8 +659,10 @@ private:
         button(BlocksCreate,L"Criar bloco");button(GearCreate,L"Criar arma");button(AiStart,L"Abrir assistente");
         button(GearHead,L"Cabeça");button(GearChest,L"Torso");button(GearLegs,L"Pernas");button(GearFeet,L"Pés");
         button(GearEdit,L"Editar selecionado");button(GearAttributes,L"Atributos");button(GearClip,L"Animar clipe");
-        button(Start3D,L"Vista inicial");button(GridToggle,L"Grade");button(CameraSpeed,L"Velocidade da câmera");
-        button(ChooseBlockbench,L"Localizar Blockbench Desktop…");button(LaunchBlockbench,L"Modelar no Blockbench");
+        button(GearImport,L"Importar Studio…");
+        button(FocusView,L"Foco");button(ResetPreferences,L"Restaurar preferências");button(Help,L"Ajuda");
+        button(RecentOpen,L"Abrir selecionado");
+        button(ChooseBlockbench,L"Localizar Blockbench Desktop…");
         button(ChooseBridge,L"Localizar ponte…");button(OpenBlockbenchFile,L"Abrir no Blockbench Desktop…");
         button(BlockSolid,L"Sólido");button(BlockSave,L"Salvar na engine");button(BlockReturn,L"Ver no mapa");
         button(BlockEdit,L"Editar");button(BlockImport,L"Importar GLB…");
@@ -610,6 +682,19 @@ private:
             SendMessageW(crop_[i],EM_SETMARGINS,EC_LEFTMARGIN,MAKELPARAM(8,0));
         }
         constexpr auto comboStyle=CBS_DROPDOWNLIST|CBS_OWNERDRAWFIXED|CBS_HASSTRINGS|WS_VSCROLL|WS_TABSTOP;
+        const auto setting=[&](int id,int labelId,const wchar_t* label,std::initializer_list<const wchar_t*> options) {
+            child(L"STATIC",label,SS_CENTERIMAGE,0,0,0,0,labelId);
+            const auto combo=child(L"COMBOBOX",L"",comboStyle,0,0,0,180,id);
+            for(const auto option:options) SendMessageW(combo,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(option));
+        };
+        setting(Start3D,ViewSettingLabel,L"Vista inicial do mapa",{L"Planta (2D)",L"Perspectiva (3D)"});
+        setting(GridToggle,GridSettingLabel,L"Grade na planta",{L"Oculta",L"Visível"});
+        setting(CameraSpeed,MovementSettingLabel,L"Movimento da câmera",{L"50% · precisa",L"100% · padrão",L"150% · rápida",L"200% · rápida"});
+        setting(ZoomSpeed,ZoomSettingLabel,L"Velocidade do zoom",{L"50% · suave",L"100% · padrão",L"150% · rápido",L"200% · rápido"});
+        setting(BrushSize,BrushSizeLabel,L"Tamanho do pincel",{L"1 × 1",L"3 × 3",L"5 × 5"});
+        SendMessageW(GetDlgItem(window_,BrushSize),CB_SETCURSEL,0,0);
+        child(L"LISTBOX",L"",listStyle,0,0,0,0,RecentProjects);
+        SendMessageW(GetDlgItem(window_,RecentProjects),LB_SETITEMHEIGHT,0,51);
         structures_=child(L"COMBOBOX",L"",comboStyle,0,0,0,190,Structure);
         SendMessageW(structures_,CB_ADDSTRING,0,reinterpret_cast<LPARAM>(L"Sem estrutura"));
         for(const auto& [id,definition]:catalog_.structures) {
@@ -630,7 +715,27 @@ private:
         showModels(readModels(game::discoverMods(mods_).mods));
         currentTab_=&addTab(Page::Home,L"Início");
         ready_=true;if(!smoke_) readSettings();
-        updateSettingLabels();layout();refresh();
+        const auto settingsStatus=status_;
+        updateSettingLabels();updateRecentProjects();installTooltips();layout();refresh(settingsStatus);
+    }
+
+    void installTooltips() {
+        tooltips_=CreateWindowExW(WS_EX_TOPMOST,TOOLTIPS_CLASSW,nullptr,WS_POPUP|TTS_ALWAYSTIP|TTS_NOPREFIX,
+            CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,window_,nullptr,GetModuleHandleW(nullptr),nullptr);
+        SendMessageW(tooltips_,TTM_SETMAXTIPWIDTH,0,320);
+        const std::pair<int,const wchar_t*> tips[]{
+            {SaveMap,L"Salvar projeto · Ctrl+S"},{Undo,L"Desfazer · Ctrl+Z"},{Redo,L"Refazer · Ctrl+Y"},
+            {BrushTool,L"B · Clique para colocar o bloco selecionado."},{EraseTool,L"R · Clique para apagar um bloco."},
+            {PickTool,L"I · Clique no mapa para selecionar o mesmo bloco na paleta."},
+            {FillTool,L"G · Clique em dois cantos para preencher uma área. Esc cancela."},
+            {ResetCamera,L"F · Enquadrar todo o mapa."},{FocusView,L"F10 · Ocultar ou mostrar o painel lateral."},
+            {TestMap,L"F6 · Abrir o mapa atual no jogo."},{Help,L"F1 · Controles e atalhos do editor."},
+            {Settings,L"Preferências do editor · Ctrl+,"},{NewTab,L"Nova aba · Ctrl+T. Arraste as abas para reorganizar."}};
+        for(const auto& [id,tip]:tips) {
+            TOOLINFOW info{sizeof(info)};info.uFlags=TTF_IDISHWND|TTF_SUBCLASS;info.hwnd=window_;
+            info.uId=reinterpret_cast<UINT_PTR>(GetDlgItem(window_,id));info.lpszText=const_cast<wchar_t*>(tip);
+            SendMessageW(tooltips_,TTM_ADDTOOLW,0,reinterpret_cast<LPARAM>(&info));
+        }
     }
 
     void drawControl(const DRAWITEMSTRUCT& item) const {
@@ -639,13 +744,16 @@ private:
             if((id>=tabSelectBase && id<tabSelectBase+tabLimit) || (id>=tabCloseBase && id<tabCloseBase+tabLimit)) {
                 drawTab(item);return;
             }
+            if(page_==Page::Home && (id==HomeBlocks || id==HomeGear || id==BlockbenchTab || id==HomeAi)) {
+                drawHomeCard(item);return;
+            }
             const bool painting=structures_ && props_ && SendMessageW(structures_,CB_GETCURSEL,0,0)==0 &&
                 SendMessageW(props_,CB_GETCURSEL,0,0)==0;
             const bool terrain=painting && id==UINT(BrushTool)+UINT(terrainTool_);
             const bool pane=id>=LibraryPanel && id<=HistoryPanel && id==UINT(LibraryPanel)+UINT(panel_);
             const bool primary=id==TestMap || id==ApplyRegion || id==HomeNew || id==BlocksCreate ||
                 id==GearCreate || id==AiStart || id==BlockSave;
-            theme::drawButton(item,primary,pane || terrain || (id==View3D && view3d_) || (id==View2D && !view3d_));
+            theme::drawButton(item,primary,pane || terrain || (id==FocusView && focusView_) || (id==View3D && view3d_) || (id==View2D && !view3d_));
             return;
         }
         if(item.itemID==UINT(-1)) {
@@ -656,6 +764,10 @@ private:
             const auto& block=ids_[visibleIds_[item.itemID]];
             theme::drawRow(item,blockNameFor(block),colors_.at(block),wide(block));
             return;
+        }
+        if(id==RecentProjects && item.itemID<recentProjects_.size()) {
+            const auto& path=recentProjects_[item.itemID];
+            theme::drawRow(item,path.stem().wstring(),theme::accent,path.parent_path().wstring());return;
         }
         const auto isCombo=item.CtlType==ODT_COMBOBOX;
         const auto length=SendMessageW(item.hwndItem,isCombo?CB_GETLBTEXTLEN:LB_GETTEXTLEN,item.itemID,0);
@@ -739,67 +851,99 @@ private:
         InvalidateRect(palette_,nullptr,TRUE);
     }
 
+    int inspectorWidth() const {
+        RECT client{};GetClientRect(window_,&client);
+        return focusView_?0:std::clamp(inspectorWidth_,294,std::max(294,std::min(480,int(client.right)-650)));
+    }
+
+    bool onDivider(POINT point) const {
+        if(page_!=Page::Map || focusView_ || regionCommand_) return false;
+        RECT client{};GetClientRect(window_,&client);
+        const auto side=client.right-inspectorWidth();
+        return point.x>=side-5 && point.x<=side+4 && point.y>=115 && point.y<client.bottom-footer;
+    }
+
     void layout() {
         if(!ready_) return;
+        hoverCell_.reset();
         RECT client{};GetClientRect(window_,&client);
-        const int right=int(client.right),bottom=int(client.bottom)-footer,side=right-inspector;
+        const int right=int(client.right),bottom=int(client.bottom)-footer,side=right-inspectorWidth();
+        const int panelWidth=right-side,inner=std::max(266,panelWidth-28);
         const auto place=[&](int id,int x,int y,int w,int h,bool visible=true) {
             const auto control=GetDlgItem(window_,id);
             MoveWindow(control,x,y,w,h,FALSE);ShowWindow(control,visible?SW_SHOWNA:SW_HIDE);
         };
         const bool map=page_==Page::Map, home=page_==Page::Home && !regionCommand_, settings=page_==Page::Settings;
-        const bool library=map && panel_==MapPanel::Library, placement=map && panel_==MapPanel::Placement;
+        const bool library=map && !focusView_ && panel_==MapPanel::Library, placement=map && !focusView_ && panel_==MapPanel::Placement;
         layoutTabs(right);
+        place(Settings,right-212,24,138,31);place(Help,right-66,24,54,31);
         place(ReloadBlockbench,right-118,76,100,29,page_==Page::Blockbench);
         place(ProjectMenu,18,78,93,32,map);place(SaveMap,117,78,69,32,map);
         place(Undo,194,78,76,32,map);place(Redo,276,78,71,32,map);
         place(View2D,365,78,62,32,map);place(View3D,433,78,50,32,map);
-        place(TestMap,right-154,78,136,32,map);
-        place(BrushTool,18,124,74,32,map);place(EraseTool,98,124,74,32,map);
-        place(PickTool,178,124,78,32,map);place(FillTool,262,124,89,32,map);
+        place(FocusView,right-236,78,74,32,map);place(TestMap,right-154,78,136,32,map);
+        place(BrushTool,18,124,88,32,map);place(EraseTool,112,124,88,32,map);
+        place(PickTool,206,124,94,32,map);place(FillTool,306,124,90,32,map);
         place(LayerDown,side-gutter-114,124,31,32,map);place(LayerUp,side-gutter-31,124,31,32,map);
         place(ResetCamera,side-gutter-224,124,96,32,map);
-        place(LibraryPanel,side+14,124,73,32,map);place(PlacementPanel,side+93,124,88,32,map);
-        place(HistoryPanel,side+187,124,93,32,map);
+        const int segment=(inner-8)/3;
+        place(LibraryPanel,side+14,124,segment,32,map && !focusView_);
+        place(PlacementPanel,side+18+segment,124,segment,32,map && !focusView_);
+        place(HistoryPanel,side+22+segment*2,124,segment,32,map && !focusView_);
         place(NewBlock,right-83,173,68,29,library);place(BlockEdit,right-151,173,62,29,library);
-        place(SearchLabel,side+14,202,266,22,library);
-        place(Filter,side+14,227,266,33,library);place(Palette,side+14,272,266,std::max(55,bottom-350),library);
-        place(Structure,side+14,215,266,180,placement);place(Props,side+14,276,266,180,placement);
-        place(Rotation,side+14,335,126,125,placement);place(PropScale,side+154,335,126,33,placement);
-        place(RegisterStructure,side+14,386,266,31,placement);place(LinkRoom,side+14,424,266,31,placement);
-        place(SyncStudio,side+14,462,266,31,placement);
-        place(Timeline,side+14,211,266,std::max(60,bottom-265),map && panel_==MapPanel::History);
+        place(SearchLabel,side+14,202,inner,22,library);
+        place(Filter,side+14,227,inner,33,library);place(Palette,side+14,272,inner,std::max(55,bottom-350),library);
+        place(BrushSizeLabel,side+14,bottom-44,inner-104,30,library);
+        place(BrushSize,right-106,bottom-44,92,140,library);
+        place(Structure,side+14,215,inner,180,placement);place(Props,side+14,276,inner,180,placement);
+        place(Rotation,side+14,335,(inner-14)/2,125,placement);place(PropScale,side+28+(inner-14)/2,335,(inner-14)/2,33,placement);
+        place(RegisterStructure,side+14,386,inner,31,placement);place(LinkRoom,side+14,424,inner,31,placement);
+        place(SyncStudio,side+14,462,inner,31,placement);
+        place(Timeline,side+14,211,inner,std::max(60,bottom-265),map && !focusView_ && panel_==MapPanel::History);
         const auto region=regionPanel();
         for(int i=0;i<4;++i) place(CropX+i,region.left+18+i*101,region.top+113,90,31,regionCommand_!=0);
         place(CancelRegion,region.right-209,region.bottom-47,88,30,regionCommand_!=0);
         place(ApplyRegion,region.right-112,region.bottom-47,94,30,regionCommand_!=0);
 
         const int x=std::max(28,(right-1110)/2),w=std::min(1110,right-2*x);
-        const int card=(w-48)/5;
-        place(HomeNew,x+24,268,124,36,home);place(HomeOpen,x+157,268,132,36,home);
-        place(HomeMap,x+24,322,188,33,home);
-        const std::array homeTools{HomeBlocks,HomeGear,BlockbenchTab,HomeAi,Settings};
-        for(int i=0;i<int(homeTools.size());++i) place(homeTools[i],x+i*(card+12)+12,494,card-24,34,home);
+        const int content=w-342,card=(content-14)/2,recentX=x+content+18;
+        place(HomeNew,x+22,240,126,36,home);place(HomeOpen,x+158,240,136,36,home);
+        place(HomeMap,recentX+16,532,280,33,home && (loadedMap_ || !catalog_.maps.empty()));
+        const std::array homeTools{HomeBlocks,HomeGear,BlockbenchTab,HomeAi};
+        for(int i=0;i<int(homeTools.size());++i) place(homeTools[i],x+(i%2)*(card+14),330+(i/2)*128,card,114,home);
+        place(RecentProjects,recentX+16,216,280,252,home && !recentProjects_.empty());
+        place(RecentOpen,recentX+16,480,280,33,home && !recentProjects_.empty());
         place(BlocksCreate,x+24,255,150,36,page_==Page::Blocks);
         place(BlockImport,x+195,255,176,36,page_==Page::Blocks);
+        if(page_==Page::Blocks) {
+            place(SearchLabel,x+20,352,w-40,22);
+            place(Filter,x+20,380,w-40,33);
+            place(Palette,x+20,427,w-40,std::max(60,bottom-487));
+            place(BlockEdit,x+w-160,305,140,32);
+        }
         const bool gear=page_==Page::Gear;
         place(GearCreate,x+24,250,135,36,gear);
         for(int id=GearHead;id<=GearFeet;++id) place(id,x+249+(id-GearHead)*107,250,99,36,gear);
-        place(GearLibrary,x+24,370,std::min(w-48,645),std::max(60,bottom-442),gear);
+        place(GearLibrary,x+24,370,w-48,std::max(60,bottom-442),gear && !gearIds_.empty());
         place(GearEdit,x+24,bottom-58,163,33,gear);
+        place(GearImport,x+198,bottom-58,153,33,gear);
         place(AiStart,x+24,255,164,36,page_==Page::Ai);
         const bool authoring=page_==Page::BlockModel;
         const auto* model=authoring?currentTab_->block.get():nullptr;
         const bool equipment=model && model->equipment;
         place(BlockName,77,77,223,32,authoring);place(BlockSolid,310,77,118,32,authoring && !equipment);
         place(GearAttributes,310,77,118,32,equipment);
-        place(GearClip,714,77,116,32,equipment && model->equipment->armorSlot.empty());
-        place(BlockSave,438,77,143,32,authoring);place(BlockReturn,591,77,113,32,authoring);
+        place(GearClip,736,77,116,32,equipment && model->equipment->armorSlot.empty());
+        place(BlockSave,438,77,143,32,authoring);place(BlockReturn,591,77,135,32,authoring);
         place(ReloadBlockbench,right-118,76,100,29,page_==Page::Blockbench || authoring);
-        place(OpenBlockbenchFile,x+340,506,235,34,settings);
-        place(Start3D,x+340,202,130,34,settings);place(GridToggle,x+340,248,130,34,settings);
-        place(CameraSpeed,x+340,294,130,34,settings);
-        place(ChooseBlockbench,x+340,406,190,34,settings);place(ChooseBridge,x+340,456,190,34,settings);
+        const int half=(w-20)/2;
+        for(int i=0;i<4;++i) place(ViewSettingLabel+i,x+20,207+i*58,half-227,34,settings);
+        place(Start3D,x+half-196,207,176,180,settings);place(GridToggle,x+half-196,265,176,120,settings);
+        place(CameraSpeed,x+half-196,323,176,180,settings);place(ZoomSpeed,x+half-196,381,176,180,settings);
+        place(ResetPreferences,x+20,456,half-40,34,settings);
+        place(ChooseBlockbench,x+half+40,263,half-40,34,settings);
+        place(ChooseBridge,x+half+40,359,half-40,34,settings);
+        place(OpenBlockbenchFile,x+half+40,456,half-40,34,settings);
         if(renderSurface_) {
             const auto area=previewViewport();
             ShowWindow(renderSurface_,map && view3d_ && !regionCommand_ && !smoke_?SW_SHOWNA:SW_HIDE);
@@ -825,11 +969,12 @@ private:
             EnableWindow(GetDlgItem(window_,GearAttributes),!block.publishing);
             EnableWindow(GetDlgItem(window_,GearClip),block.ready && !block.publishing);
         }
-        if(page_==Page::Map) EnableWindow(GetDlgItem(window_,BlockEdit),!editableBlock(selectedBlock()).empty());
+        if(page_==Page::Map || page_==Page::Blocks) EnableWindow(GetDlgItem(window_,BlockEdit),!editableBlock(selectedBlock()).empty());
         updateTabLabels();
         EnableWindow(GetDlgItem(window_,Undo),cursor_>0);
         EnableWindow(GetDlgItem(window_,Redo),cursor_<history_.size());
         EnableWindow(GetDlgItem(window_,SyncStudio),SendMessageW(props_,CB_GETCURSEL,0,0)>0);
+        EnableWindow(GetDlgItem(window_,BrushSize),terrainTool_==TerrainTool::Brush || terrainTool_==TerrainTool::Erase);
         SendMessageW(timeline_,LB_SETCURSEL,cursor_,0);
         InvalidateRect(GetDlgItem(window_,View2D),nullptr,FALSE);
         InvalidateRect(GetDlgItem(window_,View3D),nullptr,FALSE);
@@ -874,6 +1019,7 @@ private:
             throw std::runtime_error("Este arquivo já está aberto em outra aba.");
         writeProject(target);
         path_=target;saved_=cursor_;needsSave_=false;refresh(L"Mapa salvo.");
+        rememberProject(target);
         return true;
     }
 
@@ -920,6 +1066,7 @@ private:
             rebuildTimeline();
         }
         refresh(timelineError.empty()?L"Mapa aberto.":L"Mapa aberto. Linha do tempo indisponível.");
+        rememberProject(path);
         if(!timelineError.empty() && !smoke_) MessageBoxW(window_,timelineError.c_str(),L"ShardBound Editor",MB_ICONWARNING);
     }
 
@@ -953,6 +1100,7 @@ private:
         AppendMenuW(menu,MF_STRING,OpenMap,L"Abrir mapa…\tCtrl+O");
         AppendMenuW(menu,MF_STRING,ImportSave,L"Importar região de um save…");
         AppendMenuW(menu,MF_SEPARATOR,0,nullptr);
+        AppendMenuW(menu,MF_STRING,SaveAs,L"Salvar como…\tCtrl+Shift+S");
         AppendMenuW(menu,MF_STRING,ExportMap,L"Exportar mapa e mods…");
         AppendMenuW(menu,MF_STRING,ExportContent,L"Exportar mods da revisão…");
         RECT anchor{};GetWindowRect(GetDlgItem(window_,ProjectMenu),&anchor);
@@ -961,6 +1109,36 @@ private:
     }
 
     void command(int id) {
+        if(id==Help) {
+            MessageBoxW(window_,L"MAPA\nB  Pincel     R  Apagar     I  Amostra     G  Preencher área\nF  Enquadrar     F10  Modo foco     F6  Testar no jogo\nEsc  Cancelar seleção de área ou estrutura\n\nCÂMERA\nArrastar com o esquerdo: girar em 3D\nArrastar com o direito: mover · Roda: zoom\nClique esquerdo: aplicar a ferramenta · Shift + clique: início do jogador\n\nPROJETO E ABAS\nCtrl+S  Salvar     Ctrl+Shift+S  Salvar como     Ctrl+O  Abrir\nCtrl+Z / Ctrl+Y  Desfazer / refazer\nCtrl+T  Nova aba     Ctrl+W  Fechar aba\nCtrl+Tab / Ctrl+Shift+Tab  Trocar aba\nCtrl+,  Configurações\n\nArraste a divisória do painel para ajustar o espaço.\nNo Blockbench, use os atalhos próprios de modelagem e animação.",
+                L"Guia rápido · ShardBound",MB_OK|MB_ICONINFORMATION);return;
+        }
+        if(id==RecentOpen) {
+            const auto row=SendMessageW(GetDlgItem(window_,RecentProjects),LB_GETCURSEL,0,0);
+            if(row>=0 && size_t(row)<recentProjects_.size()) {
+                const auto path=recentProjects_[size_t(row)];
+                if(!std::filesystem::is_regular_file(path)) {
+                    MessageBoxW(window_,L"Este projeto foi movido ou removido. Use Abrir projeto para localizar o arquivo.",L"Projeto indisponível",MB_OK|MB_ICONINFORMATION);
+                    return;
+                }
+                openProject(path,true);
+            }
+            return;
+        }
+        if(id==FocusView) {if(page_==Page::Map) {focusView_=!focusView_;layout();SetFocus(window_);}return;}
+        if(id==ResetPreferences) {
+            showGrid_=true;start3d_=false;cameraSpeed_=zoomSpeed_=1;inspectorWidth_=330;focusView_=false;
+            saveSettings();updateSettingLabels();layout();refresh(L"Preferências de visualização restauradas. Conexões e projetos preservados.");return;
+        }
+        if(id==SaveAs) {
+            if(page_!=Page::Map) return;
+            const auto target=chooseFile(true,L"Salvar mapa como");
+            if(target.empty()) return;
+            if(const auto existing=findMapFile(target);existing && existing!=loadedMap_)
+                throw std::runtime_error("Este arquivo já está aberto em outra aba.");
+            writeProject(target);path_=target;saved_=cursor_;needsSave_=false;
+            refresh(L"Mapa salvo.");rememberProject(target);return;
+        }
         if((id>=tabSelectBase && id<tabSelectBase+tabLimit) || (id>=tabCloseBase && id<tabCloseBase+tabLimit)) {
             const bool close=id>=tabCloseBase;
             const int slot=id-(close?tabCloseBase:tabSelectBase);
@@ -983,7 +1161,7 @@ private:
             if(id==NextTabs) ++firstTab_;
             layout();return;
         }
-        if(id==BlockbenchTab || id==LaunchBlockbench) {go(Page::Blockbench);return;}
+        if(id==BlockbenchTab) {go(Page::Blockbench);return;}
         if(id==ReloadBlockbench) {
             auto* draft=currentTab_->block.get();
             auto* pane=draft?draft->pane.get():blockbenchPane_.get();
@@ -1008,6 +1186,7 @@ private:
             openEquipment(slots[id-GearHead]);return;
         }
         if(id==GearEdit) {editSelectedEquipment();return;}
+        if(id==GearImport) {command(Equipment);return;}
         if(id==BlockEdit) {editSelectedBlock();return;}
         if(id==NewBlock) {openBlock();return;}
         if(id==Settings) {go(Page::Settings);return;}
@@ -1048,7 +1227,7 @@ private:
         }
         if((id==SaveMap || id==Undo || id==Redo) && page_!=Page::Map) return;
         if(id==SaveMap) { save();return; }
-        if(id==TestMap) { testMap();return; }
+        if(id==TestMap) { if(page_==Page::Map) testMap();return; }
         if(id==ExportContent) {
             const auto selection=chooseFile(true,L"Escolher destino (o nome cria uma pasta de mods)");
             if(!selection.empty()) {
@@ -1213,7 +1392,7 @@ private:
 
     void attachDraftMap() {
         if(loadedMap_) return;
-        loadedMap_=&addTab(Page::Map,L"Mapa de exemplo");
+        loadedMap_=&addTab(Page::Map,catalog_.maps.empty()?L"Mapa sem título":L"Mapa de exemplo");
         centerPreview();view3d_=start3d_;
         layout();
     }
@@ -1244,7 +1423,7 @@ private:
             previous.emplace(MapSession{std::move(map_),std::move(path_),std::move(mods),std::move(history_),cursor_,saved_,
                 needsSave_,view3d_,layer_,panel_,terrainTool_,std::move(filter),std::move(scale),std::move(block),
                 std::move(structure),std::move(model),
-                int(SendMessageW(rotation_,CB_GETCURSEL,0,0)),centerX_,centerZ_,orbit_,distance_,pitch_,plantScale_,plantX_,plantY_});
+                int(SendMessageW(rotation_,CB_GETCURSEL,0,0)),centerX_,centerZ_,orbit_,distance_,pitch_,plantScale_,plantX_,plantY_,brushSize_});
         }
         auto& next=*tab.map;
         try {
@@ -1259,6 +1438,8 @@ private:
         map_=std::move(next.map);path_=std::move(next.path);history_=std::move(next.history);
         cursor_=next.cursor;saved_=next.saved;needsSave_=next.dirty;
         view3d_=next.view3d;layer_=next.layer;panel_=next.panel;terrainTool_=next.tool;
+        brushSize_=next.brush;hoverCell_.reset();
+        SendMessageW(GetDlgItem(window_,BrushSize),CB_SETCURSEL,(brushSize_-1)/2,0);
         centerX_=next.x;centerZ_=next.z;orbit_=next.orbit;distance_=next.distance;pitch_=next.pitch;
         plantScale_=next.zoom;plantX_=next.panX;plantY_=next.panY;
         previewDirty_=true;
@@ -1572,7 +1753,7 @@ private:
         draft.ticket=++nextPublication_;
         draft.savingChanges=draft.changes;
         draft.publishing=true;
-        blockStatus(tab,L"Salvando o modelo e registrando o bloco…");
+        blockStatus(tab,draft.equipment?L"Salvando o equipamento…":L"Salvando o modelo e registrando o bloco…");
         try {
             const auto arguments=nlohmann::json::array({draft.ticket,utf8(draft.name),
                 draft.equipment?equipmentClips(*draft.equipment):nlohmann::json::array()}).dump(-1,' ',true);
@@ -1713,12 +1894,17 @@ private:
         const auto type=item.armorSlot.empty()?"melee":"armor";
         if(project.at("meta").at("model_format")!="shardbound_studio" || data.at("id")!=model || data.at("contentType")!=type)
             throw std::runtime_error("O projeto do Studio não corresponde ao equipamento.");
-        const auto& files=event.at("files");
-        if(!files.is_object() || files.size()!=4) throw std::runtime_error("O equipamento precisa de um modelo e dos dados do Studio.");
+        const auto& entries=event.at("files");
+        if(!entries.is_array() || entries.size()!=5) throw std::runtime_error("O equipamento precisa de um modelo e dos dados do Studio.");
+        std::map<std::string,const nlohmann::json*,std::less<>> files;
+        for(const auto& entry:entries) {
+            if(!files.emplace(entry.at("path").get<std::string>(),&entry).second)
+                throw std::runtime_error("O Studio retornou um arquivo duplicado.");
+        }
         const auto modelPath="models/"+item.mod+"/model.glb";
-        auto binary=decodeAsset(files.at(modelPath).at("base64").get_ref<const std::string&>());
+        auto binary=decodeAsset(files.at(modelPath)->at("base64").get_ref<const std::string&>());
         if(!binary.starts_with("glTF")) throw std::runtime_error("Modelo GLB inválido.");
-        const auto& manifest=files.at("studio.manifest.json").at("text").get_ref<const std::string&>();
+        const auto& manifest=files.at("studio.manifest.json")->at("text").get_ref<const std::string&>();
         if(manifest.size()>1024*1024) throw std::runtime_error("Manifesto de equipamento muito grande.");
         const auto metadata=nlohmann::json::parse(manifest);
         if(metadata.at("project")!=model || metadata.at("models").size()!=1 ||
@@ -1737,7 +1923,7 @@ private:
             const auto revision=copyContent("equipamento",replacing);
             const auto input=revision.parent_path()/"exported-equipment";
             for(const auto* file:{"studio.manifest.json","studio.effects.json","studio.events.json","studio.player-animations.json"}) {
-                const auto& text=files.at(file).at("text").get_ref<const std::string&>();
+                const auto& text=files.at(file)->at("text").get_ref<const std::string&>();
                 if(text.size()>16*1024*1024) throw std::runtime_error("Dados do Studio excedem 16 MiB.");
                 game::atomicWrite(input/file,text);
             }
@@ -1795,6 +1981,14 @@ private:
                     item.air.back().reach=3.3;
                     const auto clips=equipmentClips(item);
                     openGearClip(*tab.block,clips.at(3));
+                    tab.block->pane->execute(LR"JS(
+                        const clip = Animation.selected;
+                        const ref = Project.shardbound_studio.context.groups.RightArm;
+                        const arm = Group.all.find(group => group.uuid === ref);
+                        const limb = clip.getBoneAnimator(arm);
+                        limb.createKeyframe({x: 0, y: 0, z: 0}, 0, "rotation", false, false);
+                        limb.createKeyframe({x: 45, y: 0, z: 0}, 0.3, "rotation", false, false);
+                    )JS");
                 }
                 tab.block->pane->execute(LR"JS(
                     const texture = Texture.all[1];
@@ -1845,7 +2039,9 @@ private:
         const auto root=mods_/id;
         const auto item=game::readEditorEquipment(root);
         const auto studio=game::loadStudioPackage(root/"studio/studio.manifest.json",mods_.parent_path()/"test-cache",id);
-        if(tabDirty(tab) || !history_.back().content) throw std::runtime_error("O equipamento não entrou no histórico do mapa.");
+        if(history_.empty() || !history_.back().content || history_.back().content->second!=mods_)
+            throw std::runtime_error("O equipamento não entrou no histórico do mapa.");
+        if(tabDirty(tab)) throw std::runtime_error("A aba ficou marcada como alterada após salvar.");
         const auto model=game::compileModel(studio->file(studio->manifest.at("models").at(0).at("file")),
             mods_.parent_path()/"test-cache");
         if(model.parts.empty()) throw std::runtime_error("O equipamento ficou sem geometria.");
@@ -1863,6 +2059,10 @@ private:
             if(item.ground.size()!=2 || item.ground.at(1).damage!=22 || item.air.size()!=1 || item.air.at(0).reach!=3.3 ||
                 !studio->clip("idle") || !studio->clip("ground_1") || !studio->clip("ground_2") || !studio->clip("air_1") ||
                 studio->player.at("clips").size()!=4) throw std::runtime_error("Golpes, atributos ou clipes da arma inválidos.");
+            const auto& playerClips=studio->player.at("clips");
+            const auto aerial=std::find_if(playerClips.begin(),playerClips.end(),[](const auto& clip) {return clip.at("name")=="air_1";});
+            const auto& samples=aerial->at("channels").at("RightArm").at("quaternion");
+            if(samples.at(0)==samples.at(samples.size()-4)) throw std::runtime_error("O clipe aéreo perdeu o movimento do braço.");
             const auto testMap=mods_.parent_path()/"equipamentos.json";
             writeProject(testMap);openProject(testMap);
             std::fprintf(stderr,"Equipment test passed. MAP=%s\n",game::pathText(testMap).c_str());
@@ -1921,7 +2121,25 @@ private:
     }
 
     std::filesystem::path settingsFile() const {
+        if(!settingsTestPath_.empty()) return settingsTestPath_;
         return game::defaultUserDirectory(programDirectory_)/"editor-settings.json";
+    }
+
+    void updateRecentProjects() {
+        const auto list=GetDlgItem(window_,RecentProjects);
+        SendMessageW(list,LB_RESETCONTENT,0,0);
+        for(const auto& path:recentProjects_) SendMessageW(list,LB_ADDSTRING,0,reinterpret_cast<LPARAM>(path.c_str()));
+        if(!recentProjects_.empty()) SendMessageW(list,LB_SETCURSEL,0,0);
+    }
+
+    void rememberProject(const std::filesystem::path& path) {
+        if((smoke_ || blockbenchTest_) && settingsTestPath_.empty()) return;
+        const auto absolute=std::filesystem::absolute(path).lexically_normal();
+        std::erase_if(recentProjects_,[&](const auto& item) {return _wcsicmp(item.c_str(),absolute.c_str())==0;});
+        recentProjects_.insert(recentProjects_.begin(),absolute);
+        if(recentProjects_.size()>5) recentProjects_.resize(5);
+        updateRecentProjects();
+        try {saveSettings();} catch(const std::exception&) {status_+=L" Não foi possível atualizar os projetos recentes.";}
     }
 
     void readSettings() {
@@ -1930,25 +2148,43 @@ private:
             if(!std::filesystem::is_regular_file(path) || std::filesystem::file_size(path)>16384) return;
             std::ifstream input(path);
             const auto config=nlohmann::json::parse(input);
+            recentProjects_.clear();
             showGrid_=config.value("grid",true);start3d_=config.value("start_3d",false);
             cameraSpeed_=std::clamp(config.value("camera_speed",1.f),.5f,2.f);
+            if(!std::isfinite(cameraSpeed_)) cameraSpeed_=1;
+            zoomSpeed_=std::clamp(config.value("zoom_speed",1.f),.5f,2.f);
+            if(!std::isfinite(zoomSpeed_)) zoomSpeed_=1;
+            cameraSpeed_=std::round(cameraSpeed_*2)/2;zoomSpeed_=std::round(zoomSpeed_*2)/2;
+            inspectorWidth_=std::clamp(config.value("panel_width",330),294,480);
+            if(config.contains("recent_projects")) for(const auto& entry:config.at("recent_projects")) {
+                if(recentProjects_.size()==5) break;
+                if(entry.is_string()) recentProjects_.emplace_back(wide(entry.get<std::string>()));
+            }
             blockbench_=wide(config.value("blockbench",std::string{}));
             bridge_=wide(config.value("bridge",std::string{}));
         } catch(const std::exception&) {
+            showGrid_=true;start3d_=false;cameraSpeed_=zoomSpeed_=1;inspectorWidth_=330;
+            recentProjects_.clear();blockbench_.clear();bridge_.clear();
             status_=L"Configurações inválidas. Usando os valores padrão.";
         }
     }
 
     void saveSettings() {
+        if((smoke_ || blockbenchTest_) && settingsTestPath_.empty()) return;
+        std::vector<std::string> recent;
+        for(const auto& path:recentProjects_) recent.push_back(game::pathText(path));
         const nlohmann::json config={{"grid",showGrid_},{"start_3d",start3d_},{"camera_speed",cameraSpeed_},
+            {"zoom_speed",zoomSpeed_},{"panel_width",inspectorWidth_},{"recent_projects",recent},
             {"blockbench",game::pathText(blockbench_)},{"bridge",game::pathText(bridge_)}};
         game::atomicWrite(settingsFile(),config.dump(2),true);
     }
 
     void changeSetting(int id) {
-        if(id==Start3D) start3d_=!start3d_;
-        if(id==GridToggle) showGrid_=!showGrid_;
-        if(id==CameraSpeed) cameraSpeed_=cameraSpeed_>=2.f?.5f:cameraSpeed_+.5f;
+        const auto selected=SendMessageW(GetDlgItem(window_,id),CB_GETCURSEL,0,0);
+        if(id==Start3D && selected>=0) start3d_=selected==1;
+        if(id==GridToggle && selected>=0) showGrid_=selected==1;
+        if(id==CameraSpeed && selected>=0) cameraSpeed_=float(selected+1)*.5f;
+        if(id==ZoomSpeed && selected>=0) zoomSpeed_=float(selected+1)*.5f;
         if(id==ChooseBlockbench || id==ChooseBridge) {
             const auto path=id==ChooseBlockbench?
                 chooseFile(false,L"Selecione o Blockbench instalado",L"Blockbench\0Blockbench.exe\0"):
@@ -1961,10 +2197,10 @@ private:
     }
 
     void updateSettingLabels() {
-        SetWindowTextW(GetDlgItem(window_,Start3D),start3d_?L"3D":L"Planta");
-        SetWindowTextW(GetDlgItem(window_,GridToggle),showGrid_?L"Visível":L"Oculta");
-        const auto speed=std::to_wstring(int(cameraSpeed_*100))+L"%";
-        SetWindowTextW(GetDlgItem(window_,CameraSpeed),speed.c_str());
+        SendMessageW(GetDlgItem(window_,Start3D),CB_SETCURSEL,start3d_?1:0,0);
+        SendMessageW(GetDlgItem(window_,GridToggle),CB_SETCURSEL,showGrid_?1:0,0);
+        SendMessageW(GetDlgItem(window_,CameraSpeed),CB_SETCURSEL,int(cameraSpeed_*2)-1,0);
+        SendMessageW(GetDlgItem(window_,ZoomSpeed),CB_SETCURSEL,int(zoomSpeed_*2)-1,0);
     }
 
     bool resolveBlockbench() {
@@ -2062,7 +2298,7 @@ private:
 
     RECT previewViewport() const {
         RECT client{};GetClientRect(window_,&client);
-        return {gutter,167,std::max<LONG>(gutter+1,client.right-inspector-gutter),
+        return {gutter,167,std::max<LONG>(gutter+1,client.right-inspectorWidth()-gutter),
             std::max<LONG>(125,client.bottom-footer-37)};
     }
 
@@ -2080,7 +2316,7 @@ private:
 
     void zoom(int wheel) {
         if(page_!=Page::Map || regionCommand_) return;
-        const float steps=float(wheel)/WHEEL_DELTA*cameraSpeed_;
+        const float steps=float(wheel)/WHEEL_DELTA*zoomSpeed_;
         if(view3d_) distance_=std::clamp(distance_*std::pow(.90f,steps),3.f,950.f);
         else plantScale_=std::clamp(plantScale_*std::pow(1.13f,steps),.35f,8.f);
         refresh();
@@ -2279,6 +2515,34 @@ private:
         previewRenderer_->render(previewCamera(),previewMeshes_);previewRenderer_->present();
     }
 
+    void updateHover(POINT point) {
+        std::optional<POINT> next;
+        const auto area=viewport(),view=previewViewport();
+        if(page_==Page::Map && !view3d_ && !regionCommand_ && PtInRect(&area,point) && PtInRect(&view,point)) {
+            const auto b=map_.bounds();
+            next=POINT{b.minX+(point.x-area.left)*b.width/(area.right-area.left),
+                b.minZ+(point.y-area.top)*b.depth/(area.bottom-area.top)};
+            TRACKMOUSEEVENT track{sizeof(track),TME_LEAVE,window_,0};TrackMouseEvent(&track);
+        }
+        if(bool(next)==bool(hoverCell_) && (!next || (next->x==hoverCell_->x && next->y==hoverCell_->y))) return;
+        hoverCell_=next;InvalidateRect(window_,nullptr,FALSE);
+    }
+
+    void applyBrush(int x,int z,const std::string& next,bool erase) {
+        const auto b=map_.bounds();
+        const int radius=brushSize_/2;
+        Edit edit;
+        edit.label=(erase?L"Apagar":blockNameFor(next))+L" · "+std::to_wstring(brushSize_)+L"×"+std::to_wstring(brushSize_);
+        for(int row=std::max(b.minZ,z-radius);row<=std::min(b.minZ+b.depth-1,z+radius);++row)
+            for(int col=std::max(b.minX,x-radius);col<=std::min(b.minX+b.width-1,x+radius);++col) {
+                const auto prior=map_.block(col,layer_,row);
+                if(prior!=next) edit.cells.push_back({col,layer_,row,std::string(prior),next});
+            }
+        if(edit.cells.empty()) return;
+        history_.reserve(cursor_+1);apply(edit,true);record(std::move(edit));
+        refresh(L"X "+std::to_wstring(x)+L"   Z "+std::to_wstring(z));
+    }
+
     void paintCell(int mouseX,int mouseY) {
         const auto area=viewport();const POINT point{mouseX,mouseY};
         const auto view=previewViewport();
@@ -2354,13 +2618,7 @@ private:
             if(!edit.cells.empty()) {history_.reserve(cursor_+1);apply(edit,true);record(std::move(edit));}
             refresh(L"Região preenchida na camada atual.");return;
         }
-        const auto prior=map_.block(x,layer_,z);
-        if(prior==next) return;
-        Edit edit;edit.cells.push_back({x,layer_,z,std::string(prior),next});edit.label=erase?L"Apagar bloco":blockNameFor(next);
-        history_.reserve(cursor_+1);
-        map_.setBlock(x,layer_,z,next,catalog_);
-        record(std::move(edit));
-        refresh(L"X "+std::to_wstring(x)+L"   Z "+std::to_wstring(z));
+        applyBrush(x,z,next,erase);
     }
 
     void selectTerrainTool(TerrainTool tool) {
@@ -2573,14 +2831,139 @@ private:
         if(loadedMap_!=edited || !dirty() || tabs_.size()!=2) throw std::runtime_error("Closing a map lost another tab");
     }
 
+    void verifyWorkspace() {
+        go(Page::Map);
+        const auto before=previewViewport();
+        command(FocusView);
+        if(previewViewport().right<=before.right || (GetWindowLongPtrW(palette_,GWL_STYLE)&WS_VISIBLE))
+            throw std::runtime_error("Focus mode did not expand the viewport and hide its panels");
+        command(FocusView);
+        if(previewViewport().right!=before.right) throw std::runtime_error("Focus mode did not restore the workspace");
+        RECT original{};GetWindowRect(window_,&original);
+        SetWindowPos(window_,nullptr,0,0,1040,690,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+        inspectorWidth_=480;layout();
+        RECT client{},tools{},camera{};GetClientRect(window_,&client);
+        GetWindowRect(GetDlgItem(window_,FillTool),&tools);GetWindowRect(GetDlgItem(window_,ResetCamera),&camera);
+        if(tools.right>camera.left || inspectorWidth()>client.right-650)
+            throw std::runtime_error("Map toolbar overlaps at the minimum window size");
+        const int side=int(client.right)-inspectorWidth();
+        SendMessageW(window_,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(side,190));
+        SendMessageW(window_,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(client.right-310,190));
+        SendMessageW(window_,WM_LBUTTONUP,0,MAKELPARAM(client.right-310,190));
+        if(inspectorWidth_!=310 || resizingPanel_) throw std::runtime_error("Panel divider did not resize and release capture");
+        go(Page::Settings);
+        SendMessageW(GetDlgItem(window_,CameraSpeed),CB_SETCURSEL,3,0);
+        SendMessageW(window_,WM_COMMAND,MAKEWPARAM(CameraSpeed,CBN_SELCHANGE),0);
+        SendMessageW(GetDlgItem(window_,ZoomSpeed),CB_SETCURSEL,0,0);
+        SendMessageW(window_,WM_COMMAND,MAKEWPARAM(ZoomSpeed,CBN_SELCHANGE),0);
+        if(cameraSpeed_!=2 || zoomSpeed_!=.5f) throw std::runtime_error("Camera and zoom preferences are not independent");
+        settingsTestPath_=game::createEditorRevision("workspace-test")/"preferences.json";
+        const auto recent=settingsTestPath_.parent_path()/"projeto.json";
+        rememberProject(recent);rememberProject(recent);
+        cameraSpeed_=zoomSpeed_=1;inspectorWidth_=330;recentProjects_.clear();
+        readSettings();
+        if(cameraSpeed_!=2 || zoomSpeed_!=.5f || inspectorWidth_!=310 || recentProjects_.size()!=1 || recentProjects_.front()!=recent)
+            throw std::runtime_error("Workspace preferences and recent projects did not survive reloading");
+        settingsTestPath_.clear();recentProjects_.clear();updateRecentProjects();
+        go(Page::Blocks);
+        if(!(GetWindowLongPtrW(palette_,GWL_STYLE)&WS_VISIBLE)) throw std::runtime_error("Block library is not available");
+        SetWindowTextW(filter_,L"GrAmA");
+        if(visibleIds_.size()!=1) throw std::runtime_error("Block library search failed");
+        SetWindowTextW(filter_,L"");
+        command(ResetPreferences);
+        SetWindowPos(window_,nullptr,0,0,original.right-original.left,original.bottom-original.top,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+        std::fprintf(stderr,"Workspace checks passed: focus, resize, compact layout, settings persistence, recent projects, block library.\n");
+    }
+
+    void verifyEmptyWorkspace() {
+        if(!game::discoverMods(mods_).mods.empty() || !catalog_.blocks.empty() ||
+            !catalog_.maps.empty() || !catalog_.generators.empty() || !catalog_.structures.empty() ||
+            !modelIds_.empty() || (GetWindowLongPtrW(GetDlgItem(window_,HomeMap),GWL_STYLE)&WS_VISIBLE))
+            throw std::runtime_error("Empty installation contains starter content");
+        command(HomeNew);command(ApplyRegion);
+        if(page_!=Page::Map || !visibleIds_.empty() || !map_.block(0,0,0).empty())
+            throw std::runtime_error("Creating a blank map loaded starter blocks");
+        const auto next=copyContent("empty-editor-test");
+        game::AuthoredBlock block;
+        block.mod="first_block";block.name="Primeiro bloco";block.pixels.fill(0x76a090);
+        game::publishBlock(next,block);
+        recordContent(next,L"Primeiro bloco");
+        const auto spawn=map_.spawn();
+        applyBrush(spawn.x,spawn.z,"first_block:block",false);
+        const auto package=next.parent_path()/"first_map";
+        game::exportMapPackage(map_,mods_,package,programDirectory_/"modcheck.exe");
+        const auto exported=WorldDefinition::load(game::discoverMods(package).mods);
+        if(exported.blocks.size()!=1 || exported.maps.size()!=1 ||
+            exported.maps.at("first_map:map")->block(spawn.x,layer_,spawn.z)!="first_block:block")
+            throw std::runtime_error("The first standalone map did not preserve the first authored block");
+        const auto testRoot=next.parent_path();
+        const auto testMods=testRoot/"test-mods";
+        std::filesystem::copy(next,testMods,std::filesystem::copy_options::recursive);
+        game::atomicWrite(testMods/"test_player"/"mod.json",
+            R"({"id":"test_player","name":"Test player","version":"1.0.0","api":"0.1","entry":"main.sl"})",true);
+        game::atomicWrite(testMods/"test_player"/"main.sl",R"(@Entities
+entity Actor:
+    .speed = 5
+
+@Events
+on_world_start():
+    start = world_spawn()
+    hero = spawn(Actor, vec3(start.x, start.y + 0.95, start.z))
+    add_box(hero, vec3(0.3, 0.9, 0.3), true)
+    set_player(hero, 5)
+)",true);
+        const auto preview=testRoot/"preview.json";
+        map_.save(preview);
+        const auto run=game::runEditorProcess((programDirectory_/"game.exe").wstring(),
+            {L"--hidden",L"--no-vsync",L"--frames",L"30",L"--mods",testMods.wstring(),
+             L"--test-map",preview.wstring(),L"--user-dir",(testRoot/"user").wstring()},testRoot,{},{});
+        if(run.exitCode || run.output.find("World ready: Teste do editor (editor:preview)")==std::string::npos)
+            throw std::runtime_error("First map preview failed: "+run.output);
+        std::fprintf(stderr,"Empty editor passed: no bundled content, first block, standalone map export and preview with a player supplied by a mod.\n");
+    }
+
+    void verifyBrush() {
+        const auto prior=loadedMap_;
+        const auto oldSize=brushSize_;
+        auto& tab=addMapTab(FiniteMap({-2,-3,8,8}),{},mods_,false,{},L"Teste de pincel");
+        brushSize_=3;layer_=20;
+        const auto block=ids_.front();
+        applyBrush(1,1,block,false);
+        if(cursor_!=1 || history_.front().cells.size()!=9) throw std::runtime_error("A 3x3 brush must record one nine-cell action");
+        applyBrush(1,1,block,false);
+        if(cursor_!=1) throw std::runtime_error("An unchanged brush stroke created a history entry");
+        command(Undo);
+        for(const auto& cell:history_.front().cells) if(!map_.block(cell.x,cell.y,cell.z).empty())
+            throw std::runtime_error("Brush undo left modified cells");
+        command(Redo);applyBrush(1,1,{},true);
+        if(cursor_!=2 || !map_.block(1,20,1).empty()) throw std::runtime_error("Multi-cell erase failed");
+        command(Undo);
+        if(map_.block(1,20,1)!=block) throw std::runtime_error("Erase undo did not restore the block");
+        brushSize_=5;applyBrush(-2,-3,block,false);
+        if(history_.back().cells.size()!=9) throw std::runtime_error("Brush did not clip to map borders");
+        for(const auto& cell:history_.back().cells) if(!map_.contains(cell.x,cell.z))
+            throw std::runtime_error("Brush escaped map bounds");
+        activate(*prior);
+        if(brushSize_!=oldSize) throw std::runtime_error("Changing tabs lost the previous brush size");
+        activate(tab);
+        if(brushSize_!=5) throw std::runtime_error("Changing tabs lost the new brush size");
+        std::fprintf(stderr,"Brush checks passed: paint, erase, undo/redo, no-op, edge clipping, per-tab size.\n");
+    }
+
     void drawWorkspace(HDC dc,const RECT& client) const {
-        const int right=int(client.right),bottom=int(client.bottom)-footer,side=right-inspector;
+        const int right=int(client.right),bottom=int(client.bottom)-footer,side=right-inspectorWidth();
         theme::fill(dc,client,theme::background);
         theme::fill(dc,{0,0,right,toolbar},theme::panel);
         theme::fill(dc,{0,toolbar-1,right,toolbar},theme::line);
-        theme::text(dc,{18,20,150,59},L"ShardBound",theme::ink,theme::font(19,FW_SEMIBOLD));
+        theme::text(dc,{18,14,150,39},L"SHARDBOUND",theme::ink,theme::font(16,FW_SEMIBOLD));
+        theme::text(dc,{18,38,150,55},L"C R E A T O R",theme::accent,theme::font(10,FW_SEMIBOLD));
         theme::fill(dc,{0,bottom,right,int(client.bottom)},theme::panel);
-        theme::text(dc,{18,bottom+1,right-18,int(client.bottom)},status_,theme::muted,theme::font(13));
+        const auto footerState=status_.empty()?(page_==Page::Map?(dirty()?L"Alterações não salvas":L"Pronto para editar"):L"Pronto"):status_;
+        const bool coordinates=page_==Page::Map && !view3d_ && hoverCell_;
+        theme::text(dc,{18,bottom+1,right-(coordinates?390:180),int(client.bottom)},footerState,theme::muted,theme::font(12));
+        if(coordinates) theme::text(dc,{right-380,bottom+1,right-190,int(client.bottom)},
+            L"X "+std::to_wstring(hoverCell_->x)+L"   Y "+std::to_wstring(layer_)+L"   Z "+std::to_wstring(hoverCell_->y),theme::accent,theme::font(12));
+        theme::text(dc,{right-172,bottom+1,right-14,int(client.bottom)},L"F1  Controles e atalhos",theme::muted,theme::font(12),DT_RIGHT|DT_SINGLELINE|DT_VCENTER);
         if(page_==Page::BlockModel) {
             theme::text(dc,{18,77,73,109},L"Nome");
             const auto state=currentTab_->block->pane->status();
@@ -2603,26 +2986,44 @@ private:
         if(!view3d_) for(int x=view.left+12;x<view.right;x+=24)
             for(int y=view.top+12;y<view.bottom;y+=24) SetPixelV(dc,x,y,theme::line);
         const auto title=path_.empty()?L"Mapa em edição":path_.stem().wstring();
-        theme::text(dc,{500,78,right-169,110},title+(dirty()?L"  •":L""),theme::ink,theme::font(15,FW_SEMIBOLD));
+        theme::text(dc,{500,78,right-249,110},title+(dirty()?L"  •":L""),theme::ink,theme::font(15,FW_SEMIBOLD));
         theme::text(dc,{side-gutter-81,124,side-gutter-32,156},std::to_wstring(layer_)+L"/47",theme::ink,theme::font(13,FW_SEMIBOLD),
             DT_CENTER|DT_VCENTER|DT_SINGLELINE);
-        const auto help=view3d_?L"Arraste com o esquerdo para girar · Arraste com o direito para mover · Roda para zoom":
-            L"Arraste com o direito para mover · Roda para zoom · Shift + clique marca o início";
+        const auto help=view3d_?L"Esquerdo: girar · Direito: mover · Roda: zoom · Clique: usar ferramenta":
+            L"Direito: mover · Roda: zoom · Shift + clique: início do jogador";
         theme::text(dc,{view.left,bottom-34,view.right,bottom-4},help,theme::muted,theme::font(12));
+        if(focusView_) return;
+        theme::fill(dc,{side-3,115,side-1,bottom},theme::line);
         if(panel_==MapPanel::Library) {
             theme::text(dc,{side+14,169,right-157,203},L"Paleta",theme::ink,theme::font(20,FW_SEMIBOLD));
-            const auto count=visibleIds_.empty()?L"Nenhum bloco encontrado":std::to_wstring(visibleIds_.size())+L" blocos";
+            const auto selected=selectedBlock();
+            const auto count=ids_.empty()?L"Crie um bloco em + Novo ou use o assistente.":
+                visibleIds_.empty()?L"Nenhum bloco encontrado":std::to_wstring(visibleIds_.size())+L" blocos · "+blockNameFor(selected);
             theme::text(dc,{side+14,bottom-78,right-14,bottom-46},count,theme::muted,theme::font(12));
         } else if(panel_==MapPanel::Placement) {
             theme::text(dc,{side+14,184,right-14,209},L"Estrutura",theme::muted);
             theme::text(dc,{side+14,245,right-14,270},L"Modelo",theme::muted);
             theme::text(dc,{side+14,307,side+138,331},L"Rotação",theme::muted);
-            theme::text(dc,{side+154,307,right-14,331},L"Escala do modelo",theme::muted);
+            theme::text(dc,{side+28+(right-side-42)/2,307,right-14,331},L"Escala do modelo",theme::muted);
         } else {
             theme::text(dc,{side+14,172,right-62,207},L"Linha do tempo",theme::ink,theme::font(19,FW_SEMIBOLD));
             theme::text(dc,{right-62,172,right-14,207},std::to_wstring(cursor_)+L" / "+std::to_wstring(history_.size()),
                 theme::muted,theme::font(12),DT_RIGHT|DT_VCENTER|DT_SINGLELINE);
         }
+    }
+
+    void drawHomeCard(const DRAWITEMSTRUCT& item) const {
+        const auto id=item.CtlID;
+        const wchar_t* title=id==HomeBlocks?L"Blocos":id==HomeGear?L"Equipamentos":id==BlockbenchTab?L"Modelagem livre":L"Assistente IA";
+        const wchar_t* description=id==HomeBlocks?L"Modele, pinte e use no mapa.":id==HomeGear?L"Armas, armaduras e ataques.":
+            id==BlockbenchTab?L"Crie modelos no Blockbench.":L"Crie e revise com inteligência artificial.";
+        const auto box=item.rcItem;
+        const bool hot=theme::hovered(item.hwndItem) || (item.itemState&ODS_FOCUS);
+        theme::fill(item.hDC,box,theme::background);
+        theme::rounded(item.hDC,box,hot?theme::field:theme::panel,hot?theme::accent:theme::line,12);
+        theme::text(item.hDC,{box.left+18,box.top+17,box.right-42,box.top+47},title,theme::ink,theme::font(20,FW_SEMIBOLD));
+        theme::text(item.hDC,{box.right-34,box.top+16,box.right-12,box.top+46},L"↗",theme::accent,theme::font(20));
+        theme::text(item.hDC,{box.left+18,box.top+54,box.right-18,box.bottom-12},description,theme::muted,theme::font(13),DT_LEFT|DT_WORDBREAK|DT_NOPREFIX);
     }
 
     void drawPage(HDC dc,int right) const {
@@ -2635,62 +3036,55 @@ private:
         };
         if(page_==Page::Gear) {
             heading(93,L"Equipamentos");
-            theme::fill(dc,{x,165,x+w,315},theme::panel);
+            theme::rounded(dc,{x,165,x+w,315},theme::panel,theme::line,12);
             theme::text(dc,{x+24,186,x+207,228},L"Armas",theme::ink,theme::font(19,FW_SEMIBOLD));
             theme::text(dc,{x+249,186,x+w-24,228},L"Armaduras",theme::ink,theme::font(19,FW_SEMIBOLD));
             theme::fill(dc,{x+216,190,x+217,289},theme::line);
             theme::text(dc,{x+24,328,x+w-24,365},L"Equipamentos da revisão do mapa",theme::ink,theme::font(18,FW_SEMIBOLD));
+            if(gearIds_.empty()) {
+                theme::text(dc,{x+24,390,x+w-24,425},L"Sua biblioteca de equipamentos começa aqui",theme::ink,theme::font(19,FW_SEMIBOLD));
+                copy({x+24,435,x+w-24,490},L"Escolha uma arma ou parte da armadura acima. Modele e pinte na aba integrada, ajuste os atributos e salve na engine.");
+            }
             return;
         }
         if(page_==Page::Home) {
-            heading(93,L"O que você quer criar?");
-            theme::fill(dc,{x,170,x+w,380},theme::panel);
-            theme::fill(dc,{x,170,x+3,380},theme::accent);
-            const int split=x+w*63/100;
-            theme::text(dc,{x+24,186,split-15,228},L"Um mundo para explorar",theme::ink,theme::font(25,FW_SEMIBOLD));
-            copy({x+24,232,split-15,258},L"Crie um mapa, abra um projeto ou volte ao mundo atual.");
-            const RECT thumbnail{split,185,x+w-16,365};
-            theme::fill(dc,thumbnail,theme::canvas);
-            if(!catalog_.maps.empty()) {
-                const int saved=SaveDC(dc);
-                IntersectClipRect(dc,thumbnail.left,thumbnail.top,thumbnail.right,thumbnail.bottom);
-                drawMapThumbnail(dc,thumbnail,*catalog_.maps.begin()->second);
-                RestoreDC(dc,saved);
-            }
-            const int card=(w-48)/5;
-            const std::array labels{L"Crie blocos, pinte texturas e importe modelos.",
-                L"Monte armas, armaduras e sequências de golpes.",
-                L"Modele, pinte e anime em 3D.",
-                L"Descreva uma tarefa e revise as mudanças.",
-                L"Ajuste a câmera e os caminhos dos aplicativos."};
-            for(int i=0;i<int(labels.size());++i) {
-                const int left=x+i*(card+12);
-                theme::fill(dc,{left,408,left+card,542},theme::panel);
-                copy({left+12,424,left+card-12,484},labels[i]);
+            heading(87,L"Seu próximo mundo começa aqui.");
+            const int content=w-342,recentX=x+content+18;
+            theme::rounded(dc,{x,166,x+content,308},theme::panel,theme::line,12);
+            theme::text(dc,{x+22,179,x+content-22,211},L"Projetos",theme::ink,theme::font(22,FW_SEMIBOLD));
+            copy({x+22,214,x+content-22,237},L"Construa um mapa ou continue de onde parou.");
+            theme::rounded(dc,{recentX,166,x+w,582},theme::panel,theme::line,12);
+            theme::text(dc,{recentX+16,178,x+w-16,208},L"Recentes",theme::ink,theme::font(19,FW_SEMIBOLD));
+            if(recentProjects_.empty()) {
+                theme::text(dc,{recentX+22,273,x+w-22,311},L"Tudo pronto para começar",theme::ink,theme::font(16,FW_SEMIBOLD));
+                copy({recentX+22,319,x+w-22,460},L"Os mapas que você abrir ou salvar aparecerão aqui.");
             }
             return;
         }
         if(page_==Page::Settings) {
             heading(93,L"Configurações");
-            theme::fill(dc,{x,162,x+w,352},theme::panel);
-            theme::fill(dc,{x,370,x+w,561},theme::panel);
-            theme::text(dc,{x+20,166,x+320,200},L"Editor de mapas",theme::ink,theme::font(19,FW_SEMIBOLD));
-            theme::text(dc,{x+20,202,x+320,236},L"Vista ao abrir o mapa");
-            theme::text(dc,{x+20,248,x+320,282},L"Grade na planta");
-            theme::text(dc,{x+20,294,x+320,328},L"Velocidade da câmera");
-            theme::text(dc,{x+20,372,x+320,405},L"Blockbench",theme::ink,theme::font(19,FW_SEMIBOLD));
-            theme::text(dc,{x+20,406,x+325,440},blockbench_.empty()?L"Localização automática":blockbench_.wstring());
-            theme::text(dc,{x+20,456,x+325,490},bridge_.empty()?L"Ponte local (server.mjs)":bridge_.wstring());
-            theme::text(dc,{x+20,506,x+325,540},L"Plugins da versão Desktop");
+            const int half=(w-20)/2,second=x+half+20;
+            theme::rounded(dc,{x,162,x+half,512},theme::panel,theme::line,12);
+            theme::rounded(dc,{second,162,x+w,512},theme::panel,theme::line,12);
+            theme::text(dc,{x+20,171,x+half-20,201},L"Espaço de trabalho",theme::ink,theme::font(19,FW_SEMIBOLD));
+            theme::text(dc,{second+20,171,x+w-20,201},L"Integrações",theme::ink,theme::font(19,FW_SEMIBOLD));
+            theme::text(dc,{second+20,210,x+w-20,235},L"Blockbench Desktop · opcional",theme::ink);
+            theme::text(dc,{second+20,236,x+w-20,258},blockbench_.empty()?L"Localização automática":blockbench_.wstring(),theme::muted,theme::font(12));
+            theme::text(dc,{second+20,309,x+w-20,334},L"Ponte para ferramentas de IA",theme::ink);
+            theme::text(dc,{second+20,335,x+w-20,357},bridge_.empty()?L"Selecione o arquivo da ponte quando necessário":bridge_.wstring(),theme::muted,theme::font(12));
+            theme::text(dc,{second+20,414,x+w-20,449},L"O editor integrado já está disponível nas abas.",theme::muted,theme::font(13));
+            copy({x+2,533,x+w,565},L"As preferências são salvas automaticamente. Use F1 para consultar os controles e atalhos.");
             return;
         }
-        const auto title=page_==Page::Blocks?L"Blocos":page_==Page::Gear?L"Equipamentos":L"Assistente IA";
+        const auto title=page_==Page::Blocks?L"Blocos":L"Assistente IA";
         heading(93,title);
-        theme::fill(dc,{x,170,x+w,335},theme::panel);
+        theme::rounded(dc,{x,170,x+w,300},theme::panel,theme::line,12);
         const auto instruction=page_==Page::Blocks?L"Crie e pinte blocos no Blockbench. O bloco salvo aparece na paleta do mapa.":
-            page_==Page::Gear?L"Escolha o tipo, importe o modelo e configure os atributos do equipamento.":
             L"O assistente trabalha no mapa atual. Escolha a conexão, descreva a tarefa e revise o rascunho no final.";
         copy({x+24,206,x+w-24,253},instruction);
+        if(page_==Page::Blocks) {
+            theme::text(dc,{x+20,304,x+w-180,338},L"Biblioteca de blocos · "+std::to_wstring(visibleIds_.size()),theme::ink,theme::font(19,FW_SEMIBOLD));
+        }
     }
 
     void drawMapThumbnail(HDC dc,RECT area,const FiniteMap& map) const {
@@ -2814,6 +3208,24 @@ private:
             const auto pz=area.top+((prop.z-b.minZ)*2+1)*(area.bottom-area.top)/(2*b.depth);
             const RECT propMarker{px-2,pz-2,px+3,pz+3};FillRect(dc,&propMarker,static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH)));
         }
+        if(hoverCell_ && !cameraGesture_ && !selectingStructure_ && !roomToLink_ &&
+            SendMessageW(structures_,CB_GETCURSEL,0,0)==0 && SendMessageW(props_,CB_GETCURSEL,0,0)==0) {
+            const int radius=terrainTool_==TerrainTool::Brush || terrainTool_==TerrainTool::Erase?brushSize_/2:0;
+            int left=hoverCell_->x-radius,right=hoverCell_->x+radius,top=hoverCell_->y-radius,bottom=hoverCell_->y+radius;
+            if(terrainTool_==TerrainTool::Fill && fillCorner_) {
+                left=std::min(hoverCell_->x,LONG(fillCorner_->x));right=std::max(hoverCell_->x,LONG(fillCorner_->x));
+                top=std::min(hoverCell_->y,LONG(fillCorner_->z));bottom=std::max(hoverCell_->y,LONG(fillCorner_->z));
+            }
+            left=std::max(b.minX,left);right=std::min(b.minX+b.width-1,right);
+            top=std::max(b.minZ,top);bottom=std::min(b.minZ+b.depth-1,bottom);
+            const auto outline=CreatePen(PS_SOLID,2,terrainTool_==TerrainTool::Erase?RGB(239,140,140):theme::accent);
+            const auto oldPen=SelectObject(dc,outline),oldBrush=SelectObject(dc,GetStockObject(NULL_BRUSH));
+            Rectangle(dc,area.left+(left-b.minX)*(area.right-area.left)/b.width,
+                area.top+(top-b.minZ)*(area.bottom-area.top)/b.depth,
+                area.left+(right-b.minX+1)*(area.right-area.left)/b.width,
+                area.top+(bottom-b.minZ+1)*(area.bottom-area.top)/b.depth);
+            SelectObject(dc,oldBrush);SelectObject(dc,oldPen);DeleteObject(outline);
+        }
     }
 };
 
@@ -2826,7 +3238,7 @@ LRESULT CALLBACK dispatch(HWND window,UINT message,WPARAM wParam,LPARAM lParam) 
     if(!editor) return DefWindowProcW(window,message,wParam,lParam);
     try { return editor->handle(window,message,wParam,lParam); }
     catch(const std::exception& error) {
-        if(message==WM_APP+1 || message==WM_APP+3 || message==WM_APP+4) {
+        if(message==WM_APP+1 || message==WM_APP+3 || message==WM_APP+4 || message==WM_APP+5) {
             std::fprintf(stderr,"%s\n",error.what());DestroyWindow(window);PostQuitMessage(1);return 0;
         }
         const auto messageText=wide(error.what());
@@ -2848,15 +3260,20 @@ int WINAPI wWinMain(HINSTANCE,HINSTANCE,PWSTR,int) {
         std::unique_ptr<wchar_t*,decltype(&LocalFree)> arguments(CommandLineToArgvW(GetCommandLineW(),&argc),LocalFree);
         if(!arguments) throw std::runtime_error("Não foi possível ler os argumentos do editor");
         const auto argv=arguments.get();
-        const bool gearTest=argc==2 && std::wstring_view(argv[1])==L"--smoke-equipment";
-        const bool blockbenchTest=gearTest || (argc==2 && std::wstring_view(argv[1])==L"--smoke-blockbench");
-        const bool smoke=blockbenchTest || (argc==2 && std::wstring_view(argv[1])==L"--smoke");
-        if(!smoke && argc!=1 && (argc!=3 || std::wstring_view(argv[1])!=L"--mods")) throw std::runtime_error("Uso: shardbound_editor [--mods DIRETORIO]");
+        const std::wstring_view mode=argc>1?argv[1]:L"";
+        const bool gearTest=mode==L"--smoke-equipment";
+        const bool blockbenchTest=gearTest || mode==L"--smoke-blockbench";
+        const bool emptyTest=mode==L"--smoke-empty";
+        const bool smoke=blockbenchTest || emptyTest || mode==L"--smoke";
+        const int argument=smoke?2:1;
+        const bool explicitMods=argc==argument+2 && std::wstring_view(argv[argument])==L"--mods";
+        if(argc!=argument && !explicitMods) throw std::runtime_error("Uso: shardbound_editor [--mods DIRETORIO]");
         std::array<wchar_t,32768> executable{};
         const auto count=GetModuleFileNameW(nullptr,executable.data(),DWORD(executable.size()));
         if(!count || count>=executable.size()) throw std::runtime_error("Cannot locate editor executable");
         const auto programDirectory=std::filesystem::path(executable.data()).parent_path();
-        const auto directory=argc==3?std::filesystem::absolute(argv[2]):programDirectory/"content";
+        const auto directory=explicitMods?std::filesystem::absolute(argv[argument+1]):programDirectory/"content";
+        if(!explicitMods) std::filesystem::create_directories(directory);
         auto discovery=game::discoverMods(directory);
         for(const auto& diagnostic:discovery.diagnostics) if(diagnostic.code!="MOD106") throw game::DiagnosticError(diagnostic);
         Editor editor(WorldDefinition::load(discovery.mods),programDirectory,directory,smoke,blockbenchTest,gearTest);
@@ -2875,16 +3292,18 @@ int WINAPI wWinMain(HINSTANCE,HINSTANCE,PWSTR,int) {
         if(blockbenchTest) {
             ShowWindow(window,SW_SHOWNOACTIVATE);
             PostMessageW(window,WM_APP+3,0,0);
-        } else if(smoke) PostMessageW(window,WM_APP+1,0,0);else ShowWindow(window,SW_SHOW);
+        } else if(smoke) PostMessageW(window,emptyTest?WM_APP+5:WM_APP+1,0,0);else ShowWindow(window,SW_SHOW);
         ACCEL shortcuts[]{{FVIRTKEY|FCONTROL,'S',SaveMap},{FVIRTKEY|FCONTROL,'O',OpenMap},
+            {FVIRTKEY|FCONTROL|FSHIFT,'S',SaveAs},{FVIRTKEY|FCONTROL,VK_OEM_COMMA,Settings},
+            {FVIRTKEY,VK_F1,Help},{FVIRTKEY,VK_F6,TestMap},{FVIRTKEY,VK_F10,FocusView},
             {FVIRTKEY|FCONTROL,'Z',Undo},{FVIRTKEY|FCONTROL,'Y',Redo},
             {FVIRTKEY|FCONTROL,'T',NewTab},{FVIRTKEY|FCONTROL,'W',CloseTab},
             {FVIRTKEY|FCONTROL,VK_TAB,CycleTabs},{FVIRTKEY|FCONTROL|FSHIFT,VK_TAB,ReverseTabs}};
         const auto keys=CreateAcceleratorTableW(shortcuts,int(std::size(shortcuts)));
         MSG message{};int result;
         while((result=GetMessageW(&message,nullptr,0,0))>0) {
-            if(editor.blockbenchInput(message.hwnd) ||
-                (!TranslateAcceleratorW(window,keys,&message) && !IsDialogMessageW(window,&message))) {
+            if(editor.blockbenchInput(message.hwnd) || (!editor.mapShortcut(message) &&
+                (!TranslateAcceleratorW(window,keys,&message) && !IsDialogMessageW(window,&message)))) {
                 TranslateMessage(&message);DispatchMessageW(&message);
             }
         }

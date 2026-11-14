@@ -25,7 +25,7 @@ def add(data):
 for values in (vertices, normals, uvs):
     add(b''.join(struct.pack('<' + 'f' * len(v), *v) for v in values))
 add(struct.pack('<' + 'I' * len(indices), *indices))
-add((root / 'assets/core/textures/checker.png').read_bytes())
+add((root / 'tests/fixtures/legacy-core/textures/checker.png').read_bytes())
 document = {
     'asset': {'version': '2.0', 'generator': 'Game Runtime original fixture'},
     'buffers': [{'byteLength': len(payload)}], 'bufferViews': views,
@@ -46,6 +46,6 @@ payload += b'\0' * (-len(payload) % 4)
 glb = struct.pack('<III', 0x46546C67, 2, 28 + len(metadata) + len(payload))
 glb += struct.pack('<II', len(metadata), 0x4E4F534A) + metadata
 glb += struct.pack('<II', len(payload), 0x004E4942) + payload
-target = root / 'assets/core/models/cube.glb'
+target = root / 'tests/fixtures/legacy-core/models/cube.glb'
 target.parent.mkdir(parents=True, exist_ok=True)
 target.write_bytes(glb)

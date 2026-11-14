@@ -7,7 +7,7 @@ from pathlib import Path
 import struct
 
 root = Path(__file__).resolve().parent.parent
-source = (root / 'assets/core/models/cube.glb').read_bytes()
+source = (root / 'tests/fixtures/legacy-core/models/cube.glb').read_bytes()
 length = struct.unpack_from('<I', source, 12)[0]
 document = json.loads(source[20:20 + length])
 binary = source[28 + length:]

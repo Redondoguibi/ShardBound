@@ -6,8 +6,10 @@
 #include "core/PathText.h"
 #include "world/WorldDefinition.h"
 #include <array>
+#include <algorithm>
 #include <chrono>
 #include <commdlg.h>
+#include <commctrl.h>
 #include <condition_variable>
 #include <fstream>
 #include <mutex>
@@ -48,9 +50,12 @@ public:
         type.hCursor=LoadCursorW(nullptr,IDC_ARROW);type.hbrBackground=reinterpret_cast<HBRUSH>(COLOR_WINDOW+1);
         type.lpszClassName=L"ShardBoundAiDialog";
         if(!RegisterClassW(&type) && GetLastError()!=ERROR_CLASS_ALREADY_EXISTS) throw std::runtime_error("Cannot register AI panel");
-        const auto window=CreateWindowExW(WS_EX_DLGMODALFRAME,type.lpszClassName,L"Assistente do ShardBound",WS_CAPTION|WS_SYSMENU|WS_POPUP,
+        const auto window=CreateWindowExW(WS_EX_DLGMODALFRAME,type.lpszClassName,L"Assistente do ShardBound",WS_CAPTION|WS_SYSMENU|WS_POPUP|WS_THICKFRAME|WS_MAXIMIZEBOX|WS_CLIPCHILDREN,
             CW_USEDEFAULT,CW_USEDEFAULT,838,704,parent,nullptr,type.hInstance,this);
         if(!window) throw std::runtime_error("Cannot open AI panel");
+        RECT work{};SystemParametersInfoW(SPI_GETWORKAREA,0,&work,0);
+        SetWindowPos(window,nullptr,0,0,std::clamp(int(work.right-work.left)-80,838,1160),
+            std::clamp(int(work.bottom-work.top)-80,704,860),SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
         editor::darkCaption(window);editor::centerDialog(window,parent);
         EnableWindow(parent,FALSE);ShowWindow(window,SW_SHOW);SetFocus(prompt_);
         MSG message{};BOOL result=TRUE;
@@ -70,6 +75,9 @@ private:
     WorldDefinition catalog_;
     std::filesystem::path mods_,program_,work_,currentContent_,bridge_;
     HWND window_{},provider_{},model_{},key_{},mode_{},prompt_{},log_{};
+    struct ControlPlacement {HWND control;RECT bounds;};
+    std::vector<ControlPlacement> placements_;
+    SIZE originalSize_{};
     std::mutex mutex_;
     std::condition_variable_any condition_;
     std::vector<std::string> logs_;
@@ -113,10 +121,45 @@ private:
         child(L"STATIC",L"O que o assistente deve fazer?",0,22,464,534,23);
         prompt_=child(L"EDIT",L"",WS_TABSTOP|ES_MULTILINE|ES_AUTOVSCROLL|ES_WANTRETURN|WS_VSCROLL,22,492,524,107);
         log_=child(L"EDIT",L"",ES_MULTILINE|ES_READONLY|ES_AUTOVSCROLL|WS_VSCROLL|WS_TABSTOP,22,94,524,356);
+        SetWindowTextW(log_,L"Descreva uma tarefa para o mapa atual.\r\n\r\n"
+            L"1. Escolha a conexão e, se necessário, informe o modelo.\r\n"
+            L"2. Escreva o que deseja criar ou alterar.\r\n"
+            L"3. Execute a tarefa e acompanhe as ações aqui.\r\n"
+            L"4. Use Aplicar rascunho para trazer o resultado ao mapa.\r\n\r\n"
+            L"Exemplo: crie um caminho de pedra entre o início do jogador e a entrada da sala.\r\n\r\n"
+            L"As alterações aplicadas entram na linha do tempo do projeto.");
         child(L"BUTTON",L"Executar tarefa",WS_TABSTOP,22,610,136,34,Start);
-        child(L"BUTTON",L"Cancelar / fechar",WS_TABSTOP,166,610,142,34,Cancel);
+        child(L"BUTTON",L"Fechar",WS_TABSTOP,166,610,142,34,Cancel);
         child(L"BUTTON",L"Aplicar rascunho",WS_TABSTOP,636,610,166,34,Apply);
         EnableWindow(GetDlgItem(window_,Apply),FALSE);selectProvider();
+        SendMessageW(prompt_,EM_SETCUEBANNER,FALSE,reinterpret_cast<LPARAM>(L"Descreva o que você quer criar ou alterar neste mapa…"));
+        for(auto field:{model_,key_,prompt_,log_}) SendMessageW(field,EM_SETMARGINS,EC_LEFTMARGIN|EC_RIGHTMARGIN,MAKELPARAM(10,10));
+        RECT area{};GetClientRect(window_,&area);originalSize_={area.right,area.bottom};
+        for(auto control=GetWindow(window_,GW_CHILD);control;control=GetWindow(control,GW_HWNDNEXT)) {
+            RECT bounds{};GetWindowRect(control,&bounds);
+            MapWindowPoints(nullptr,window_,reinterpret_cast<POINT*>(&bounds),2);
+            placements_.push_back({control,bounds});
+        }
+    }
+
+    void layout() {
+        if(placements_.empty()) return;
+        RECT area{};GetClientRect(window_,&area);
+        const auto dx=area.right-originalSize_.cx,dy=area.bottom-originalSize_.cy;
+        for(const auto& placement:placements_) {
+            auto rect=placement.bounds;
+            if(provider()==AiProvider::Codex && rect.left>=574 && rect.top>=306 && rect.top<=456) {
+                rect.top-=106;rect.bottom-=106;
+            }
+            if(rect.left>=574) {rect.left+=dx;rect.right+=dx;}
+            else if(placement.control==prompt_ || placement.control==log_ || rect.top<90) rect.right+=dx;
+            if(placement.control==log_) rect.bottom+=dy;
+            else if((rect.top>=464 && placement.bounds.left<574) || rect.top>=610) {rect.top+=dy;rect.bottom+=dy;}
+            if(placement.control==provider_) rect.bottom=rect.top+180;
+            if(placement.control==mode_) rect.bottom=rect.top+100;
+            MoveWindow(placement.control,rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,TRUE);
+        }
+        InvalidateRect(window_,nullptr,TRUE);
     }
     AiProvider provider() const {return static_cast<AiProvider>(SendMessageW(provider_,CB_GETCURSEL,0,0));}
     void chooseBridge() {
@@ -135,6 +178,7 @@ private:
         SetWindowTextW(key_,L"");
         SetWindowTextW(GetDlgItem(window_,ConnectionState),api?(editorAiHasKey(provider())?L"Chave salva para este fornecedor.":L"Salve a chave e informe o ID do modelo."):
             L"Usa o login da instalação local do Codex.");
+        layout();
     }
     void append(const std::wstring& message) {
         SendMessageW(log_,EM_SETSEL,WPARAM(-1),LPARAM(-1));SendMessageW(log_,EM_REPLACESEL,FALSE,reinterpret_cast<LPARAM>(message.c_str()));
@@ -256,6 +300,7 @@ private:
         map_=baseMap_;catalog_=baseCatalog_;revisions_.clear();revisionBytes_=0;contentRevision_=0;terminalRan_=false;currentContent_=mods_;
         SetWindowTextW(log_,L"");
         EnableWindow(GetDlgItem(window_,Start),FALSE);EnableWindow(GetDlgItem(window_,Apply),FALSE);EnableWindow(provider_,FALSE);
+        SetWindowTextW(GetDlgItem(window_,Cancel),L"Cancelar tarefa");
         EnableWindow(key_,FALSE);EnableWindow(GetDlgItem(window_,SaveKey),FALSE);
         EnableWindow(GetDlgItem(window_,ChooseBridge),FALSE);
         request.work=work_;finished_=false;succeeded_=false;
@@ -300,6 +345,7 @@ private:
             {std::lock_guard lock(mutex_);decision_=allow;}condition_.notify_all();
         }
         if(finished) {
+            SetWindowTextW(GetDlgItem(window_,Cancel),L"Fechar");
             EnableWindow(GetDlgItem(window_,Start),TRUE);EnableWindow(provider_,TRUE);
             EnableWindow(GetDlgItem(window_,ChooseBridge),TRUE);
             EnableWindow(key_,provider()!=AiProvider::Codex);EnableWindow(GetDlgItem(window_,SaveKey),provider()!=AiProvider::Codex);
@@ -332,6 +378,8 @@ private:
         if(editor::paintDialog(window,message,wParam,lParam,themed,Apply)) return themed;
         try {
             if(message==WM_CREATE) {self->controls();return 0;}
+            if(message==WM_GETMINMAXINFO) {reinterpret_cast<MINMAXINFO*>(lParam)->ptMinTrackSize={838,704};return 0;}
+            if(message==WM_SIZE && wParam!=SIZE_MINIMIZED) {self->layout();return 0;}
             if(message==WM_COMMAND) {self->command(LOWORD(wParam),HIWORD(wParam));return 0;}
             if(message==WM_CLOSE) {self->close();return 0;}
             if(message==update) {self->deliver();return 0;}

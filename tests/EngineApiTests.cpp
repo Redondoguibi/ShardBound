@@ -77,7 +77,7 @@ register_engine_extension("budget:loop", "fixed", endless)
 }
 struct EngineIntegrationAccess {
     static void run(const std::filesystem::path& root) {
-        Application app;app.root_=std::filesystem::current_path();app.modsDirectory_=root/"mods";std::filesystem::create_directories(root);std::filesystem::copy("content",app.modsDirectory_,std::filesystem::copy_options::recursive);
+        Application app;app.root_=std::filesystem::current_path();app.modsDirectory_=root/"mods";std::filesystem::create_directories(root);std::filesystem::copy("tests/fixtures/former-content",app.modsDirectory_,std::filesystem::copy_options::recursive);
         const auto mod=app.modsDirectory_/"engine_probe";std::filesystem::create_directories(mod);std::filesystem::copy_file("tests/native/engine_probe.dll",mod/"probe.dll");
         atomicWrite(mod/"mod.json",R"({"id":"engine_probe","name":"Engine integration probe","version":"1.0.0","api":"0.1","entry":"main.sl","native":"probe.dll","dependencies":["foundation >= 0.2.0"]})");
         atomicWrite(mod/"main.sl",R"(@Globals

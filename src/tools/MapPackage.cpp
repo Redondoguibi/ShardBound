@@ -35,16 +35,16 @@ void exportMapPackage(const FiniteMap& map,const std::filesystem::path& content,
     const auto active=discoverMods(source);
     for(const auto& diagnostic:active.diagnostics) if(diagnostic.code!="MOD106") throw DiagnosticError(diagnostic);
     const auto catalog=WorldDefinition::load(active.mods);
-    if(catalog.maps.empty()) throw std::runtime_error("Carregue os mods do mapa oficial primeiro");
     if(map.exit()) throw std::runtime_error("Escolha um mapa principal para exportar. Interiores são publicados com a porta que os conecta ao mapa.");
     map.validateDoors(catalog);
-    const auto mapId=catalog.maps.begin()->first;
+    const bool replacesMap=!catalog.maps.empty();
+    const auto mapId=replacesMap?catalog.maps.begin()->first:id+":map";
     const auto document=map.json();
     const auto encoded=document.dump();
     if(encoded.size()>8*1024*1024) throw std::runtime_error("O mapa exportado excede 8 MiB");
 
     auto dependencies=catalog.mapPlacementMods;
-    dependencies.insert(AssetId(mapId).nameSpace());
+    if(replacesMap) dependencies.insert(AssetId(mapId).nameSpace());
     const auto collect=[&](const Json& area) {
         for(const auto& run:area.at("runs")) {
             const auto blockId=run.at(2).get<std::string>();
@@ -72,7 +72,7 @@ void exportMapPackage(const FiniteMap& map,const std::filesystem::path& content,
         for(const auto& mod:active.mods) {
             const auto copy=stage/mod.id;
             std::filesystem::copy(mod.root,copy,std::filesystem::copy_options::recursive|std::filesystem::copy_options::skip_symlinks);
-            if(!std::filesystem::exists(copy/"world.json")) continue;
+            if(!replacesMap || !std::filesystem::exists(copy/"world.json")) continue;
             const auto worldPath=VirtualFileSystem::contained(copy,"world.json");
             Json world;
             {std::ifstream input(worldPath,std::ios::binary);world=Json::parse(input);}
@@ -80,8 +80,10 @@ void exportMapPackage(const FiniteMap& map,const std::filesystem::path& content,
                 atomicWrite(worldPath,world.dump(2));
         }
         atomicWrite(stage/id/"map.json",encoded);
-        atomicWrite(stage/id/"world.json",Json{{"version",1},{"map_overrides",{{mapId,
-            {{"source","map.json"},{"baked_placements",catalog.mapPlacementMods}}}}}}.dump(2));
+        Json world={{"version",1}};
+        if(replacesMap) world["map_overrides"][mapId]={{"source","map.json"},{"baked_placements",catalog.mapPlacementMods}};
+        else world["maps"][mapId]="map.json";
+        atomicWrite(stage/id/"world.json",world.dump(2));
         atomicWrite(stage/id/"mod.json",Json{{"id",id},{"name",id},{"api","0.1"},{"version","1.0.0"},
             {"dependencies",dependencies}}.dump(2));
         const auto checked=runEditorProcess(modcheck.wstring(),{stage.wstring(),L"--json"},stage,{},{});

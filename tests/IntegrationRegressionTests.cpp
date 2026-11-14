@@ -18,7 +18,7 @@ struct ApplicationRegressionAccess {
     static void run() {
         Application app;app.root_=std::filesystem::current_path();
         const auto root=app.root_/"user"/("integration-regressions-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
-        const auto mods=root/"mods";std::filesystem::create_directories(root);std::filesystem::copy(app.root_/"content",mods,std::filesystem::copy_options::recursive);
+        const auto mods=root/"mods";std::filesystem::create_directories(root);std::filesystem::copy(app.root_/"tests/fixtures/former-content",mods,std::filesystem::copy_options::recursive);
         std::filesystem::create_directories(mods/"review");
         write(mods/"review/mod.json",R"({"id":"review","name":"Regression probe","version":"1.0.0","api":"0.1","entry":"main.sl","dependencies":["foundation >= 0.2.0"]})");
         write(mods/"review/main.sl",R"(@Globals

@@ -6,6 +6,7 @@
     let saving = false;
     let studio;
     let equipment;
+    let syncingClips = false;
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     function starter(name) {
@@ -127,23 +128,28 @@
                 if (equipment.type === "melee") {
                     const mode = Mode.selected;
                     const selected = Animation.selected;
-                    for (const clip of clips) if (!Animation.all.some(value => value.name === clip.name)) {
-                        studio.createClip(clip.name, clip.length, clip.loop);
+                    syncingClips = true;
+                    try {
+                        for (const clip of clips) if (!Animation.all.some(value => value.name === clip.name)) {
+                            studio.createClip(clip.name, clip.length, clip.loop);
+                        }
+                    } finally {
+                        syncingClips = false;
+                        mode?.select();
+                        selected?.select();
                     }
-                    mode?.select();
-                    selected?.select();
                 }
                 const source = studio.codec.compile({raw: true, bitmaps: true, absolute_paths: false, reference_images: false});
                 source.name = name;
                 const compiled = await studio.exporter.compile();
                 const json = JSON.stringify(source);
                 if (new TextEncoder().encode(json).length > 16 * 1024 * 1024) throw new Error("O projeto ultrapassa 16 MiB.");
-                const files = {};
+                const files = [];
                 let size = 0;
                 for (const [path, data] of compiled.files) {
                     size += typeof data === "string" ? new TextEncoder().encode(data).length : data.byteLength;
                     if (size > 32 * 1024 * 1024) throw new Error("O equipamento ultrapassa 32 MiB.");
-                    files[path] = typeof data === "string" ? {text: data} : {base64: encode(data)};
+                    files.push(typeof data === "string" ? {path, text: data} : {path, base64: encode(data)});
                 }
                 events.postMessage({kind: "publish", ticket, source: json, files});
                 return;
@@ -226,7 +232,7 @@
                     }
                 }, true);
                 const changed = () => {
-                    if (Project === project) events.postMessage({kind: "changed"});
+                    if (Project === project && !syncingClips) events.postMessage({kind: "changed"});
                 };
                 for (const event of ["finished_edit", "undo", "redo"]) Blockbench.on(event, changed);
                 events.postMessage({kind: "ready"});

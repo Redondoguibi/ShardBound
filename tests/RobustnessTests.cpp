@@ -71,7 +71,7 @@ int main(int argc,char** argv) {
         write(cancel/"assets.json",R"({"models":{"cancelled:a":{"source":"cube.glb"},"cancelled:b":{"source":"cube.glb"}}})");std::filesystem::copy_file("assets/core/models/cube.glb",cancel/"cube.glb");
         rejects([&]{loader.load(root/"cancel",[](auto,size_t done,size_t){if(done==1) throw PreparationCancelled();});},"Cancellation did not interrupt preparation");
         rejects([&]{assets.model(AssetId("cancelled:a"));},"Cancelled transaction leaked a model");check(loader.load(root/"cancel").registeredAssets==2,"Cancelled package could not be retried");
-        const auto content=loader.load("content");check(content.diagnostics.empty(),"Default content failed");const auto definition=WorldDefinition::load(content.mods);
+        const auto content=loader.load("tests/fixtures/former-content");check(content.diagnostics.empty(),"Default content failed");const auto definition=WorldDefinition::load(content.mods);
         // Cold-page windows own immutable data while live edits continue.
         RegionEdits edits(root/"pages");for(int i=0;i<128;++i) edits.replace({i,0},{{{i*16,4,0},"plains:stone"}});
         IoExecutor::instance().submit([]{}).get();check(edits.pendingWrites()==0,"Completed terrain writes retained evicted voxel payloads");

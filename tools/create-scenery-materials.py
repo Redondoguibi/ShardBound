@@ -8,11 +8,11 @@ import struct
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-source = (ROOT / "assets/core/models/solid.glb").read_bytes()
+source = (ROOT / "tests/fixtures/legacy-core/models/solid.glb").read_bytes()
 json_size = struct.unpack_from("<I", source, 12)[0]
 base = json.loads(source[20:20 + json_size])
 binary = source[28 + json_size:]
-textures = ROOT / "assets/core/textures/woodland"
+textures = ROOT / "tests/fixtures/legacy-core/textures/woodland"
 textures.mkdir(parents=True, exist_ok=True)
 
 for name in ("grass", "earth", "plaster", "roof", "stone"):
@@ -54,4 +54,4 @@ for name in ("grass", "earth", "plaster", "roof", "stone"):
     glb = struct.pack("<III", 0x46546C67, 2, 28 + len(header) + len(blob))
     glb += struct.pack("<II", len(header), 0x4E4F534A) + header
     glb += struct.pack("<II", len(blob), 0x004E4942) + blob
-    (ROOT / f"assets/core/models/{name}_block.glb").write_bytes(glb)
+    (ROOT / f"tests/fixtures/legacy-core/models/{name}_block.glb").write_bytes(glb)

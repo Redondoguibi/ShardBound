@@ -12,7 +12,7 @@ void check(bool condition,const char* message) {if(!condition) throw std::runtim
 struct ReadinessReviewAccess {
     static std::unique_ptr<Application> application(const std::filesystem::path& root) {
         auto app=std::make_unique<Application>();app->root_=std::filesystem::current_path();
-        app->modsDirectory_=root/"mods";std::filesystem::create_directories(root);std::filesystem::copy("content",app->modsDirectory_,std::filesystem::copy_options::recursive);
+        app->modsDirectory_=root/"mods";std::filesystem::create_directories(root);std::filesystem::copy("tests/fixtures/former-content",app->modsDirectory_,std::filesystem::copy_options::recursive);
         app->userDirectory_=root/"user";app->explicitMods_=true;app->windowConfig_.hidden=true;app->noVsyncOverride_=true;
         app->autoWorldName_="Review world";app->autoWorldSeed_="readiness-review";check(app->initialize(),"Review application initialization failed");return app;
     }

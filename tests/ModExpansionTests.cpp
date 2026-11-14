@@ -32,7 +32,7 @@ int main(int argc,char** argv) {
         const int iterations=argc==3 && std::string(argv[1])=="--soak"?std::clamp(std::stoi(argv[2]),1,10000):24;
         const auto directory=std::filesystem::path("user/expansion-tests")/std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
         WindowSystem window({"Mod platform expansion",1280,720,true});Renderer renderer(window.nativeHandle(),1280,720,"assets/core/shaders/forward.hlsl",{false,1});
-        VirtualFileSystem vfs;AssetManager assets(vfs,renderer,"user/expansion-cache");ModLoader loader(vfs,assets);const auto mods=loader.load("content");check(mods.diagnostics.empty(),"Official content failed to load");
+        VirtualFileSystem vfs;AssetManager assets(vfs,renderer,"user/expansion-cache");ModLoader loader(vfs,assets);const auto mods=loader.load("tests/fixtures/former-content");check(mods.diagnostics.empty(),"Official content failed to load");
         auto definition=WorldDefinition::load(mods.mods);auto& settings=definition.generators.at("plains:gentle");settings.relief=0;settings.noise.clear();settings.structures.clear();
         RegionEdits pages(directory/"pages");
         for(int cx=-48;cx<48;++cx) { BlockEdits cells;for(int x=0;x<8;++x) for(int z=0;z<8;++z) cells[{cx*16+x,6,z}]="plains:stone";pages.replace({cx,0},std::move(cells));check(pages.residentPages()<=64,"Page cache grew beyond its limit"); }

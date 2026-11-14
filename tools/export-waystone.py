@@ -13,7 +13,7 @@ import struct
 
 
 ROOT = Path(__file__).resolve().parent.parent
-MODELS = ROOT / 'assets/core/models'
+MODELS = ROOT / 'tests/fixtures/legacy-core/models'
 
 
 def require(condition, message):

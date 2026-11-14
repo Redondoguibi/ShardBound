@@ -26,7 +26,7 @@ int main() {
         std::cout<<std::unitbuf;
         const auto directory=std::filesystem::path("user/developer-tests")/std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
         WindowSystem window({"Developer tools validation",1280,720,true});Renderer renderer(window.nativeHandle(),1280,720,"assets/core/shaders/forward.hlsl",{false,1});
-        VirtualFileSystem vfs;AssetManager assets(vfs,renderer,"user/developer-cache");ModLoader loader(vfs,assets);const auto mods=loader.load("content");check(mods.diagnostics.empty(),"Content load failed");
+        VirtualFileSystem vfs;AssetManager assets(vfs,renderer,"user/developer-cache");ModLoader loader(vfs,assets);const auto mods=loader.load("tests/fixtures/former-content");check(mods.diagnostics.empty(),"Content load failed");
         auto definition=WorldDefinition::load(mods.mods);auto& generator=definition.generators.at("plains:gentle");generator.structures.clear();generator.relief=0;generator.noise.clear();
         World world;PhysicsSystem physics(world);PlayerController player(world,physics);InputSystem input;AudioSystem audio(true);Runtime runtime;
         bindRuntimeApi(runtime,world,assets);bindGameplayApi(runtime,world,physics,player,input,audio,assets);DeveloperMode dev(runtime,world,physics,player,input);

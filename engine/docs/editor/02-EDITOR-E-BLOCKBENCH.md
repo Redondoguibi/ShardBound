@@ -4,6 +4,8 @@
 
 ## Implementação disponível
 
+Para a organização atual, preferências, bibliotecas e atalhos, consulte o [guia do espaço de trabalho](10-ESPACO-DE-TRABALHO.md). Configurações e Ajuda ficam sempre acessíveis no canto superior direito; a tela inicial também oferece projetos recentes e o cartão **Modelagem livre** para o Blockbench avulso.
+
 Abra `shardbound_editor.exe` ao lado de `game.exe`. A aba **Início** permite criar ou abrir mapas e acessar **Blocos**, **Equipamentos**, **Blockbench**, **Assistente IA** e **Configurações**. Clique em **+** para abrir outra aba de início sem sair do projeto em uso. Cada mapa ganha sua própria aba, com câmera, camada, seleção de blocos, linha do tempo e revisão de mods independentes. Um ponto ao lado do nome sinaliza alterações pendentes. Ao fechar um mapa alterado, o editor oferece salvar, descartar ou cancelar.
 
 Arraste uma aba pela faixa superior para mudar sua posição. Clique no **×** ou com o botão do meio para fechá-la. No editor do ShardBound, **Ctrl+T** cria uma aba, **Ctrl+Tab** alterna entre abas e **Ctrl+W** fecha a atual. No mapa, alterne o painel entre blocos, colocação e histórico. O editor carrega `content/` por padrão. Passe `--mods DIRETORIO` para carregar outro conjunto de mods.
@@ -12,20 +14,20 @@ Escolha **Planta** ou **3D** acima do mapa e ajuste a camada com **−** e **+**
 
 Em **Projeto → Importar região de um save…**, preencha X, Z, largura e profundidade e escolha o `checkpoint.json` da partida. As edições salvas e os blocos do terreno entram no recorte. **Testar no jogo** abre uma partida de teste em diretório temporário. A lista de modelos permite colocar um modelo registrado com rotação e escala.
 
-**Projeto → Exportar mapa e mods…** cria uma pasta com o mod que substitui o mapa oficial e uma cópia dos mods da revisão. O editor valida a pasta antes de publicar. Abra o pacote com `game.exe --mods "CAMINHO_DA_PASTA"` e inicie uma nova partida. O mapa exportado preserva as edições feitas sobre estruturas que já estavam no catálogo de colocações da revisão.
+**Projeto → Exportar mapa e mods…** cria um mod com o primeiro mapa da revisão ou uma substituição para o mapa carregado. A pasta inclui os mods da revisão e passa por validação antes da exportação. Para jogar o pacote, carregue-o com `game.exe --mods "CAMINHO_DA_PASTA"` e inclua um mod de gameplay que crie o jogador. O mapa exportado preserva as edições feitas sobre estruturas já colocadas na revisão.
 
 O editor usa a versão web oficial do Blockbench dentro do ShardBound. Ao trocar de aba, o projeto de modelagem permanece aberto. A integração usa o Microsoft Edge WebView2 e precisa de internet para carregar. A aba **Blockbench** em **Início** também pode ser usada para abrir ou editar um `.bbmodel` avulso.
 
 ### Criar um bloco
 
-1. No mapa, clique em **+ Novo** na paleta. A partir de **Início**, entre em **Blocos → Criar bloco**. O editor usa o mapa atual e abre o mapa de exemplo se ainda não houver um mapa aberto.
+1. No mapa, clique em **+ Novo** na paleta. A partir de **Início**, entre em **Blocos → Criar bloco**. O editor usa o mapa atual ou prepara um mapa vazio se a instalação ainda estiver sem conteúdo.
 2. O Blockbench abre em uma aba com um **Modelo genérico**. O cubo inicial tem 16 unidades de lado, base em Y = 0 e uma área de pintura de 16 × 16 por face. Edite os cubos ou as malhas no modo **Edit** e pinte no modo **Paint**.
 3. Dê um nome ao bloco e use **Salvar na engine** ou **Ctrl+S**. O editor registra o bloco na revisão do mapa e guarda o projeto `.bbmodel` com as texturas. O controle **Sólido** usa colisão de célula inteira. **Sem colisão** permite atravessar o bloco.
 4. Clique em **Ver no mapa** para voltar com o bloco selecionado. Clique no terreno para colocá-lo e use **3D** para ver a forma e a pintura. Para editar novamente, selecione o bloco na paleta e clique em **Editar**. Ao salvar de novo, os blocos já colocados passam a usar a nova versão. Salve o mapa para conservar a revisão ao reabrir.
 
 O **Farol de Cobre** é um exemplo feito por esse fluxo. A pintura cobre uma face de cobre e o modelo tem um topo e uma base menores. Para um GLB que já existe, use **Blocos → Importar GLB…**.
 
-Os plugins ShardBound Studio e ponte local continuam no Blockbench Desktop, acessível em **Configurações**. Na autoria de equipamento, **Criar clipes no Blockbench** prepara os clipes e **Exportar do Blockbench** importa o pacote exportado pela ponte do Studio. Para atualizar um pacote já publicado pelo editor, deixe o projeto correspondente ativo no Blockbench Desktop, escolha um de seus modelos e use **Atualizar no Blockbench**.
+Em **Equipamentos**, o Blockbench integrado abre a arma ou armadura sobre o jogador de referência. **Salvar na engine** registra o modelo e seus atributos na revisão do mapa. O fluxo está no [guia de equipamentos](04-ITENS-ARMADURAS-E-ANIMACOES.md). Para projetos vinculados ao Blockbench Desktop, a ponte local está disponível em **Configurações** e o comando **Atualizar no Blockbench** continua no painel de colocação.
 
 **Registrar seleção como estrutura…** usa dois cantos e as camadas selecionadas para cadastrar uma construção como mod. O cadastro não coloca a estrutura no jogo. Use a lista de estruturas para colocá-la onde quiser.
 

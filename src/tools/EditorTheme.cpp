@@ -9,6 +9,19 @@
 
 namespace game::editor {
 namespace {
+LRESULT CALLBACK interactiveControl(HWND window,UINT message,WPARAM wParam,LPARAM lParam,UINT_PTR id,DWORD_PTR) {
+    if(message==WM_MOUSEMOVE && !GetPropW(window,L"ShardBoundHover")) {
+        SetPropW(window,L"ShardBoundHover",HANDLE(1));
+        TRACKMOUSEEVENT track{sizeof(track),TME_LEAVE,window,0};TrackMouseEvent(&track);
+        InvalidateRect(window,nullptr,FALSE);
+    }
+    if(message==WM_MOUSELEAVE || message==WM_KILLFOCUS || message==WM_NCDESTROY) {
+        RemovePropW(window,L"ShardBoundHover");InvalidateRect(window,nullptr,FALSE);
+    }
+    if(message==WM_SETFOCUS) InvalidateRect(window,nullptr,FALSE);
+    if(message==WM_NCDESTROY) RemoveWindowSubclass(window,interactiveControl,id);
+    return DefSubclassProc(window,message,wParam,lParam);
+}
 LRESULT CALLBACK comboFrame(HWND window,UINT message,WPARAM wParam,LPARAM lParam,UINT_PTR id,DWORD_PTR) {
     if(message==WM_NCDESTROY) RemoveWindowSubclass(window,comboFrame,id);
     const auto result=DefSubclassProc(window,message,wParam,lParam);
@@ -49,6 +62,16 @@ void fill(HDC dc,const RECT& rect,COLORREF color) {
     FillRect(dc,&rect,static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
 }
 
+bool hovered(HWND control) { return GetPropW(control,L"ShardBoundHover")!=nullptr; }
+
+void rounded(HDC dc,const RECT& rect,COLORREF color,COLORREF border,int radius) {
+    const auto brush=SelectObject(dc,GetStockObject(DC_BRUSH));
+    const auto pen=SelectObject(dc,GetStockObject(DC_PEN));
+    SetDCBrushColor(dc,color);SetDCPenColor(dc,border);
+    RoundRect(dc,rect.left,rect.top,rect.right,rect.bottom,radius,radius);
+    SelectObject(dc,pen);SelectObject(dc,brush);
+}
+
 void text(HDC dc,RECT rect,std::wstring_view value,COLORREF color,HFONT face,UINT flags) {
     const auto previous=SelectObject(dc,face?face:font());
     SetBkMode(dc,TRANSPARENT);
@@ -86,6 +109,7 @@ void styleControl(HWND control) {
     SetWindowTheme(control,L"DarkMode_Explorer",nullptr);
     wchar_t type[32]{};
     GetClassNameW(control,type,int(std::size(type)));
+    if(std::wstring_view(type)==L"Button") SetWindowSubclass(control,interactiveControl,2,0);
     if(std::wstring_view(type)==L"ComboBox") {
         SetWindowSubclass(control,comboFrame,1,0);
         SendMessageW(control,CB_SETITEMHEIGHT,WPARAM(-1),25);
@@ -137,10 +161,9 @@ void drawButton(const DRAWITEMSTRUCT& item,bool primary,bool active) {
     auto bounds=item.rcItem;
     const bool enabled=!(item.itemState&ODS_DISABLED);
     const bool pressed=item.itemState&ODS_SELECTED;
-    const auto bg=primary?(pressed?RGB(212,152,86):accent):active?selected:pressed?line:field;
-    fill(item.hDC,bounds,primary && !enabled?field:bg);
-    SetDCBrushColor(item.hDC,active?accent:primary?bg:line);
-    FrameRect(item.hDC,&bounds,static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+    const auto bg=primary?(pressed?RGB(96,160,145):accent):active?selected:pressed || hovered(item.hwndItem)?line:field;
+    fill(item.hDC,bounds,panel);
+    rounded(item.hDC,bounds,primary && !enabled?field:bg,active || (item.itemState&ODS_FOCUS)?accent:primary?bg:line);
     InflateRect(&bounds,-5,-3);
     text(item.hDC,bounds,label,enabled?(primary?background:active?accent:ink):muted,font(14,FW_SEMIBOLD),
         DT_CENTER|DT_VCENTER|DT_SINGLELINE|DT_END_ELLIPSIS|DT_NOPREFIX);

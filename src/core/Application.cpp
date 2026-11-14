@@ -89,9 +89,10 @@ bool Application::initialize() {
     vfs_.mount("core",root_ / "assets/core");
     assets_ = std::make_unique<AssetManager>(vfs_,*renderer_,userDirectory_/"cache");
     const auto discovered=discoverMods(root_/modsDirectory_);
-    procedural_=!explicitMods_;
+    procedural_=!explicitMods_ || discovered.mods.empty() || !testMap_.empty();
     for(const auto& mod:discovered.mods) if(std::filesystem::exists(mod.root/"world.json")) procedural_=true;
-    if(!procedural_) registerCoreModels(*assets_);
+    if(!procedural_ && std::filesystem::is_regular_file(root_ / "assets/core/models/player.glb"))
+        registerCoreModels(*assets_);
     PreparationScreen preparation(*renderer_);
     ModLoader loader(vfs_,*assets_);
     const auto report=loader.load(root_/modsDirectory_,[&](std::string_view mod,size_t done,size_t total) {

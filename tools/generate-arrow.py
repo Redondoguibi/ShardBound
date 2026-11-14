@@ -8,7 +8,7 @@ import struct
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
-source = (root / 'assets/core/models/cube.glb').read_bytes()
+source = (root / 'tests/fixtures/legacy-core/models/cube.glb').read_bytes()
 length = struct.unpack_from('<I', source, 12)[0]
 doc = json.loads(source[20:20 + length])
 binary = source[28 + length:]
@@ -29,4 +29,4 @@ metadata += b' ' * (-len(metadata) % 4)
 result = struct.pack('<III', 0x46546C67, 2, 28 + len(metadata) + len(binary))
 result += struct.pack('<II', len(metadata), 0x4E4F534A) + metadata
 result += struct.pack('<II', len(binary), 0x004E4942) + binary
-(root / 'assets/core/models/arrow.glb').write_bytes(result)
+(root / 'tests/fixtures/legacy-core/models/arrow.glb').write_bytes(result)

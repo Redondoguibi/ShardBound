@@ -135,7 +135,7 @@ set_texture_shader("core:checker", "paint:surface", opts)
         saves.save("retained");const auto retained=nlohmann::json::parse(encodeData(SaveGame::inspect(root/"saves/retained.json")));require(retained["entities"][0]["shader"]==saved["entities"][0]["shader"],"Missing shader state lost on save");
         vfs.mount("paint",mod);assets.registerShader({"paint:surface","surface.hlsl"});require(saves.load("retained").empty() && world.get<ModelComponent>(world.find("subject")).shader->shader,"Returning shader did not restore binding");
         // Block shader snapshots survive world metadata and are used by chunk publication.
-        auto mods=loader.load("content");require(mods.diagnostics.empty(),"Default content failed");auto definition=WorldDefinition::load(mods.mods);
+        auto mods=loader.load("tests/fixtures/former-content");require(mods.diagnostics.empty(),"Default content failed");auto definition=WorldDefinition::load(mods.mods);
         definition.blocks.at("plains:grass").shader="paint:surface";definition.blocks.at("plains:grass").shaderParameters={0,1,0,1};
         WorldStorage storage(root/"worlds");auto record=storage.create("Shader terrain","shader seed",definition.generators.begin()->first,definition,{});auto loaded=storage.read(record.id);
         require(loaded.definition.json()==definition.json(),"Block shader lost in world metadata");

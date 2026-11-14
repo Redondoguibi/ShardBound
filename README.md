@@ -8,22 +8,15 @@ Mods podem estender ou substituir fases da engine por scripts e DLLs: movimento/
 
 Para gerar um ZIP com dependências de execução e verificações: `./tools/package.ps1`. Instalações novas usam os dados locais do usuário; pastas `user` existentes continuam sendo utilizadas, e `--portable` mantém os dados ao lado do executável.
 
-Novas partidas usam o **mapa finito do ShardBound**, com dois biomas conectados
-e carregamento por chunks. Abra `build/release/game.exe`, clique em **Jogar** e
-dê um nome à partida. Saves procedurais existentes continuam disponíveis.
-Configurações estão na tela inicial e na pausa.
+O ShardBound começa com zero mods e um catálogo vazio. O jogo abre no menu.
+Para jogar, os mods instalados precisam fornecer terreno e criar o jogador.
+Coloque módulos em `content/` ou selecione a pasta com `--mods`.
+[Guia do conteúdo](content/README.md).
 
-Abra `build/release/shardbound_editor.exe` para editar o mapa por camadas,
-importar recortes de saves ou abrir uma partida de teste.
+Abra `engine/shardbound_editor.exe` (ou `build/release/ShardBoundEditor.exe`
+na compilação local) para criar um mapa vazio, criar conteúdo com o Assistente
+IA ou exportar o primeiro mod do projeto.
 [Guia do editor](docs/editor/02-EDITOR-E-BLOCKBENCH.md).
-
-Todo conteúdo do modo padrão está nos mods `content/foundation` (gameplay,
-modelos, sons e equipamentos) e `content/plains` (blocos, texturas e geração).
-[Guia do conteúdo](content/README.md) · [Contrato dos mundos procedurais legados](docs/27-PROCEDURAL-WORLDS.md).
-
-Para trocar os placeholders, edite `content/plains/textures/*.png`, compile
-novamente e reinicie. A aventura fixa anterior foi preservada em
-`examples/legacy/adventure`, fora da inicialização padrão.
 
 Projeto experimental de um jogo 3D com estética pixel-art, construído sem uma engine de jogos tradicional e pensado desde o início para ser extremamente modificável.
 

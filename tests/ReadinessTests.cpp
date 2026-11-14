@@ -64,7 +64,7 @@ void steepSlopeAndContinuousCollision() {
 }
 struct ReadinessTestAccess {
     static void run(const std::filesystem::path& root) {
-        const auto mods=root/"mods";std::filesystem::copy("content",mods,std::filesystem::copy_options::recursive);std::filesystem::create_directories(mods/"readiness");
+        const auto mods=root/"mods";std::filesystem::copy("tests/fixtures/former-content",mods,std::filesystem::copy_options::recursive);std::filesystem::create_directories(mods/"readiness");
         atomicWrite(mods/"readiness/mod.json",R"({"id":"readiness","name":"Profile test","version":"1.0.0","api":"0.1","entry":"main.sl","dependencies":["foundation >= 0.2.0"]})");atomicWrite(mods/"readiness/main.sl","@Entities\nentity Persistent:\n    .label = \"Persistent\"\n@Globals\nactivated = 73\n");
         Application app;app.root_=std::filesystem::current_path();app.modsDirectory_=mods;app.userDirectory_=root/"user";app.explicitMods_=true;app.windowConfig_.hidden=true;app.noVsyncOverride_=true;app.autoWorldName_="Profile A";check(app.initialize(),"Readiness application initialization failed");
         auto& front=*app.frontEnd_;const auto original=*app.currentWorld_;check(app.scripting_->global("readiness","activated").number()==73,"Selected mod did not initialize");

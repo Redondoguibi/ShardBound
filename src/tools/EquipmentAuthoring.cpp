@@ -51,7 +51,7 @@ void publishEquipment(const std::filesystem::path& mods,const AuthoredEquipment&
     const auto destination=mods/equipment.mod;
     if(std::filesystem::exists(destination)) throw std::runtime_error("Já existe um pacote com esse ID");
     const auto discovery=discoverMods(mods);
-    std::vector<std::string> dependencies{"foundation"};
+    std::vector<std::string> dependencies;
     for(const auto& mod:discovery.mods) if(mod.id==equipment.mod) throw std::runtime_error("Já existe um mod com esse ID");
     const bool armor=!equipment.armorSlot.empty();
     const auto numeric=[](double value,double min,double max) {
@@ -90,7 +90,7 @@ void publishEquipment(const std::filesystem::path& mods,const AuthoredEquipment&
             }
         }
         if(!available) throw std::runtime_error(armor?"Escolha um modelo de armadura com encaixes do Studio":"Modelo não encontrado nos mods ativos");
-        if(owner!="foundation") dependencies.push_back(owner);
+        dependencies.push_back(owner);
     }
 
     static std::atomic<unsigned> serial{};

@@ -21,7 +21,7 @@ def png(path, base, seed):
     path.write_bytes(b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB',16,16,8,6,0,0,0)) + chunk(b'IDAT', zlib.compress(bytes(pixels))) + chunk(b'IEND',b''))
 
 def main():
-    root = ROOT / 'content/plains'
+    root = ROOT / 'tests/fixtures/former-content/plains'
     colors = {'grass': (112,145,75), 'dirt': (119,89,63), 'stone': (118,124,119),
               'wood': (106,79,51), 'leaves': (70,112,62), 'flower': (189,162,80), 'brick': (143,135,113)}
     assets = {'textures': {}}
