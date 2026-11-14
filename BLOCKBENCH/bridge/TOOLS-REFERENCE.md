@@ -1,12 +1,14 @@
 # Referência de modelagem e MTools
 
+Consulte também as **16 ferramentas Studio** e seu [fluxo completo](STUDIO-COMPATIBILITY.md). O catálogo total contém 34 ferramentas; geometrias, texturas e MTools reconhecem os dois formatos.
+
 ## Ferramentas
 
 | Ferramenta                           | Função                                                    |
 | ------------------------------------ | --------------------------------------------------------- |
 | `status`, `read_project`             | Conexão, projeto, revisão, seleção e geometria opcional   |
 | `create_project`                     | Nova aba Generic Model                                    |
-| `create_elements`, `update_elements` | Grupos, cubos e malhas; transformações e propriedades     |
+| `create_elements`, `update_elements` | Grupos, cubos e malhas; transformações, propriedades e reparenting sem ciclos     |
 | `edit_mesh`                          | Vértices, faces e UVs com validação de topologia          |
 | `delete_elements`, `select_elements` | Remoção e seleção de elementos/componentes                |
 | `capture_view`                       | Imagem da vista do editor                                 |

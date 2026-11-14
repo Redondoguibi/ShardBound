@@ -1,0 +1,208 @@
+{
+  "clips": [
+    {
+      "events": [],
+      "fps": 24,
+      "length": 1,
+      "loop": "once",
+      "name": "run"
+    },
+    {
+      "events": [],
+      "fps": 24,
+      "length": 1,
+      "loop": "once",
+      "name": "jump"
+    },
+    {
+      "events": [
+        {
+          "action": "start",
+          "follow": false,
+          "fps": 24,
+          "frame": 0,
+          "id": "3b6510fc-e3e8-4fa1-3b49-c2cfc64bd3fa:e0d5223f-ee80-7a27-f5fd-daf3b9a20ec9",
+          "instance": "particle",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 0,
+          "pitch": 1,
+          "resource": "studio_demo:sparks",
+          "target": "6c05bac0-80f6-a420-a4a0-25b7e6ae02b9",
+          "time": 0,
+          "type": "particle",
+          "volume": 1
+        },
+        {
+          "action": "start",
+          "follow": false,
+          "fps": 24,
+          "frame": 0,
+          "id": "3b6510fc-e3e8-4fa1-3b49-c2cfc64bd3fa:00ac8a07-50c0-e023-610b-d8849b804e7b",
+          "instance": "trail",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 1,
+          "pitch": 1,
+          "resource": "studio_demo:trail",
+          "target": "17117769-660a-3f1f-d158-54a45ad058ea",
+          "time": 0,
+          "type": "trail",
+          "volume": 1
+        },
+        {
+          "action": "start",
+          "follow": false,
+          "fps": 24,
+          "frame": 0,
+          "id": "3b6510fc-e3e8-4fa1-3b49-c2cfc64bd3fa:bf977b5a-9158-56fc-d21e-def7c65b3899",
+          "instance": "flash",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 2,
+          "pitch": 1,
+          "resource": "studio_demo:flash",
+          "target": "17117769-660a-3f1f-d158-54a45ad058ea",
+          "time": 0,
+          "type": "flash",
+          "volume": 1
+        },
+        {
+          "action": "start",
+          "follow": false,
+          "fps": 24,
+          "frame": 0,
+          "id": "3b6510fc-e3e8-4fa1-3b49-c2cfc64bd3fa:d8a27f6e-f621-b7bc-3f79-240903c966f0",
+          "instance": "glow",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 3,
+          "pitch": 1,
+          "resource": "studio_demo:glow",
+          "target": "6c05bac0-80f6-a420-a4a0-25b7e6ae02b9",
+          "time": 0,
+          "type": "glow",
+          "volume": 1
+        },
+        {
+          "action": "burst",
+          "follow": false,
+          "fps": 24,
+          "frame": 2,
+          "id": "b9ea4400-86b5-e81f-3756-569d3f1af13a:2568881d-4ed2-d18e-51cf-b814f38e47f8",
+          "instance": "sound",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 4,
+          "pitch": 1,
+          "resource": "studio_demo:chime",
+          "target": "6c05bac0-80f6-a420-a4a0-25b7e6ae02b9",
+          "time": 0.1,
+          "type": "sound",
+          "volume": 0.2
+        },
+        {
+          "action": "burst",
+          "follow": false,
+          "fps": 24,
+          "frame": 6,
+          "id": "362c3ed7-bc3d-478c-0c95-ba80ded690ed:0218f9ee-58d4-cd65-4ced-e55c7ae1b9bd",
+          "instance": "",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 6,
+          "pitch": 1,
+          "resource": "test:ui_effect",
+          "target": "52ba5674-ed13-60f3-b3f8-45a6f5b06d96",
+          "time": 0.25,
+          "type": "particle",
+          "volume": 1
+        },
+        {
+          "action": "stop",
+          "follow": false,
+          "fps": 24,
+          "frame": 10,
+          "id": "91772af8-3d2f-c127-8f01-2eeca30cdc1b:8d2445f6-4c1b-a761-27c0-82a9ce159e3d",
+          "instance": "particle",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 5,
+          "pitch": 1,
+          "resource": "studio_demo:sparks",
+          "target": "6c05bac0-80f6-a420-a4a0-25b7e6ae02b9",
+          "time": 0.4,
+          "type": "particle",
+          "volume": 1
+        }
+      ],
+      "fps": 24,
+      "length": 1,
+      "loop": "once",
+      "name": "attack"
+    },
+    {
+      "events": [],
+      "fps": 24,
+      "length": 1,
+      "loop": "once",
+      "name": "fire"
+    }
+  ],
+  "generator": "ShardBound Studio 1.3.0",
+  "locators": [
+    {
+      "name": "blade_tip",
+      "parent": "17117769-660a-3f1f-d158-54a45ad058ea",
+      "position": [
+        -5,
+        24,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "uuid": "6c05bac0-80f6-a420-a4a0-25b7e6ae02b9"
+    }
+  ],
+  "project": "studio_demo:bow",
+  "schema": "shardbound.studio.events",
+  "sounds": [
+    {
+      "duration": 0.3,
+      "file": "audio/studio_demo/chime.wav",
+      "id": "studio_demo:chime"
+    }
+  ],
+  "version": 1
+}

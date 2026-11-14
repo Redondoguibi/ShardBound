@@ -2,6 +2,8 @@
 
 ## Status
 
+O runtime também implementa `async func` e o operador `await`, com tarefas cooperativas, esperas e cancelamento. A extensão normativa e seus limites estão em [modding/13-ASYNC-AWAIT.md](modding/13-ASYNC-AWAIT.md); exemplos v0 abaixo continuam válidos.
+
 A linguagem possui agora uma **especificação v0 implementável**.
 
 A referência normativa da Etapa 8 é:

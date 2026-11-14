@@ -1,8 +1,8 @@
 (() => {
   var __defProp = Object.defineProperty;
   var __export = (target, all) => {
-    for (var name2 in all)
-      __defProp(target, name2, { get: all[name2], enumerable: true });
+    for (var name3 in all)
+      __defProp(target, name3, { get: all[name3], enumerable: true });
   };
 
   // node_modules/zod/v3/external.js
@@ -1677,13 +1677,13 @@
     lt(value, message) {
       return this.setLimit("max", value, false, errorUtil.toString(message));
     }
-    setLimit(kind, value, inclusive, message) {
+    setLimit(kind2, value, inclusive, message) {
       return new _ZodNumber({
         ...this._def,
         checks: [
           ...this._def.checks,
           {
-            kind,
+            kind: kind2,
             value,
             inclusive,
             message: errorUtil.toString(message)
@@ -1893,13 +1893,13 @@
     lt(value, message) {
       return this.setLimit("max", value, false, errorUtil.toString(message));
     }
-    setLimit(kind, value, inclusive, message) {
+    setLimit(kind2, value, inclusive, message) {
       return new _ZodBigInt({
         ...this._def,
         checks: [
           ...this._def.checks,
           {
-            kind,
+            kind: kind2,
             value,
             inclusive,
             message: errorUtil.toString(message)
@@ -2802,33 +2802,33 @@
       ...processCreateParams(params)
     });
   };
-  var getDiscriminator = (type) => {
-    if (type instanceof ZodLazy) {
-      return getDiscriminator(type.schema);
-    } else if (type instanceof ZodEffects) {
-      return getDiscriminator(type.innerType());
-    } else if (type instanceof ZodLiteral) {
-      return [type.value];
-    } else if (type instanceof ZodEnum) {
-      return type.options;
-    } else if (type instanceof ZodNativeEnum) {
-      return util.objectValues(type.enum);
-    } else if (type instanceof ZodDefault) {
-      return getDiscriminator(type._def.innerType);
-    } else if (type instanceof ZodUndefined) {
+  var getDiscriminator = (type2) => {
+    if (type2 instanceof ZodLazy) {
+      return getDiscriminator(type2.schema);
+    } else if (type2 instanceof ZodEffects) {
+      return getDiscriminator(type2.innerType());
+    } else if (type2 instanceof ZodLiteral) {
+      return [type2.value];
+    } else if (type2 instanceof ZodEnum) {
+      return type2.options;
+    } else if (type2 instanceof ZodNativeEnum) {
+      return util.objectValues(type2.enum);
+    } else if (type2 instanceof ZodDefault) {
+      return getDiscriminator(type2._def.innerType);
+    } else if (type2 instanceof ZodUndefined) {
       return [void 0];
-    } else if (type instanceof ZodNull) {
+    } else if (type2 instanceof ZodNull) {
       return [null];
-    } else if (type instanceof ZodOptional) {
-      return [void 0, ...getDiscriminator(type.unwrap())];
-    } else if (type instanceof ZodNullable) {
-      return [null, ...getDiscriminator(type.unwrap())];
-    } else if (type instanceof ZodBranded) {
-      return getDiscriminator(type.unwrap());
-    } else if (type instanceof ZodReadonly) {
-      return getDiscriminator(type.unwrap());
-    } else if (type instanceof ZodCatch) {
-      return getDiscriminator(type._def.innerType);
+    } else if (type2 instanceof ZodOptional) {
+      return [void 0, ...getDiscriminator(type2.unwrap())];
+    } else if (type2 instanceof ZodNullable) {
+      return [null, ...getDiscriminator(type2.unwrap())];
+    } else if (type2 instanceof ZodBranded) {
+      return getDiscriminator(type2.unwrap());
+    } else if (type2 instanceof ZodReadonly) {
+      return getDiscriminator(type2.unwrap());
+    } else if (type2 instanceof ZodCatch) {
+      return getDiscriminator(type2._def.innerType);
     } else {
       return [];
     }
@@ -2888,8 +2888,8 @@
      */
     static create(discriminator, options, params) {
       const optionsMap = /* @__PURE__ */ new Map();
-      for (const type of options) {
-        const discriminatorValues = getDiscriminator(type.shape[discriminator]);
+      for (const type2 of options) {
+        const discriminatorValues = getDiscriminator(type2.shape[discriminator]);
         if (!discriminatorValues.length) {
           throw new Error(`A discriminator value for key \`${discriminator}\` could not be extracted from all schema options`);
         }
@@ -2897,7 +2897,7 @@
           if (optionsMap.has(value)) {
             throw new Error(`Discriminator property ${String(discriminator)} has duplicate value ${String(value)}`);
           }
-          optionsMap.set(value, type);
+          optionsMap.set(value, type2);
         }
       }
       return new _ZodDiscriminatedUnion({
@@ -3708,9 +3708,9 @@
       return this._def.innerType;
     }
   };
-  ZodOptional.create = (type, params) => {
+  ZodOptional.create = (type2, params) => {
     return new ZodOptional({
-      innerType: type,
+      innerType: type2,
       typeName: ZodFirstPartyTypeKind.ZodOptional,
       ...processCreateParams(params)
     });
@@ -3727,9 +3727,9 @@
       return this._def.innerType;
     }
   };
-  ZodNullable.create = (type, params) => {
+  ZodNullable.create = (type2, params) => {
     return new ZodNullable({
-      innerType: type,
+      innerType: type2,
       typeName: ZodFirstPartyTypeKind.ZodNullable,
       ...processCreateParams(params)
     });
@@ -3751,9 +3751,9 @@
       return this._def.innerType;
     }
   };
-  ZodDefault.create = (type, params) => {
+  ZodDefault.create = (type2, params) => {
     return new ZodDefault({
-      innerType: type,
+      innerType: type2,
       typeName: ZodFirstPartyTypeKind.ZodDefault,
       defaultValue: typeof params.default === "function" ? params.default : () => params.default,
       ...processCreateParams(params)
@@ -3804,9 +3804,9 @@
       return this._def.innerType;
     }
   };
-  ZodCatch.create = (type, params) => {
+  ZodCatch.create = (type2, params) => {
     return new ZodCatch({
-      innerType: type,
+      innerType: type2,
       typeName: ZodFirstPartyTypeKind.ZodCatch,
       catchValue: typeof params.catch === "function" ? params.catch : () => params.catch,
       ...processCreateParams(params)
@@ -3918,9 +3918,9 @@
       return this._def.innerType;
     }
   };
-  ZodReadonly.create = (type, params) => {
+  ZodReadonly.create = (type2, params) => {
     return new ZodReadonly({
-      innerType: type,
+      innerType: type2,
       typeName: ZodFirstPartyTypeKind.ZodReadonly,
       ...processCreateParams(params)
     });
@@ -4046,19 +4046,124 @@
   };
   var NEVER = INVALID;
 
+  // shared/studio-tools.mjs
+  var id = external_exports.string().min(1).max(200);
+  var name = external_exports.string().min(1).max(160);
+  var n = external_exports.number().finite().min(-1e6).max(1e6);
+  var vec = external_exports.array(n).length(3);
+  var resource = id.regex(/^[a-z0-9_.-]+:[a-z0-9_./-]+$/).refine((v) => v.replace(":", "/").split("/").every((p) => p && p !== "." && p !== ".."));
+  var asset = external_exports.string().min(1).max(240).refine((v) => v.startsWith("assets/") && !v.includes("\\") && !v.includes(":") && v.split("/").every((p) => p && p !== "." && p !== ".."));
+  var guard = { project_id: id, expected_revision: external_exports.number().int().nonnegative() };
+  var type = external_exports.enum(["player", "item", "melee", "ranged", "block", "armor", "monster", "effect"]);
+  var kind = external_exports.enum(["particle", "trail", "flash", "glow"]);
+  var part = external_exports.enum(["Head", "Body", "LeftArm", "RightArm", "LeftLeg", "RightLeg"]);
+  var color = external_exports.string().regex(/^#[a-f0-9]{6}$/i);
+  var curve = (value) => external_exports.array(external_exports.object({ age: external_exports.number().min(0).max(1), value }).strict()).min(2).max(64);
+  var effectPatch = external_exports.object({
+    id: resource.optional(),
+    duration: external_exports.number().min(1e-3).max(3600).optional(),
+    lifetime: external_exports.number().min(1e-3).max(120).optional(),
+    burst: external_exports.number().int().min(0).max(4096).optional(),
+    rate: external_exports.number().min(0).max(4096).optional(),
+    seed: external_exports.number().int().min(0).max(4294967295).optional(),
+    shape: external_exports.enum(["point", "box", "sphere", "cone"]).optional(),
+    shapeSize: vec.optional(),
+    speed: external_exports.number().min(0).max(1e4).optional(),
+    speedSpread: external_exports.number().min(0).max(1e4).optional(),
+    direction: vec.optional(),
+    spread: external_exports.number().min(0).max(180).optional(),
+    gravity: vec.optional(),
+    drag: external_exports.number().min(0).max(100).optional(),
+    size: external_exports.number().min(0).max(1e4).optional(),
+    sizeEnd: external_exports.number().min(0).max(1e4).optional(),
+    color: color.optional(),
+    colorEnd: color.optional(),
+    opacity: external_exports.number().min(0).max(1).optional(),
+    opacityEnd: external_exports.number().min(0).max(1).optional(),
+    rotation: external_exports.number().min(-36e3).max(36e3).optional(),
+    angularVelocity: external_exports.number().min(-36e3).max(36e3).optional(),
+    texture: external_exports.string().max(200).optional(),
+    blend: external_exports.enum(["alpha", "additive"]).optional(),
+    columns: external_exports.number().int().min(1).max(256).optional(),
+    rows: external_exports.number().int().min(1).max(256).optional(),
+    frames: external_exports.number().int().min(1).max(65536).optional(),
+    fps: external_exports.number().min(0).max(240).optional(),
+    curves: external_exports.object({ size: curve(external_exports.number().finite().min(0)).optional(), opacity: curve(external_exports.number().min(0).max(1)).optional(), rotation: curve(n).optional(), color: curve(color).optional() }).strict().optional(),
+    trailLength: external_exports.number().min(1e-3).max(30).optional(),
+    trailSamples: external_exports.number().int().min(2).max(240).optional(),
+    width: external_exports.number().min(1e-3).max(1e4).optional(),
+    startOffset: vec.optional(),
+    endOffset: vec.optional(),
+    intensity: external_exports.number().min(0).max(1e4).optional(),
+    distance: external_exports.number().min(0).max(1e4).optional(),
+    follow: external_exports.boolean().optional()
+  }).strict();
+  var eventPatch = external_exports.object({
+    type: external_exports.enum(["particle", "trail", "flash", "glow", "sound"]).optional(),
+    action: external_exports.enum(["burst", "start", "stop"]).optional(),
+    resource: resource.optional(),
+    target: external_exports.string().max(200).optional(),
+    offset: vec.optional(),
+    follow: external_exports.boolean().optional(),
+    instance: external_exports.string().max(200).optional(),
+    volume: external_exports.number().min(0).max(1).optional(),
+    pitch: external_exports.number().min(0.1).max(4).optional(),
+    loop: external_exports.boolean().optional()
+  }).strict();
+  var tool = (description, shape, read = false) => ({ description, read, schema: external_exports.object(shape).strict() });
+  var studioTools = {
+    studio_read: tool("Read Studio capabilities, version, metadata, models/bindings, effects, sound metadata, native clips, timeline events, locators and validation. Never returns audio/image blobs. Optional clip UUID includes paginated native transform keyframes.", {
+      clip: id.optional(),
+      offset: external_exports.number().int().min(0).default(0),
+      limit: external_exports.number().int().min(1).max(200).default(100)
+    }, true),
+    studio_create_project: tool("Create a new Studio project tab with a real content template; existing tabs stay open. Requires ShardBound Studio 1.1+ loaded.", { type, id: resource, name, variant: external_exports.enum(["wide", "slim"]).default("wide") }),
+    studio_project_settings: tool("Update Studio project ID, units per meter, export sampling and shared projectile visual. Does not convert formats or change gameplay.", { ...guard, id: resource.optional(), unitsPerMeter: external_exports.number().min(1e-3).max(1e5).optional(), sampleRate: external_exports.number().min(1).max(240).optional(), projectileVisual: resource.nullable().optional() }),
+    studio_model: tool("Manage independent Studio models. add requires type and id; update requires model and id/name; bind requires model and body part; select/remove require model. Removal rejects referenced animation/effect targets.", { ...guard, action: external_exports.enum(["add", "update", "select", "bind", "remove"]), model: resource.optional(), type: type.optional(), id: resource.optional(), name: name.optional(), part: part.optional(), root: id.optional() }),
+    studio_locator: tool("Create/update/remove an attachment locator. Create needs name and parent group UUID; update/remove need locator UUID. Position uses native editor units. Referenced locators cannot be deleted.", { ...guard, action: external_exports.enum(["add", "update", "remove"]), id: id.optional(), name: name.optional(), parent: id.optional(), position: vec.optional() }),
+    studio_clip: tool("Create/update/select/remove a native Studio animation clip. Create needs name; other actions need clip UUID. Length 0.001\u20131000s, snapping 1\u2013120 FPS. Shortening past existing transform/events is rejected.", { ...guard, action: external_exports.enum(["add", "update", "select", "remove"]), clip: id.optional(), name: name.optional(), length: external_exports.number().min(1e-3).max(1e3).optional(), loop: external_exports.enum(["once", "loop", "hold"]).optional(), fps: external_exports.number().int().min(1).max(120).optional() }),
+    studio_keyframes: tool("Atomically add/update/remove native group position/rotation/scale keyframes. Numeric vectors only. Rotation in degrees. Each upsert needs group, channel, time, value; optional id targets an existing keyframe, otherwise same group/channel/time is replaced. Native interpolation and Bezier handles supported.", {
+      ...guard,
+      clip: id,
+      remove: external_exports.array(id).max(500).default([]),
+      keyframes: external_exports.array(external_exports.object({
+        id: id.optional(),
+        group: id,
+        channel: external_exports.enum(["position", "rotation", "scale"]),
+        time: external_exports.number().min(0).max(1e3),
+        value: vec,
+        interpolation: external_exports.enum(["linear", "step", "catmullrom", "bezier"]).default("linear"),
+        bezier_linked: external_exports.boolean().optional(),
+        bezier_left_time: vec.optional(),
+        bezier_left_value: vec.optional(),
+        bezier_right_time: vec.optional(),
+        bezier_right_value: vec.optional()
+      }).strict()).max(500).default([])
+    }),
+    studio_effect: tool("Add/update/remove a real particle/trail/flash/glow definition. Add needs kind and id; update/remove need id. values exposes all emitter, atlas, life curves, ribbon, flash and glow parameters. Texture is an existing project texture UUID. Remove rejects timeline references.", { ...guard, action: external_exports.enum(["add", "update", "remove"]), id: resource, kind: kind.optional(), values: effectPatch.default({}) }),
+    studio_event: tool("Add/update/remove a synchronized Studio event. Add needs clip UUID, time in seconds and values.type/resource. Update/remove need the composite event id returned by studio_read. Values supports action, attachment UUID, offset, follow, instance and audio settings.", { ...guard, action: external_exports.enum(["add", "update", "remove"]), clip: id.optional(), id: id.optional(), time: external_exports.number().min(0).max(1e3).optional(), values: eventPatch.default({}) }),
+    studio_sound: tool("Import a real WAV/OGG/MP3 from assets/ or remove an unreferenced sound. Import decodes bytes in Blockbench, maximum 24 MiB. No fabricated sound placeholders.", { ...guard, action: external_exports.enum(["import", "remove"]), id: resource, path: asset.optional() }),
+    studio_skin: tool("Import a real 64x64 PNG skin from assets/ or an existing texture UUID, or set outer skin layer visibility. Does not change wide/slim geometry after creation.", { ...guard, action: external_exports.enum(["import", "layers"]), path: asset.optional(), texture: id.optional(), visible: external_exports.boolean().optional() }),
+    studio_material: tool("Set a Studio texture material, preserving native painting and GLB export. Only OPAQUE or MASK with optional cutoff and double-sided rendering.", { ...guard, texture: id, alphaMode: external_exports.enum(["OPAQUE", "MASK"]), alphaCutoff: external_exports.number().min(0).max(1).default(0.5), doubleSided: external_exports.boolean().default(true) }),
+    paint_texture: tool("Paint/erase real texture pixels atomically with native bitmap Undo. Rectangles use integer pixel coordinates and #RRGGBB or #RRGGBBAA. Works in Generic Model and Studio, including skins and effect sprite atlases.", { ...guard, texture: id, rectangles: external_exports.array(external_exports.object({ x: external_exports.number().int().min(0).max(2047), y: external_exports.number().int().min(0).max(2047), width: external_exports.number().int().min(1).max(2048), height: external_exports.number().int().min(1).max(2048), color: external_exports.string().regex(/^#[a-f0-9]{6}([a-f0-9]{2})?$/i), erase: external_exports.boolean().default(false) }).strict()).min(1).max(1e4) }),
+    studio_timeline: tool("Select a Studio clip, seek, play or pause the actual native timeline and synchronized FX/audio. time is seconds; speed is percent, 10\u2013400. Scrubbing does not replay sounds.", { ...guard, action: external_exports.enum(["seek", "play", "pause"]), clip: id.optional(), time: external_exports.number().min(0).max(1e3).optional(), speed: external_exports.number().min(10).max(400).optional() }),
+    studio_validate: tool("Validate the complete active Studio project against its real authoring/export contract. Returns concrete errors and warnings.", {}, true),
+    studio_export: tool("Validate and export a complete Studio package: independent animated GLBs, embedded model textures, sprite PNGs, audio, versioned effects/events/player-animation companions. Saves to a unique new folder under outputs/ or the supplied assets/ directory; never overwrites mods/scripts. Returns local paths, not a download URL.", { ...guard, directory: asset.optional() })
+  };
+
   // shared/tools.mjs
   var number = external_exports.number().finite().min(-1e6).max(1e6);
   var vec3 = external_exports.array(number).length(3);
   var vec2 = external_exports.array(number).length(2);
   var uvRect = external_exports.array(number).length(4);
   var key = external_exports.string().min(1).max(100).regex(/^[a-zA-Z0-9_-]+$/).refine((v) => !["__proto__", "constructor", "prototype"].includes(v));
-  var id = external_exports.string().min(1).max(100);
-  var name = external_exports.string().min(1).max(160);
+  var id2 = external_exports.string().min(1).max(100);
+  var name2 = external_exports.string().min(1).max(160);
   var projectPath = external_exports.string().min(1).max(240).refine((v) => {
     if (v.includes("\\") || v.startsWith("/") || /^[a-zA-Z]:/.test(v))
       return false;
     const parts = v.split("/");
-    return parts.every((part) => part && part !== "." && part !== "..");
+    return parts.every((part2) => part2 && part2 !== "." && part2 !== "..");
   }, "Use a relative project path with forward slashes and without . or .. segments.");
   var assetPath = projectPath.refine(
     (v) => v === "assets" || v.startsWith("assets/"),
@@ -4067,12 +4172,12 @@
   var face = external_exports.object({
     vertices: external_exports.array(key).min(3).max(4),
     uv: external_exports.record(key, vec2).optional(),
-    texture: id.nullable().optional()
+    texture: id2.nullable().optional()
   }).strict();
   var mesh = { vertices: external_exports.record(key, vec3), faces: external_exports.record(key, face) };
   var cubeFace = external_exports.object({
     uv: uvRect.optional(),
-    texture: id.nullable().optional(),
+    texture: id2.nullable().optional(),
     rotation: external_exports.union([external_exports.literal(0), external_exports.literal(90), external_exports.literal(180), external_exports.literal(270)]).optional(),
     enabled: external_exports.boolean().optional()
   }).strict();
@@ -4085,8 +4190,8 @@
     down: cubeFace.optional()
   }).strict();
   var common = {
-    name,
-    parent: id.optional(),
+    name: name2,
+    parent: id2.optional(),
     origin: vec3.optional(),
     rotation: vec3.optional()
   };
@@ -4106,8 +4211,8 @@
     }).strict(),
     external_exports.object({ type: external_exports.literal("mesh"), ...common, ...mesh }).strict()
   ]);
-  var guard = {
-    project_id: id.describe(
+  var guard2 = {
+    project_id: id2.describe(
       "UUID from read_project/status. Prevents editing another open tab."
     ),
     expected_revision: external_exports.number().int().nonnegative().optional()
@@ -4311,23 +4416,24 @@
     create_project: {
       description: "Create a new Generic Model tab, keeping existing tabs open.",
       schema: external_exports.object({
-        name,
+        name: name2,
         texture_width: external_exports.number().int().min(1).max(4096).default(64),
         texture_height: external_exports.number().int().min(1).max(4096).default(64)
       }).strict()
     },
     create_elements: {
       description: "Create groups, cubes or meshes in one undo step. Cubes support per-face UV, texture UUID, 0/90/180/270 UV rotation, enabled state and box UV settings. Parent is an existing group UUID.",
-      schema: external_exports.object({ ...guard, elements: external_exports.array(element).min(1).max(100) }).strict()
+      schema: external_exports.object({ ...guard2, elements: external_exports.array(element).min(1).max(100) }).strict()
     },
     update_elements: {
       description: "Update name, pivot/origin, rotation, visibility, cube bounds and cube UV/face data. Mesh vertex coordinates stay local to the origin. One undo step.",
       schema: external_exports.object({
-        ...guard,
+        ...guard2,
         updates: external_exports.array(
           external_exports.object({
-            id,
-            name: name.optional(),
+            id: id2,
+            name: name2.optional(),
+            parent: id2.optional(),
             origin: vec3.optional(),
             rotation: vec3.optional(),
             visibility: external_exports.boolean().optional(),
@@ -4346,8 +4452,8 @@
     edit_mesh: {
       description: "Patch mesh vertices and faces (including UVs and texture UUID). Faces referencing deleted vertices must also be removed or replaced. Atomic, undoable.",
       schema: external_exports.object({
-        ...guard,
-        id,
+        ...guard2,
+        id: id2,
         vertices: mesh.vertices.optional(),
         faces: mesh.faces.optional(),
         delete_vertices: external_exports.array(key).max(1e4).default([]),
@@ -4356,18 +4462,18 @@
     },
     delete_elements: {
       description: "Delete specified elements or empty groups in one undo step. Nonempty groups are rejected.",
-      schema: external_exports.object({ ...guard, ids: external_exports.array(id).min(1).max(100) }).strict()
+      schema: external_exports.object({ ...guard2, ids: external_exports.array(id2).min(1).max(100) }).strict()
     },
     select_elements: {
       description: "Set exact element/component selection before running MTools. all_components selects every component of selected meshes. IDs must be mesh/cube UUIDs.",
       schema: external_exports.object({
-        ...guard,
-        ids: external_exports.array(id).max(100),
+        ...guard2,
+        ids: external_exports.array(id2).max(100),
         mode: external_exports.enum(["object", "vertex", "edge", "face"]).default("object"),
         all_components: external_exports.boolean().default(false),
         components: external_exports.array(
           external_exports.object({
-            id,
+            id: id2,
             vertices: external_exports.array(key).default([]),
             faces: external_exports.array(key).default([]),
             edges: external_exports.array(external_exports.array(key).length(2)).default([])
@@ -4385,7 +4491,7 @@
     },
     undo_redo: {
       description: "Undo or redo one operation in the active project. Can include manual user edits; inspect history in status first.",
-      schema: external_exports.object({ ...guard, direction: external_exports.enum(["undo", "redo"]) }).strict()
+      schema: external_exports.object({ ...guard2, direction: external_exports.enum(["undo", "redo"]) }).strict()
     },
     mtools_list: {
       read: true,
@@ -4395,7 +4501,7 @@
     mtools_run: {
       description: "Run an adapted MTools 2.1.0 action on the current selection. Read mtools_list for parameters and select_elements first. Each modeling operation uses native Undo. Does not execute arbitrary JavaScript.",
       schema: external_exports.object({
-        ...guard,
+        ...guard2,
         action: external_exports.enum(Object.keys(mtools)),
         parameters: external_exports.record(
           external_exports.string(),
@@ -4411,9 +4517,9 @@
     put_texture: {
       description: "Create or replace a texture with a PNG data URL, or a solid color. Returns texture UUID for cube or mesh faces. Replacement preserves UUID and supports Undo.",
       schema: external_exports.object({
-        ...guard,
-        id: id.optional(),
-        name,
+        ...guard2,
+        id: id2.optional(),
+        name: name2,
         width: external_exports.number().int().min(1).max(2048).default(64),
         height: external_exports.number().int().min(1).max(2048).default(64),
         color: external_exports.string().regex(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/).default("#ffffffff"),
@@ -4423,7 +4529,7 @@
     get_texture: {
       read: true,
       description: "Read a project texture as a PNG image.",
-      schema: external_exports.object({ id }).strict()
+      schema: external_exports.object({ id: id2 }).strict()
     },
     list_model_files: {
       read: true,
@@ -4431,25 +4537,25 @@
       schema: external_exports.object({
         directory: assetPath.default("assets/core/models"),
         recursive: external_exports.boolean().default(false),
-        extensions: external_exports.array(external_exports.enum(["bbmodel", "gltf", "glb"])).min(1).max(3).default(["bbmodel", "gltf", "glb"])
+        extensions: external_exports.array(external_exports.enum(["bbmodel", "sbstudio", "gltf", "glb"])).min(1).max(4).default(["bbmodel", "sbstudio", "gltf", "glb"])
       }).strict()
     },
     open_project_file: {
       description: "Open an editable .bbmodel from the project assets directory in a new Blockbench project tab. Existing tabs stay open.",
       schema: external_exports.object({
         path: assetPath.refine(
-          (v) => v.toLowerCase().endsWith(".bbmodel"),
-          "Only .bbmodel editable sources can be opened."
+          (v) => /\.(bbmodel|sbstudio)$/i.test(v),
+          "Only .bbmodel or .sbstudio editable sources can be opened."
         )
       }).strict()
     },
     save_project: {
       description: "Save the current editable project as an embedded-texture .bbmodel under assets/. Existing files are overwritten only when overwrite=true.",
       schema: external_exports.object({
-        ...guard,
+        ...guard2,
         path: assetPath.refine(
-          (v) => v.toLowerCase().endsWith(".bbmodel"),
-          "Save path must end in .bbmodel."
+          (v) => /\.(bbmodel|sbstudio)$/i.test(v),
+          "Save path must end in .bbmodel or .sbstudio."
         ),
         overwrite: external_exports.boolean().default(false)
       }).strict()
@@ -4457,14 +4563,16 @@
     export_project: {
       description: "Export the current project as bbmodel, OBJ, embedded-texture glTF, or binary embedded-texture GLB. With path, writes safely under assets/; otherwise writes a unique file in bridge outputs.",
       schema: external_exports.object({
-        project_id: id,
-        format: external_exports.enum(["bbmodel", "obj", "gltf", "glb"]).default("bbmodel"),
+        project_id: id2,
+        format: external_exports.enum(["bbmodel", "sbstudio", "obj", "gltf", "glb"]).default("bbmodel"),
+        expected_revision: external_exports.number().int().nonnegative().optional(),
         filename: external_exports.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/).default("model"),
         path: assetPath.optional(),
         overwrite: external_exports.boolean().default(false)
       }).strict()
     }
   };
+  Object.assign(tools, studioTools);
   function validateMesh(data) {
     if (Object.keys(data.vertices).length > 2e4 || Object.keys(data.faces).length > 2e4)
       throw new Error("Mesh limit: 20000 vertices/faces per operation.");
@@ -4519,11 +4627,11 @@
       flags: { hasReferencedOpenAiAnyType: false },
       currentPath,
       propertyPath: void 0,
-      seen: new Map(Object.entries(_options.definitions).map(([name2, def]) => [
+      seen: new Map(Object.entries(_options.definitions).map(([name3, def]) => [
         def._def,
         {
           def: def._def,
-          path: [..._options.basePath, _options.definitionPath, name2],
+          path: [..._options.basePath, _options.definitionPath, name3],
           // Resolution of references will be forced even though seen, so it's ok that the schema is undefined here for now.
           jsonSchema: void 0
         }
@@ -4741,10 +4849,10 @@
   }
 
   // node_modules/zod-to-json-schema/dist/esm/parsers/intersection.js
-  var isJsonSchema7AllOfType = (type) => {
-    if ("type" in type && type.type === "string")
+  var isJsonSchema7AllOfType = (type2) => {
+    if ("type" in type2 && type2.type === "string")
       return false;
-    return "allOf" in type;
+    return "allOf" in type2;
   };
   function parseIntersectionDef(def, refs) {
     const allOf = [
@@ -5157,7 +5265,7 @@
       return schema;
     }
     if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodString && def.keyType._def.checks?.length) {
-      const { type, ...keyType } = parseStringDef(def.keyType._def, refs);
+      const { type: type2, ...keyType } = parseStringDef(def.keyType._def, refs);
       return {
         ...schema,
         propertyNames: keyType
@@ -5170,7 +5278,7 @@
         }
       };
     } else if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodBranded && def.keyType._def.type._def.typeName === ZodFirstPartyTypeKind.ZodString && def.keyType._def.type._def.checks?.length) {
-      const { type, ...keyType } = parseBrandedDef(def.keyType._def, refs);
+      const { type: type2, ...keyType } = parseBrandedDef(def.keyType._def, refs);
       return {
         ...schema,
         propertyNames: keyType
@@ -5252,20 +5360,20 @@
     const options = def.options instanceof Map ? Array.from(def.options.values()) : def.options;
     if (options.every((x) => x._def.typeName in primitiveMappings && (!x._def.checks || !x._def.checks.length))) {
       const types = options.reduce((types2, x) => {
-        const type = primitiveMappings[x._def.typeName];
-        return type && !types2.includes(type) ? [...types2, type] : types2;
+        const type2 = primitiveMappings[x._def.typeName];
+        return type2 && !types2.includes(type2) ? [...types2, type2] : types2;
       }, []);
       return {
         type: types.length > 1 ? types : types[0]
       };
     } else if (options.every((x) => x._def.typeName === "ZodLiteral" && !x.description)) {
       const types = options.reduce((acc, x) => {
-        const type = typeof x._def.value;
-        switch (type) {
+        const type2 = typeof x._def.value;
+        switch (type2) {
           case "string":
           case "number":
           case "boolean":
-            return [...acc, type];
+            return [...acc, type2];
           case "bigint":
             return [...acc, "integer"];
           case "object":
@@ -5701,17 +5809,17 @@
   // node_modules/zod-to-json-schema/dist/esm/zodToJsonSchema.js
   var zodToJsonSchema = (schema, options) => {
     const refs = getRefs(options);
-    let definitions = typeof options === "object" && options.definitions ? Object.entries(options.definitions).reduce((acc, [name3, schema2]) => ({
+    let definitions = typeof options === "object" && options.definitions ? Object.entries(options.definitions).reduce((acc, [name4, schema2]) => ({
       ...acc,
-      [name3]: parseDef(schema2._def, {
+      [name4]: parseDef(schema2._def, {
         ...refs,
-        currentPath: [...refs.basePath, refs.definitionPath, name3]
+        currentPath: [...refs.basePath, refs.definitionPath, name4]
       }, true) ?? parseAnyDef(refs)
     }), {}) : void 0;
-    const name2 = typeof options === "string" ? options : options?.nameStrategy === "title" ? void 0 : options?.name;
-    const main = parseDef(schema._def, name2 === void 0 ? refs : {
+    const name3 = typeof options === "string" ? options : options?.nameStrategy === "title" ? void 0 : options?.name;
+    const main = parseDef(schema._def, name3 === void 0 ? refs : {
       ...refs,
-      currentPath: [...refs.basePath, refs.definitionPath, name2]
+      currentPath: [...refs.basePath, refs.definitionPath, name3]
     }, false) ?? parseAnyDef(refs);
     const title = typeof options === "object" && options.name !== void 0 && options.nameStrategy === "title" ? options.name : void 0;
     if (title !== void 0) {
@@ -5735,18 +5843,18 @@
         };
       }
     }
-    const combined = name2 === void 0 ? definitions ? {
+    const combined = name3 === void 0 ? definitions ? {
       ...main,
       [refs.definitionPath]: definitions
     } : main : {
       $ref: [
         ...refs.$refStrategy === "relative" ? [] : refs.basePath,
         refs.definitionPath,
-        name2
+        name3
       ].join("/"),
       [refs.definitionPath]: {
         ...definitions,
-        [name2]: main
+        [name3]: main
       }
     };
     if (refs.target === "jsonSchema7") {
@@ -5759,6 +5867,344 @@
     }
     return combined;
   };
+
+  // plugin-src/studio.mjs
+  function createStudioAdapter(g, { requireProject, changed, toBase64 }) {
+    const sessions = /* @__PURE__ */ new Map();
+    const expiration = g.setInterval(() => pruneSessions(), 3e4);
+    const api = (a = {}, edit = true) => {
+      const s = g.ShardBoundStudio;
+      if (!s || s.apiVersion !== 1) throw new Error("Carregue ShardBound Studio 1.1 ou superior junto com a ShardBound Bridge.");
+      requireProject(a, false);
+      if (!s.isStudio()) throw new Error("Abra/crie um projeto ShardBound Studio.");
+      if (edit && (g.Dialog.open || g.Undo.current_save || s.exporting)) throw new Error("Conclua o di\xE1logo, edi\xE7\xE3o ou exporta\xE7\xE3o ativa primeiro.");
+      return s;
+    };
+    const required = (v, field) => {
+      if (v === void 0 || v === "") throw new Error(`Campo obrigat\xF3rio: ${field}.`);
+      return v;
+    };
+    const clip = (id3) => {
+      const a = g.Animation.all.find((a2) => a2.uuid === id3);
+      if (!a) throw new Error("Clip UUID n\xE3o encontrado.");
+      return a;
+    };
+    const node = (id3) => {
+      const n2 = g.ShardBoundStudio.find(id3);
+      if (!n2) throw new Error("Pasta/elemento UUID n\xE3o encontrado.");
+      return n2;
+    };
+    const group = (id3) => {
+      const n2 = node(id3);
+      if (!(n2 instanceof g.Group)) throw new Error("Use o UUID de uma pasta.");
+      return n2;
+    };
+    const model = (s, id3) => {
+      const m = s.state().models.find((m2) => m2.id === id3);
+      if (!m) throw new Error("Modelo ID n\xE3o encontrado.");
+      return m;
+    };
+    const texture = (id3) => {
+      const t = g.Texture.all.find((t2) => t2.uuid === id3);
+      if (!t) throw new Error("Textura UUID n\xE3o encontrada.");
+      return t;
+    };
+    const frames = (animation) => Object.values(animation.animators).filter((a) => a.type !== "effect").flatMap((a) => a.keyframes);
+    const describeClip = (a) => ({ id: a.uuid, name: a.name, length: a.length, loop: a.loop, fps: a.snapping, keyframe_count: frames(a).length });
+    const describeKey = (k) => ({
+      id: k.uuid,
+      group: k.animator.uuid,
+      channel: k.channel,
+      time: k.time,
+      interpolation: k.interpolation,
+      values: k.data_points.map((p) => [p.x, p.y, p.z]),
+      bezier_linked: k.bezier_linked,
+      bezier_left_time: k.bezier_left_time,
+      bezier_left_value: k.bezier_left_value,
+      bezier_right_time: k.bezier_right_time,
+      bezier_right_value: k.bezier_right_value
+    });
+    function ensureUnreferenced(ids) {
+      const s = g.ShardBoundStudio, set = new Set(ids);
+      if (s.allEvents().some((e) => set.has(e.target))) throw new Error("Remova/realoque os eventos que usam este alvo primeiro.");
+      if (g.Animation.all.some((a) => frames(a).some((k) => set.has(k.animator.uuid)))) throw new Error("Remova/realoque os keyframes das pastas primeiro.");
+    }
+    function pruneSessions() {
+      for (const [key2, session] of sessions) if (Date.now() - session.created > 3e5) sessions.delete(key2);
+    }
+    const handlers = {
+      studio_read(a) {
+        const s = api(a, false), state2 = structuredClone(s.state());
+        state2.sounds = state2.sounds.map(({ data, ...metadata }) => ({ ...metadata, bytes: Math.floor(data.split(",")[1].length * 0.75) }));
+        const keys = a.clip ? frames(clip(a.clip)).map(describeKey).sort((a2, b) => a2.time - b.time || a2.id.localeCompare(b.id)) : [];
+        return {
+          studio: { installed: true, version: s.version, api_version: s.apiVersion },
+          state: state2,
+          clips: g.Animation.all.map(describeClip),
+          events: s.allEvents(),
+          locators: g.Locator.all.map((l) => ({ id: l.uuid, name: l.name, parent: l.parent?.uuid, position: l.position })),
+          timeline: { clip: g.Animation.selected?.uuid || null, time: g.Timeline.time, playing: !!g.Timeline.playing, speed: g.Timeline.playback_speed },
+          keyframes: keys.slice(a.offset, a.offset + a.limit),
+          total_keyframes: keys.length,
+          next_offset: a.offset + a.limit < keys.length ? a.offset + a.limit : null,
+          validation: s.exporter.validate(),
+          preview: { ...s.preview.stats, error: s.preview.lastError }
+        };
+      },
+      studio_create_project(a) {
+        const s = g.ShardBoundStudio;
+        if (!s || s.apiVersion !== 1) throw new Error("Carregue ShardBound Studio 1.1 ou superior.");
+        if (g.Dialog.open || g.Undo?.current_save || s.exporting) throw new Error("Conclua a edi\xE7\xE3o ativa primeiro.");
+        return { model: s.createProject(a.type, { id: a.id, name: a.name, variant: a.variant }) };
+      },
+      studio_project_settings(a) {
+        const s = api(a);
+        const { project_id, expected_revision, ...patch } = a;
+        s.edit("MCP: propriedades Studio", () => Object.assign(s.state(), patch));
+        return { state: { id: s.state().id, sampleRate: s.state().sampleRate, unitsPerMeter: s.state().unitsPerMeter, projectileVisual: s.state().projectileVisual } };
+      },
+      studio_model(a) {
+        const s = api(a);
+        if (a.action === "add") return { model: s.addModel(required(a.type, "type"), { id: required(a.id, "id"), name: a.name }) };
+        const m = model(s, required(a.model, "model"));
+        if (a.action === "select") s.selectModel(m);
+        if (a.action === "update") s.renameModel(m, a.id || m.id, a.name || m.name);
+        if (a.action === "bind") s.bind(m, required(a.part, "part"), a.root || m.roots[0]);
+        if (a.action === "remove") {
+          const descendants = (n2) => [n2.uuid, ...(n2.children || []).flatMap(descendants)];
+          ensureUnreferenced(m.roots.flatMap((id3) => descendants(node(id3))));
+          s.removeModel(m);
+          return { removed: a.model };
+        }
+        return { model: structuredClone(m) };
+      },
+      studio_locator(a) {
+        const s = api(a);
+        let locator;
+        if (a.action === "add") {
+          const parent = group(required(a.parent, "parent")), elements = [];
+          s.edit("MCP: criar marcador", () => {
+            locator = new g.Locator({ name: required(a.name, "name"), position: a.position || parent.origin.slice() }).addTo(parent).init();
+            elements.push(locator);
+          }, { elements, outliner: true });
+        } else {
+          locator = node(required(a.id, "id"));
+          if (!(locator instanceof g.Locator)) throw new Error("Use o UUID de um marcador.");
+          if (a.action === "remove") {
+            ensureUnreferenced([locator.uuid]);
+            s.edit("MCP: remover marcador", () => locator.remove(), { elements: [locator], outliner: true });
+            return { removed: a.id };
+          }
+          const parent = a.parent ? group(a.parent) : null;
+          s.edit("MCP: editar marcador", () => {
+            locator.extend({ ...a.name ? { name: a.name } : {}, ...a.position ? { position: a.position } : {} });
+            if (parent) locator.addTo(parent);
+          }, { elements: [locator], outliner: true });
+        }
+        return { locator: { id: locator.uuid, name: locator.name, parent: locator.parent.uuid, position: locator.position } };
+      },
+      studio_clip(a) {
+        const s = api(a);
+        if (a.action === "add") return { clip: describeClip(s.createClip(required(a.name, "name"), a.length ?? 1, a.loop || "loop", a.fps || 24)) };
+        const animation = clip(required(a.clip, "clip"));
+        if (a.action === "select") {
+          g.Modes.options.animate.select();
+          animation.select();
+        }
+        if (a.action === "remove") {
+          s.edit("MCP: remover clip", () => {
+            g.Timeline.pause();
+            animation.remove(false);
+          }, { animations: [animation] });
+          return { removed: a.clip };
+        }
+        if (a.action === "update") {
+          if (a.name && g.Animation.all.some((other) => other !== animation && other.name === a.name)) throw new Error("Nome de clip repetido.");
+          if (a.length !== void 0 && [...frames(animation), ...s.events(animation)].some((k) => k.time > a.length)) throw new Error("A dura\xE7\xE3o excluiria keyframes/eventos existentes.");
+          s.edit("MCP: propriedades do clip", () => {
+            animation.extend({ name: a.name ?? animation.name, length: a.length ?? animation.length, loop: a.loop ?? animation.loop, snapping: a.fps ?? animation.snapping });
+          }, { animations: [animation] });
+        }
+        return { clip: describeClip(animation) };
+      },
+      studio_keyframes(a) {
+        const s = api(a), animation = clip(a.clip), all = frames(animation), byId = new Map(all.map((k) => [k.uuid, k]));
+        if (!a.remove.length && !a.keyframes.length) throw new Error("Forne\xE7a keyframes ou remove.");
+        for (const id3 of a.remove) if (!byId.has(id3)) throw new Error(`Keyframe n\xE3o encontrado: ${id3}.`);
+        const slots = /* @__PURE__ */ new Set(), ids = new Set(a.remove);
+        for (const k of a.keyframes) {
+          group(k.group);
+          if (k.time > animation.length) throw new Error("Keyframe fora da dura\xE7\xE3o do clip.");
+          if (k.id) {
+            const old = byId.get(k.id);
+            if (!old || old.animator.uuid !== k.group || old.channel !== k.channel || ids.has(k.id)) throw new Error("UUID de keyframe incompat\xEDvel/repetido.");
+            ids.add(k.id);
+          }
+          const slot = `${k.group}|${k.channel}|${k.time}`;
+          if (slots.has(slot)) throw new Error("Keyframes repetidos no mesmo canal/frame.");
+          slots.add(slot);
+          const collision = all.find((old) => old.animator.uuid === k.group && old.channel === k.channel && Math.abs(old.time - k.time) < 1e-8 && old.uuid !== k.id && !a.remove.includes(old.uuid));
+          if (k.id && collision) throw new Error("J\xE1 existe um keyframe no frame de destino.");
+          if (k.bezier_left_time?.some((v) => v > 0) || k.bezier_right_time?.some((v) => v < 0)) throw new Error("Handles de tempo Bezier: esquerda <= 0; direita >= 0.");
+        }
+        const updated = [];
+        s.edit("MCP: keyframes de pastas", () => {
+          a.remove.forEach((id3) => byId.get(id3).remove());
+          for (const k of a.keyframes) {
+            const animator = animation.getBoneAnimator(group(k.group)), { id: id3, group: _, value, ...data } = k;
+            const old = id3 ? byId.get(id3) : animator[k.channel].find((old2) => Math.abs(old2.time - k.time) < 1e-8);
+            const payload = { ...data, data_points: [{ x: value[0], y: value[1], z: value[2] }] };
+            const result = old ? old.extend(payload) : animator.addKeyframe(payload);
+            updated.push(describeKey(old || result));
+          }
+        }, { animations: [animation] });
+        return { keyframes: updated, removed: a.remove };
+      },
+      studio_effect(a) {
+        const s = api(a);
+        if (a.values.texture) texture(a.values.texture);
+        if (a.action === "add") {
+          if (a.values.id && a.values.id !== a.id) throw new Error("values.id deve coincidir com id ao criar.");
+          return { effect: s.addEffect(required(a.kind, "kind"), a.id, a.values) };
+        }
+        if (!s.state().effects.some((e) => e.id === a.id)) throw new Error("Efeito ID n\xE3o encontrado.");
+        if (a.action === "update") return { effect: s.updateEffect(a.id, a.values) };
+        s.removeEffect(a.id);
+        return { removed: a.id };
+      },
+      studio_event(a) {
+        const s = api(a);
+        if (a.action === "add") {
+          const animation = clip(required(a.clip, "clip"));
+          required(a.time, "time");
+          required(a.values.type, "values.type");
+          required(a.values.resource, "values.resource");
+          const added = s.addEvent(animation, a.time, a.values);
+          return { event: s.events(animation).find((e) => e.id === `${added.keyframe.uuid}:${added.event.id}`) };
+        }
+        const id3 = required(a.id, "id");
+        if (!s.allEvents().some((e) => e.id === id3)) throw new Error("Use o ID composto retornado por studio_read.");
+        if (a.action === "remove") {
+          s.removeEvent(id3);
+          return { removed: id3 };
+        }
+        s.updateEvent(id3, a.values, a.time);
+        return { events: s.allEvents() };
+      },
+      studio_sound(a) {
+        const s = api(a);
+        if (a.action !== "remove") throw new Error("Importa\xE7\xE3o deve passar pelo servidor MCP.");
+        if (!s.state().sounds.some((sound) => sound.id === a.id)) throw new Error("Som n\xE3o encontrado.");
+        s.removeSound(a.id);
+        return { removed: a.id };
+      },
+      studio_skin(a) {
+        const s = api(a);
+        if (a.action === "layers") {
+          required(a.visible, "visible");
+          s.setSkinLayers(a.visible);
+          return { visible: a.visible };
+        }
+        if (!a.texture || a.path) throw new Error("Forne\xE7a somente path ou texture.");
+        return s.importSkin(texture(a.texture).getDataURL(), () => api(a)).then((t) => ({ texture_id: t.uuid }));
+      },
+      studio_material(a) {
+        const s = api(a);
+        texture(a.texture);
+        const material = { alphaMode: a.alphaMode, alphaCutoff: a.alphaCutoff, doubleSided: a.doubleSided };
+        s.edit("MCP: material", () => {
+          s.state().materials[a.texture] = material;
+        });
+        return { texture: a.texture, material };
+      },
+      paint_texture(a) {
+        requireProject(a, false);
+        if (g.Dialog.open || g.Undo.current_save) throw new Error("Conclua a edi\xE7\xE3o ativa primeiro.");
+        const t = texture(a.texture);
+        if (!t.img.complete || !t.img.naturalWidth) throw new Error("A textura ainda est\xE1 carregando.");
+        for (const r of a.rectangles) if (r.x + r.width > t.width || r.y + r.height > t.height) throw new Error("Ret\xE2ngulo fora da textura.");
+        g.Undo.initEdit({ textures: [t], bitmap: true });
+        try {
+          for (const r of a.rectangles) {
+            if (r.erase) t.ctx.clearRect(r.x, r.y, r.width, r.height);
+            else {
+              t.ctx.fillStyle = r.color;
+              t.ctx.fillRect(r.x, r.y, r.width, r.height);
+            }
+          }
+          t.updateChangesAfterEdit();
+          g.Undo.finishEdit("MCP: pintar textura");
+          g.ShardBoundStudio?.preview?.invalidate();
+          return { texture: t.uuid, rectangles: a.rectangles.length };
+        } catch (error) {
+          g.Undo.cancelEdit(true);
+          throw error;
+        }
+      },
+      studio_timeline(a) {
+        const s = api(a);
+        const animation = a.clip ? clip(a.clip) : g.Animation.selected;
+        if (!animation) throw new Error("Selecione um clip.");
+        if (a.time !== void 0 && a.time > animation.length) throw new Error("Tempo fora do clip.");
+        g.Timeline.pause();
+        g.Modes.options.animate.select();
+        animation.select();
+        if (a.speed !== void 0) g.Timeline.playback_speed = a.speed;
+        if (a.time !== void 0) g.Timeline.setTime(a.time);
+        g.Animator.preview(false);
+        if (a.action === "play") g.Timeline.start();
+        else s.preview.render(animation, g.Timeline.time, { playing: false });
+        return { clip: animation.uuid, time: g.Timeline.time, playing: !!g.Timeline.playing, speed: g.Timeline.playback_speed };
+      },
+      studio_validate(a) {
+        return { validation: api(a, false).exporter.validate() };
+      },
+      async studio_export(a) {
+        const s = api(a);
+        pruneSessions();
+        if (sessions.size) throw new Error("Uma transfer\xEAncia de pacote est\xE1 ativa. Aguarde terminar (ou expirar em 5 minutos).");
+        const compiled = await s.exporter.compile();
+        api(a, false);
+        const files = new Map([...compiled.files].map(([name3, data]) => [name3, typeof data === "string" ? new TextEncoder().encode(data) : data]));
+        const manifest = [...files].map(([name3, data]) => ({ name: name3, bytes: data.byteLength }));
+        if (manifest.reduce((sum, f) => sum + f.bytes, 0) > 256 * 1024 * 1024) throw new Error("Pacote excede o limite MCP de 256 MiB. Exporte pelo painel Studio.");
+        const session = g.guid();
+        sessions.set(session, { created: Date.now(), files });
+        return { session, id: compiled.state.id, files: manifest, warnings: compiled.report.warnings };
+      }
+    };
+    const internal = {
+      async __studio_import_sound(a) {
+        const s = api(a);
+        const sound = await s.addSound(a.id, a.data, a.filename, () => api(a));
+        return { sound: { id: sound.id, duration: sound.duration, filename: sound.filename } };
+      },
+      async __studio_import_skin(a) {
+        const s = api(a);
+        const t = await s.importSkin(a.data, () => api(a));
+        return { texture_id: t.uuid };
+      },
+      __studio_export_chunk(a) {
+        pruneSessions();
+        const session = sessions.get(a.session), bytes = session?.files.get(a.file);
+        if (!bytes || !Number.isInteger(a.offset) || a.offset < 0 || a.offset > bytes.byteLength) throw new Error("Transfer\xEAncia de pacote inv\xE1lida/expirada.");
+        session.created = Date.now();
+        return { data: toBase64(bytes.subarray(a.offset, a.offset + 1024 * 1024)), total: bytes.byteLength };
+      },
+      __studio_export_release(a) {
+        sessions.delete(a.session);
+        return { released: true };
+      }
+    };
+    return { handlers, internal, ensureUnreferenced, async call(name3, a, isInternal = false) {
+      const result = await (isInternal ? internal : handlers)[name3](a);
+      if (!["studio_read", "studio_validate", "__studio_export_chunk", "__studio_export_release"].includes(name3)) changed();
+      return result;
+    }, dispose() {
+      g.clearInterval(expiration);
+      sessions.clear();
+    } };
+  }
 
   // plugin-src/controller.mjs
   function createController(g) {
@@ -5773,25 +6219,32 @@
       "select_project",
       "update_selection"
     ];
-    events.forEach((e) => g.Blockbench.on(e, changed));
+    const eventListeners = events.map((event) => [event, () => {
+      if (event === "update_selection" && g.ShardBoundStudio?.exporting) return;
+      changed();
+    }]);
+    eventListeners.forEach(([event, listener]) => g.Blockbench.on(event, listener));
     const snapshot = () => ({ project_id: g.Project?.uuid ?? null, revision });
-    const find = (id2) => {
+    const find = (id3) => {
       const node = [...g.Outliner.elements, ...g.Group.all].find(
-        (e) => e.uuid === id2
+        (e) => e.uuid === id3
       );
-      if (!node) throw new Error(`Element not found: ${id2}`);
+      if (!node) throw new Error(`Element not found: ${id3}`);
       return node;
     };
     const requireProject = (args, edit = true) => {
-      if (!g.Project || g.Format?.id !== "free")
-        throw new Error("Open a Generic Model project first.");
+      if (!g.Project || !["free", "shardbound_studio"].includes(g.Format?.id))
+        throw new Error("Open a Generic Model or ShardBound Studio project first.");
+      if (edit && g.Format.id === "shardbound_studio" && g.ShardBoundStudio?.apiVersion !== 1)
+        throw new Error("Load ShardBound Studio 1.1+ before editing its projects.");
+      if (edit && g.ShardBoundStudio?.exporting) throw new Error("Wait for the Studio export to finish.");
       if (args.project_id && g.Project.uuid !== args.project_id)
         throw new Error("Active project changed. Read the project again.");
       if (args.expected_revision !== void 0 && args.expected_revision !== revision)
         throw new Error("Project revision changed. Read the project again.");
       if (edit && (g.Dialog.open || g.Undo.current_save))
         throw new Error("Finish the active dialog/edit in Blockbench first.");
-      if (edit && g.Modes.selected?.id !== "edit")
+      if (edit && g.Modes.selected?.id !== "edit" && g.Format.id !== "shardbound_studio")
         throw new Error("Switch Blockbench to Edit mode first.");
     };
     const refresh = () => {
@@ -5820,6 +6273,10 @@
     };
     const summary = () => ({
       ...snapshot(),
+      connected: true,
+      bridge_version: "0.5.0",
+      supported_formats: ["free", "shardbound_studio"],
+      studio: { installed: !!g.ShardBoundStudio, version: g.ShardBoundStudio?.version ?? null, api_version: g.ShardBoundStudio?.apiVersion ?? null, active: g.Format?.id === "shardbound_studio" },
       name: g.Project?.name,
       format: g.Format?.id,
       blockbench: g.Blockbench.version,
@@ -5886,6 +6343,7 @@
           );
       }
       if (e instanceof g.Group) data.children = e.children.map((c) => c.uuid);
+      if (g.Locator && e instanceof g.Locator) data.position = e.position;
       return data;
     };
     const validateTextures = (faces) => {
@@ -5902,7 +6360,7 @@
     const validateGeometry = () => {
       for (const m of g.Mesh.all)
         for (const v of Object.values(m.vertices))
-          if (v.some((n) => !Number.isFinite(n)))
+          if (v.some((n2) => !Number.isFinite(n2)))
             throw new Error(
               "MTools produced invalid vertex coordinates; operation reverted."
             );
@@ -5964,7 +6422,7 @@
             validateTextures(e.faces);
           }
           if (e.type === "cube") {
-            if (e.from.some((n, i) => n > e.to[i]))
+            if (e.from.some((n2, i) => n2 > e.to[i]))
               throw new Error("Cube from must be <= to.");
             validateTextures(e.faces);
           }
@@ -5972,16 +6430,16 @@
         const elements = [], groups = [];
         return transaction("Bridge: Create elements", elements, groups, () => {
           const created = a.elements.map((e, i) => {
-            const { type, parent, faces, ...data } = e;
-            const ctor = { group: g.Group, cube: g.Cube, mesh: g.Mesh }[type];
-            const payload = type === "cube" ? {
+            const { type: type2, parent, faces, ...data } = e;
+            const ctor = { group: g.Group, cube: g.Cube, mesh: g.Mesh }[type2];
+            const payload = type2 === "cube" ? {
               ...data,
               ...faces ? { faces: normalizeCubeFaces(faces) } : {}
-            } : type === "mesh" ? { ...data, faces } : data;
+            } : type2 === "mesh" ? { ...data, faces } : data;
             const node = new ctor(payload);
-            (type === "group" ? groups : elements).push(node);
+            (type2 === "group" ? groups : elements).push(node);
             node.addTo(parents[i]).init();
-            return describe(node, type === "cube");
+            return describe(node, type2 === "cube");
           });
           return { created };
         });
@@ -5990,31 +6448,48 @@
         requireProject(a);
         const nodes = a.updates.map((u) => find(u.id));
         a.updates.forEach((u, i) => {
-          const n = nodes[i];
+          const n2 = nodes[i];
+          if (u.parent !== void 0) {
+            const parent = u.parent === "root" ? "root" : find(u.parent);
+            if (parent !== "root" && !(parent instanceof g.Group)) throw new Error("Parent must be a group or root.");
+            const parents = new Map(a.updates.filter((u2) => u2.parent !== void 0).map((u2) => [u2.id, u2.parent]));
+            const visited = /* @__PURE__ */ new Set([n2.uuid]);
+            let next = u.parent;
+            while (next && next !== "root") {
+              if (visited.has(next)) throw new Error("Reparenting would create a hierarchy cycle.");
+              visited.add(next);
+              next = parents.get(next) ?? find(next).parent?.uuid;
+            }
+            if (g.Format.id === "shardbound_studio") {
+              const state2 = g.ShardBoundStudio.state();
+              if (state2.models.some((m) => m.roots.includes(n2.uuid)) || state2.context?.root === n2.uuid || Object.values(state2.context?.groups || {}).includes(n2.uuid)) throw new Error("Use studio_model bind for equipment roots; preserve reference player hierarchy.");
+            }
+          }
           const cubeOnly = u.from || u.to || u.faces || u.box_uv !== void 0 || u.uv_offset || u.inflate !== void 0 || u.shade !== void 0 || u.mirror_uv !== void 0;
-          if (cubeOnly && !(n instanceof g.Cube))
+          if (cubeOnly && !(n2 instanceof g.Cube))
             throw new Error(
               "Cube bounds/UV/face properties are only valid for cubes."
             );
-          if (n instanceof g.Cube && (u.from ?? n.from).some((v, k) => v > (u.to ?? n.to)[k]))
+          if (n2 instanceof g.Cube && (u.from ?? n2.from).some((v, k) => v > (u.to ?? n2.to)[k]))
             throw new Error("Invalid cube bounds.");
           if (u.faces) validateTextures(u.faces);
         });
         return transaction(
           "Bridge: Update elements",
-          nodes.filter((n) => !(n instanceof g.Group)),
-          nodes.filter((n) => n instanceof g.Group),
+          nodes.filter((n2) => !(n2 instanceof g.Group)),
+          nodes.filter((n2) => n2 instanceof g.Group),
           () => {
-            a.updates.forEach(({ id: id2, faces, ...data }, i) => {
+            a.updates.forEach(({ id: id3, faces, parent, ...data }, i) => {
               const node = nodes[i];
               node.extend(data);
+              if (parent !== void 0) node.addTo(parent === "root" ? "root" : find(parent));
               if (faces && node instanceof g.Cube)
                 for (const [direction, face2] of Object.entries(
                   normalizeCubeFaces(faces)
                 ))
                   node.faces[direction].extend(face2);
             });
-            return { updated: nodes.map((n) => n.uuid) };
+            return { updated: nodes.map((n2) => n2.uuid) };
           }
         );
       },
@@ -6060,14 +6535,21 @@
       delete_elements(a) {
         requireProject(a);
         const nodes = a.ids.map(find);
-        if (nodes.some((n) => n instanceof g.Group && n.children.length))
+        if (nodes.some((n2) => n2 instanceof g.Group && n2.children.length))
           throw new Error("Delete children before deleting a nonempty group.");
+        if (g.Format.id === "shardbound_studio") {
+          const state2 = g.ShardBoundStudio?.state();
+          if (!state2) throw new Error("Load ShardBound Studio before editing its project.");
+          if (nodes.some((n2) => state2.models.some((m) => m.roots.includes(n2.uuid)) || state2.context?.root === n2.uuid || Object.values(state2.context?.groups || {}).includes(n2.uuid)))
+            throw new Error("Use studio_model to manage declared roots; reference player folders are protected.");
+          studioAdapter.ensureUnreferenced(nodes.map((n2) => n2.uuid));
+        }
         return transaction(
           "Bridge: Delete elements",
-          nodes.filter((n) => !(n instanceof g.Group)),
-          nodes.filter((n) => n instanceof g.Group),
+          nodes.filter((n2) => !(n2 instanceof g.Group)),
+          nodes.filter((n2) => n2 instanceof g.Group),
           () => {
-            nodes.forEach((n) => n.remove());
+            nodes.forEach((n2) => n2.remove());
             return { deleted: a.ids };
           }
         );
@@ -6075,33 +6557,33 @@
       select_elements(a) {
         requireProject(a);
         const nodes = a.ids.map(find);
-        if (nodes.some((n) => n instanceof g.Group))
+        if (nodes.some((n2) => n2 instanceof g.Group))
           throw new Error(
             "Select individual meshes or cubes for component operations."
           );
         const selection = /* @__PURE__ */ new Map();
-        for (const n of nodes.filter((n2) => n2 instanceof g.Mesh)) {
-          const c = a.components.find((c2) => c2.id === n.uuid) ?? {
+        for (const n2 of nodes.filter((n3) => n3 instanceof g.Mesh)) {
+          const c = a.components.find((c2) => c2.id === n2.uuid) ?? {
             vertices: [],
             edges: [],
             faces: []
           };
-          const faces = a.all_components ? Object.keys(n.faces) : c.faces;
-          const edges = a.all_components ? Object.values(n.faces).flatMap(
+          const faces = a.all_components ? Object.keys(n2.faces) : c.faces;
+          const edges = a.all_components ? Object.values(n2.faces).flatMap(
             (f) => f.getSortedVertices().map((v, i, vs) => [v, vs[(i + 1) % vs.length]])
           ) : c.edges;
-          if (faces.some((f) => !n.faces[f]) || [...c.vertices, ...edges.flat()].some((v) => !n.vertices[v]))
+          if (faces.some((f) => !n2.faces[f]) || [...c.vertices, ...edges.flat()].some((v) => !n2.vertices[v]))
             throw new Error(
               "Unknown vertex, edge endpoint or face in selection."
             );
-          const vertices = a.all_components ? Object.keys(n.vertices) : [
+          const vertices = a.all_components ? Object.keys(n2.vertices) : [
             .../* @__PURE__ */ new Set([
               ...c.vertices,
               ...edges.flat(),
-              ...faces.flatMap((f) => n.faces[f].vertices)
+              ...faces.flatMap((f) => n2.faces[f].vertices)
             ])
           ];
-          selection.set(n.uuid, {
+          selection.set(n2.uuid, {
             vertices,
             faces: a.mode === "face" ? faces : [],
             edges: a.mode === "edge" ? edges : []
@@ -6113,8 +6595,8 @@
         g.unselectAllElements();
         g.Project.mesh_selection = {};
         g.BarItems.selection_mode.set(a.mode);
-        nodes.forEach((n) => n.markAsSelected());
-        for (const [id2, c] of selection) g.Project.mesh_selection[id2] = c;
+        nodes.forEach((n2) => n2.markAsSelected());
+        for (const [id3, c] of selection) g.Project.mesh_selection[id3] = c;
         g.updateSelection();
         g.Canvas.updateView({ elements: nodes, selection: true });
         g.Undo.finishSelection("Bridge: Select elements");
@@ -6144,9 +6626,9 @@
         return {
           version: summary().mtools,
           actions: Object.entries(g.BarItems).filter(
-            ([id2, item]) => id2.startsWith("@mesh_tools/") && typeof item.click === "function"
-          ).map(([id2, item]) => {
-            const key2 = id2.split("/")[1], spec = mtools[key2];
+            ([id3, item]) => id3.startsWith("@mesh_tools/") && typeof item.click === "function"
+          ).map(([id3, item]) => {
+            const key2 = id3.split("/")[1], spec = mtools[key2];
             return {
               id: key2,
               name: item.name,
@@ -6161,6 +6643,7 @@
       },
       async mtools_run(a) {
         requireProject(a);
+        if (g.Format.id === "shardbound_studio" && g.Modes.selected?.id !== "edit") g.Modes.options.edit.select();
         const spec = mtools[a.action], params = spec.schema.parse(a.parameters);
         const actionParams = { ...params };
         for (const key2 of spec.adapterKeys ?? []) delete actionParams[key2];
@@ -6355,6 +6838,11 @@
               texture.fromDataURL(url);
             }
             texture.saved = false;
+            texture.canvas.width = image.width;
+            texture.canvas.height = image.height;
+            texture.ctx.clearRect(0, 0, image.width, image.height);
+            texture.ctx.drawImage(image, 0, 0);
+            texture.updateChangesAfterEdit();
             return { texture_id: texture.uuid };
           },
           { textures, bitmap: true }
@@ -6368,15 +6856,20 @@
       },
       save_project(a) {
         requireProject(a, false);
+        if (g.Dialog.open || g.Undo.current_save) throw new Error("Finish the active dialog/edit before saving.");
         const content = g.Codecs.project.compile({
           bitmaps: true,
           absolute_paths: false
         });
-        return { format: "bbmodel", content };
+        return { format: g.Format.id === "shardbound_studio" ? "sbstudio" : "bbmodel", content };
       },
       async export_project(a) {
         requireProject(a, false);
-        const codec = g.Codecs[a.format === "bbmodel" ? "project" : a.format === "glb" ? "gltf" : a.format];
+        if (g.Dialog.open || g.Undo.current_save) throw new Error("Finish the active dialog/edit before exporting.");
+        if (g.Format.id === "shardbound_studio" && !["bbmodel", "sbstudio"].includes(a.format))
+          throw new Error("Use studio_export for Studio GLBs, animations and companions. Native generic export would lose Studio metadata/reference filtering.");
+        if (a.format === "sbstudio" && g.Format.id !== "shardbound_studio") throw new Error("sbstudio requires a Studio project.");
+        const codec = g.Codecs[["bbmodel", "sbstudio"].includes(a.format) ? "project" : a.format === "glb" ? "gltf" : a.format];
         if (!codec) throw new Error(`Codec unavailable: ${a.format}`);
         let content;
         if (a.format === "gltf" || a.format === "glb")
@@ -6387,7 +6880,7 @@
             armature: false,
             merge_armature: false
           });
-        else if (a.format === "bbmodel")
+        else if (["bbmodel", "sbstudio"].includes(a.format))
           content = await codec.compile({
             compressed: false,
             raw: false,
@@ -6410,6 +6903,7 @@
         };
       }
     };
+    const studioAdapter = createStudioAdapter(g, { requireProject, changed, toBase64 });
     const internalHandlers = {
       __open_project_data(a) {
         if (g.Dialog.open || g.Project && g.Undo.current_save)
@@ -6421,32 +6915,36 @@
           throw new Error("Invalid .bbmodel JSON.");
         }
         if (!model?.meta) throw new Error("Invalid .bbmodel: missing meta.");
-        if (model.meta.model_format && model.meta.model_format !== "free")
+        if (model.meta.model_format && !["free", "shardbound_studio"].includes(model.meta.model_format))
           throw new Error(
             `Expected Generic Model (.meta.model_format=free), got ${model.meta.model_format}.`
           );
-        g.Codecs.project.load(model, { path: a.path, no_file: false });
-        if (g.Format?.id !== "free")
-          throw new Error("Loaded project is not a Generic Model.");
+        if (model.meta.model_format === "shardbound_studio") {
+          if (g.ShardBoundStudio?.apiVersion !== 1) throw new Error("Load ShardBound Studio 1.1+ before opening this project.");
+          g.ShardBoundStudio.codec.load(model, { path: a.path, no_file: false });
+        } else g.Codecs.project.load(model, { path: a.path, no_file: false });
         changed();
         return summary();
       }
     };
     return {
-      async call(name2, args) {
-        if (Object.hasOwn(internalHandlers, name2))
-          return { ...await internalHandlers[name2](args), ...snapshot() };
-        if (!Object.hasOwn(tools, name2)) throw new Error("Unknown tool");
-        const parsed = tools[name2].schema.parse(args);
-        if (!Object.hasOwn(handlers, name2))
+      async call(name3, args) {
+        if (Object.hasOwn(studioAdapter.internal, name3)) return { ...await studioAdapter.call(name3, args, true), ...snapshot() };
+        if (Object.hasOwn(internalHandlers, name3))
+          return { ...await internalHandlers[name3](args), ...snapshot() };
+        if (!Object.hasOwn(tools, name3)) throw new Error("Unknown tool");
+        const parsed = tools[name3].schema.parse(args);
+        if (Object.hasOwn(studioAdapter.handlers, name3)) return { ...await studioAdapter.call(name3, parsed), ...snapshot() };
+        if (!Object.hasOwn(handlers, name3))
           throw new Error(
-            `Tool ${name2} is handled by the MCP server and should not reach Blockbench directly.`
+            `Tool ${name3} is handled by the MCP server and should not reach Blockbench directly.`
           );
-        const result = await handlers[name2](parsed);
+        const result = await handlers[name3](parsed);
         return { ...result, ...snapshot() };
       },
       dispose() {
-        events.forEach((e) => g.Blockbench.removeListener(e, changed));
+        studioAdapter.dispose();
+        eventListeners.forEach(([event, listener]) => g.Blockbench.removeListener(event, listener));
       }
     };
   }
@@ -6570,8 +7068,8 @@
   BBPlugin.register("shardbound_bridge", {
     title: "ShardBound Bridge",
     author: "ShardBound",
-    description: "Generic Model + MTools para Codex e ChatGPT via MCP local.",
-    version: "0.2.0",
+    description: "Generic Model, ShardBound Studio e MTools para Codex e ChatGPT via MCP.",
+    version: "0.5.0",
     min_version: "5.2.0",
     variant: "desktop",
     tags: ["Mesh", "Integration"],

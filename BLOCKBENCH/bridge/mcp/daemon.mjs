@@ -17,7 +17,7 @@ export async function startDaemon(config) {
     httpServer = http.createServer(app);
   const sockets = new WebSocketServer({
     noServer: true,
-    maxPayload: 16 * 1024 * 1024,
+    maxPayload: 64 * 1024 * 1024,
   });
   let plugin = null,
     tail = Promise.resolve(),
@@ -31,7 +31,7 @@ export async function startDaemon(config) {
     httpServer.closeAllConnections();
     await new Promise((resolve) => httpServer.close(resolve));
   };
-  const internalNames = new Set(['__open_project_data']);
+  const internalNames = new Set(['__open_project_data', '__studio_import_sound', '__studio_import_skin', '__studio_export_chunk', '__studio_export_release']);
   const localAuth = (req, res, next) =>
     equalSecret(req.headers.authorization, `Bearer ${config.token}`)
       ? next()
@@ -60,11 +60,11 @@ export async function startDaemon(config) {
       return res.sendStatus(403);
     next();
   });
-  app.use(express.json({ limit: '8mb' }));
+  app.use(express.json({ limit: '48mb' }));
   app.get('/health', localAuth, (req, res) =>
     res.json({
       service: 'shardbound-blockbench',
-      version: '0.2.0',
+      version: '0.5.0',
       connected: !!plugin,
       publicUrl: config.publicUrl || null,
     }),
@@ -106,7 +106,7 @@ export async function startDaemon(config) {
     return next;
   };
   const call = (name, args) => {
-    const deadline = Date.now() + 45000;
+    const deadline = Date.now() + (name === 'studio_export' ? 180000 : 45000);
     if (internalNames.has(name))
       return serialize(() => dispatch(name, args, deadline));
     if (!Object.hasOwn(tools, name))
@@ -239,7 +239,7 @@ export async function startDaemon(config) {
         clearTimeout(timer);
         authenticated = true;
         plugin = ws;
-        ws.send(JSON.stringify({ type: 'ready', version: '0.2.0' }));
+        ws.send(JSON.stringify({ type: 'ready', version: '0.5.0' }));
         return;
       }
       const request = pending.get(message.id);

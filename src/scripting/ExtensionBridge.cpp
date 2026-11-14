@@ -1,6 +1,7 @@
 #include "scripting/ExtensionBridge.h"
 #include "scripting/DataConversion.h"
 #include <cmath>
+#include "scripting/ScriptCheck.h"
 namespace game {
 namespace {
 using namespace script;
@@ -15,7 +16,34 @@ ExtensionBridge::ExtensionBridge(script::Runtime& runtime,World& world,Component
         auto errors=runtime.emit("on_validate_load",{fromData(state)});
         if(!errors.empty()) throw DiagnosticError(errors.front());
     };
+    const auto inspect=[&world](EntityId entity) {
+        auto row=object();const auto& identity=world.get<IdentityComponent>(entity);
+        row.setMember("key",Value(identity.persistent),{});row.setMember("name",Value(world.get<NameComponent>(entity).name),{});row.setMember("definition",Value(identity.definition),{});row.setMember("owner",Value(identity.owner),{});row.setMember("active",Value(world.get<ActiveComponent>(entity).value),{});
+        auto custom=object();for(const auto& [type,value]:world.custom(entity)) { auto item=object();item.setMember("version",Value(double(value.version)),{});item.setMember("data",fromData(value.data),{});custom.setMember(type,item,{}); }row.setMember("components",custom,{});
+        auto inventory=object();if(world.has<InventoryComponent>(entity)) for(const auto& [id,count]:world.get<InventoryComponent>(entity).items) inventory.setMember(id,Value(double(count)),{});row.setMember("inventory",inventory,{});
+        if(world.has<TransformComponent>(entity)) { const auto p=world.get<TransformComponent>(entity).local.position;auto position=object();position.setMember("x",Value(double(p.x)),{});position.setMember("y",Value(double(p.y)),{});position.setMember("z",Value(double(p.z)),{});row.setMember("position",position,{}); }
+        if(world.has<HealthComponent>(entity)) { const auto health=world.get<HealthComponent>(entity);auto value=object();value.setMember("current",Value(double(health.current)),{});value.setMember("maximum",Value(double(health.maximum)),{});row.setMember("health",value,{}); }
+        if(auto parent=world.parent(entity)) row.setMember("parent",Value(world.get<IdentityComponent>(parent).persistent),{});
+        if(world.has<ModelComponent>(entity)) row.setMember("model",Value(world.get<ModelComponent>(entity).definition.str()),{});
+        if(world.has<InteractableComponent>(entity)) row.setMember("interactable",Value(world.get<InteractableComponent>(entity).enabled),{});
+        return row;
+    };
+    runtime.bind("inspect_entity",native([&world,inspect](const auto& a,const auto& at) { arity(a,1,at);return inspect(requireEntity(a[0],world,at)); }));
+    runtime.bind("write_debug_report",native([&runtime,&world,&saves,inspect](const auto& a,const auto& at) {
+        arity(a,0,at);auto report=fromData(runtime.debugSnapshot());std::vector<Value> entities;
+        for(auto entity:world.entities()) if(!saves.includeEntity || saves.includeEntity(entity)) entities.push_back(inspect(entity));report.setMember("entities",list(std::move(entities)),at);
+        return Value(saves.writeDebugReport(toData(report)).string());
+    }));
     runtime.bind("script_error",native([](const auto& a,const auto& at)->Value { arity(a,1,at); fail(at,"SCRIPT325",a[0].string(at)); }));
+    runtime.bind("register_save_migration",native([&](const auto& a,const auto& at) {
+        arity(a,2,at);const auto from=version(a[0],at);const auto owner=runtime.currentMod();const auto file=a[1].string(at);const auto root=runtime.moduleRoot(owner);
+        const auto checked=checkScripts(root,file);if(!checked.diagnostics.empty()) throw DiagnosticError(checked.diagnostics.front());
+        saves.registerMigration(owner,from,[owner,root,file](const Data& data){
+            Runtime isolated;isolated.bind("record",native([](const auto& args,const auto& loc){arity(args,0,loc);return object();}));
+            isolated.bind("script_error",native([](const auto& args,const auto& loc)->Value {arity(args,1,loc);fail(loc,"SCRIPT325",args[0].string(loc));}));
+            isolated.load(owner,root,file);return toData(isolated.invoke(isolated.global(owner,"migrate"),{fromData(data)}));
+        });return Value{};
+    }));
     runtime.bind("record",native([](const auto& a,const auto& at) { arity(a,0,at); return object(); }));
     runtime.bind("entity_key",native([&](const auto& a,const auto& at) { arity(a,1,at); return Value(world.get<IdentityComponent>(requireEntity(a[0],world,at)).persistent); }));
     runtime.bind("get_entity_by_key",native([&](const auto& a,const auto& at) { arity(a,1,at); return entityValue(world,world.findPersistent(a[0].string(at))); }));
@@ -37,7 +65,7 @@ ExtensionBridge::ExtensionBridge(script::Runtime& runtime,World& world,Component
         arity(a,1,at); const auto type=id(a[0],at);
         if(!components.known(type)) fail(at,"EXT102","Component type is not registered");
         std::vector<Value> result;
-        for(auto entity:world.entities()) if(world.custom(entity).contains(type.str())) result.push_back(entityValue(world,entity));
+        for(auto entity:world.entitiesWithCustom(type.str())) result.push_back(entityValue(world,entity));
         return list(std::move(result));
     }));
     runtime.bind("remove_component",native([&](const auto& a,const auto& at) { arity(a,2,at); return Value(world.removeCustom(requireEntity(a[0],world,at),id(a[1],at))); }));

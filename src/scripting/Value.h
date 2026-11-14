@@ -29,9 +29,10 @@ struct Value {
 };
 struct List { std::vector<Value> values; };
 struct Object { std::map<std::string,Value> fields; };
-struct Callable { std::function<Value(const std::vector<Value>&,const Location&)> call; };
+struct Callable { std::function<Value(const std::vector<Value>&,const Location&)> call; bool asynchronous=false; };
 struct HostObject {
     virtual ~HostObject()=default;
+    virtual bool equals(const HostObject& other) const { return this==&other; }
     virtual Value get(const std::string& key,const Location& at)=0;
     virtual void set(const std::string& key,Value value,const Location& at)=0;
 };

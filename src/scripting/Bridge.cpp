@@ -1,4 +1,5 @@
 #include "scripting/Bridge.h"
+#include "scripting/ShaderBridge.h"
 #include "core/Log.h"
 #include <cmath>
 #include <limits>
@@ -39,6 +40,9 @@ class EntityRef final : public HostObject {
 public:
     World& world; EntityId id;
     EntityRef(World& w,EntityId value) : world(w),id(value) {}
+    bool equals(const HostObject& other) const override {
+        const auto* entity=dynamic_cast<const EntityRef*>(&other);return entity && &world==&entity->world && id==entity->id;
+    }
     Value get(const std::string& key,const Location& at) override {
         if(!world.alive(id)) fail(at,"BRIDGE103","Entity was destroyed");
         if(key=="position") return Value(std::shared_ptr<HostObject>(std::make_shared<PositionRef>(world,id)));
@@ -68,6 +72,8 @@ EntityId requireEntity(const script::Value& value,World& world,const script::Loc
     return ref->id;
 }
 void bindRuntimeApi(script::Runtime& scripting,World& world,AssetManager& assets) {
+    bindShaderApi(scripting,world,assets);
+    scripting.bind("is_studio_model",native([&](const auto& a,const auto& at){arity(a,1,at);auto e=requireEntity(a[0],world,at);return Value(world.has<ModelComponent>(e)&&world.get<ModelComponent>(e).model&&bool(world.get<ModelComponent>(e).model->studio));}));
     using namespace script;
     scripting.bind("vec3",native([](const auto& args,const auto& at) { arity(args,3,at); return vector({number(args[0],at),number(args[1],at),number(args[2],at)}); }));
     scripting.bind("spawn",native([&](const auto& args,const auto& at) {

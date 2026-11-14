@@ -1,0 +1,7 @@
+{
+  "studio": {
+    "studio_demo:crystal_sword": {
+      "source": "sword/studio.manifest.json"
+    }
+  }
+}

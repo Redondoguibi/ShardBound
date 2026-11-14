@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "biomes": {
+    "gardens:flower_field": {
+      "name": "Campo de flores",
+      "rock": "plains:stone",
+      "layers": [{"block":"plains:grass","depth":1},{"block":"plains:dirt","depth":3}]
+    }
+  },
+  "structures": {
+    "gardens:flower_patch": [[0,0,0,"plains:flower"],[1,0,0,"plains:flower"],[0,0,1,"plains:flower"]]
+  },
+  "generators": {
+    "gardens:quiet": {
+      "extends": "plains:gentle",
+      "name": "Jardins tranquilos",
+      "safe_radius": 1,
+      "noise": [{"period":128,"amplitude":0.75,"salt":101},{"period":32,"amplitude":0.25,"salt":102}],
+      "biomes": [{"biome":"gardens:flower_field","weight":1}],
+      "structures": [
+        {"id":"gardens:patches","structure":"gardens:flower_patch","chance":0.6,"attempts":6,"alignment":"surface","spacing":3,"biomes":["gardens:flower_field"]},
+        {"id":"gardens:ruins","structure":"plains:ruin","chance":0.04,"max_slope":0,"spacing":6,"rotations":[0,180]}
+      ]
+    }
+  },
+  "generator_extensions": {
+    "gardens:plains_flowers": {
+      "generator": "plains:gentle",
+      "structures": [{"id":"gardens:extra_flowers","structure":"gardens:flower_patch","chance":0.15,"attempts":2,"alignment":"surface","spacing":2}]
+    }
+  }
+}

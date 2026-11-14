@@ -9,6 +9,7 @@
 #include <functional>
 #include <cmath>
 #include <numeric>
+#include <set>
 namespace game {
 namespace {
 using Json = nlohmann::json;
@@ -46,17 +47,20 @@ Json encode(const ModelData& model) {
     for (const auto& part : model.parts) {
         std::vector<float> vertices;
         for (const auto& v:part.vertices) vertices.insert(vertices.end(),{v.position.x,v.position.y,v.position.z,v.normal.x,v.normal.y,v.normal.z,v.uv.x,v.uv.y});
-        result.push_back({{"name",part.name},{"vertices",vertices},{"indices",part.indices},{"transform",part.transform.values},
+        result.push_back({{"node",part.node},{"name",part.name},{"vertices",vertices},{"indices",part.indices},{"transform",part.transform.values},
             {"color",{part.color.r,part.color.g,part.color.b,part.color.a}},{"width",part.texture.width},{"height",part.texture.height},{"pixels",Json::binary(part.texture.pixels)},
             {"alphaMode",static_cast<int>(part.alphaMode)},{"alphaCutoff",part.alphaCutoff},{"doubleSided",part.doubleSided}});
     }
-    return result;
+    Json nodes=Json::array(),clips=Json::array();
+    for(const auto& n:model.hierarchy.nodes) nodes.push_back({{"name",n.name},{"uuid",n.uuid},{"role",n.role},{"parent",n.parent},{"local",n.local.values}});
+    for(const auto& c:model.hierarchy.clips) { Json tracks=Json::array(); for(const auto& t:c.tracks) tracks.push_back({{"node",t.node},{"path",t.path},{"step",t.step},{"times",t.times},{"values",t.values}}); clips.push_back({{"name",c.name},{"length",c.length},{"tracks",tracks}}); }
+    return {{"parts",result},{"nodes",nodes},{"clips",clips}};
 }
 ModelData decode(const Json& data) {
-    if (!data.is_array() || data.empty() || data.size()>10000) throw std::runtime_error("Invalid model cache");
+    if (!data.is_object() || !data.at("parts").is_array() || data.at("parts").size()>10000) throw std::runtime_error("Invalid model cache");
     ModelData result;
-    for (const auto& p:data) {
-        ModelPartData part; part.name=p.at("name").get<std::string>();
+    for (const auto& p:data.at("parts")) {
+        ModelPartData part; part.node=p.at("node"); part.name=p.at("name").get<std::string>();
         auto vertices=p.at("vertices").get<std::vector<float>>();
         if (vertices.size()%8) throw std::runtime_error("Invalid vertex cache");
         for (size_t i=0;i<vertices.size();i+=8) part.vertices.push_back({{vertices[i],vertices[i+1],vertices[i+2]},{vertices[i+3],vertices[i+4],vertices[i+5]},{vertices[i+6],vertices[i+7]}});
@@ -67,11 +71,15 @@ ModelData decode(const Json& data) {
         part.alphaCutoff=p.at("alphaCutoff"); part.doubleSided=p.at("doubleSided");
         validatePart(part); result.parts.push_back(std::move(part));
     }
+    for(const auto& n:data.at("nodes")) { ModelNode node; node.name=n.at("name"); node.uuid=n.at("uuid"); node.role=n.at("role"); node.parent=n.at("parent"); node.local.values=n.at("local").get<std::array<float,16>>(); result.hierarchy.nodes.push_back(node); }
+    for(const auto& c:data.at("clips")) { ModelClip clip; clip.name=c.at("name"); clip.length=c.at("length"); for(const auto& t:c.at("tracks")) { ModelTrack track; track.node=t.at("node"); track.path=t.at("path"); track.step=t.at("step"); track.times=t.at("times").get<std::vector<float>>(); track.values=t.at("values").get<std::vector<std::array<float,4>>>(); if(track.node>=result.hierarchy.nodes.size() || track.times.empty() || track.times.size()!=track.values.size()) throw std::runtime_error("Invalid cached track"); clip.tracks.push_back(std::move(track)); } result.hierarchy.clips.push_back(std::move(clip)); }
+    validateHierarchy(result.hierarchy);(void)sampleModel(result.hierarchy,"",0);
+    for(const auto& p:result.parts) if(p.node>=result.hierarchy.nodes.size()) throw std::runtime_error("Invalid cached mesh node");
     result.cacheHit=true; return result;
 }
 }
 ModelData compileModel(const std::filesystem::path& source,const std::filesystem::path& cache) {
-    const auto key=fingerprint(source,"static-model-v2-fastgltf-0.9-mask-double-sided");
+    const auto key=fingerprint(source,"rigid-model-v3-hierarchy-animation-studio");
     const auto target=cache/(key+".model");
     if (std::filesystem::is_regular_file(target) && std::filesystem::file_size(target)<256*1024*1024) {
         try { std::ifstream input(target,std::ios::binary); return decode(Json::from_cbor(input)); } catch (const std::exception&) {}
@@ -84,7 +92,7 @@ ModelData compileModel(const std::filesystem::path& source,const std::filesystem
     if (!loaded) fail(source,std::string(fastgltf::getErrorMessage(loaded.error())));
     auto& asset=loaded.get();
     if (fastgltf::validate(asset)!=fastgltf::Error::None) fail(source,"Invalid GLTF asset");
-    if (!asset.skins.empty() || !asset.animations.empty()) fail(source,"Skinning/animation is not implemented in the static model v0 importer");
+    if (!asset.skins.empty()) fail(source,"Weighted skinning is not supported; animate rigid nodes/groups");
     for (const auto& buffer:asset.buffers) (void)bytes(buffer.data);
     if (asset.scenes.empty()) fail(source,"Model has no scene");
     std::vector<bool> visiting(asset.nodes.size());
@@ -97,12 +105,45 @@ ModelData compileModel(const std::filesystem::path& source,const std::filesystem
     const auto scene=asset.defaultScene.value_or(0);
     for (auto node:asset.scenes.at(scene).nodeIndices) validateNode(node,0);
     ModelData output;
+    if(asset.nodes.size()>10000 || asset.animations.size()>1024) fail(source,"Model node/clip limit exceeded");
+    std::ifstream metadataFile(source,std::ios::binary); std::uint32_t header[5]{}; metadataFile.read(reinterpret_cast<char*>(header),sizeof(header)); Json metadata;
+    if(header[0]==0x46546c67) { if(header[3]>64*1024*1024 || header[4]!=0x4e4f534a) fail(source,"Invalid GLB metadata"); std::string text(header[3],' '); metadataFile.read(text.data(),header[3]); if(!metadataFile) fail(source,"Truncated GLB metadata"); metadata=Json::parse(text); }
+    else { metadataFile.clear(); metadataFile.seekg(0); metadata=Json::parse(metadataFile); }
+    for(size_t i=0;i<asset.nodes.size();i++) {
+        const auto& node=asset.nodes[i]; ModelNode n; n.name=std::string(node.name); const auto m=fastgltf::getTransformMatrix(node);
+        for(size_t r=0;r<4;r++) for(size_t c=0;c<4;c++) { n.local.values[r*4+c]=m[r][c]; if(!std::isfinite(m[r][c])) fail(source,"Non-finite node transform"); }
+        const auto& raw=metadata.at("nodes").at(i); if(raw.contains("extras") && raw["extras"].is_object()) { n.uuid=raw["extras"].value("studio_uuid",std::string{}); n.role=raw["extras"].value("studio_role",std::string{}); }
+        output.hierarchy.nodes.push_back(n);
+    }
+    for(size_t i=0;i<asset.nodes.size();i++) for(auto child:asset.nodes[i].children) { auto& parent=output.hierarchy.nodes.at(child).parent; if(parent!=-1) fail(source,"Node has multiple parents"); parent=int(i); }
+    size_t samples=0;
+    for(const auto& animation:asset.animations) {
+        ModelClip clip; clip.name=animation.name.empty() ? "animation_"+std::to_string(output.hierarchy.clips.size()) : std::string(animation.name);
+        for(const auto& previous:output.hierarchy.clips) if(previous.name==clip.name) fail(source,"Duplicate animation name");
+        std::set<std::pair<size_t,int>> targets;
+        for(const auto& channel:animation.channels) {
+            if(!channel.nodeIndex || channel.path==fastgltf::AnimationPath::Weights) fail(source,"Only node translation, rotation and scale animation are supported");
+            const auto& sampler=animation.samplers.at(channel.samplerIndex);
+            if(sampler.interpolation==fastgltf::AnimationInterpolation::CubicSpline) fail(source,"Bake cubic animation curves to LINEAR samples before import");
+            ModelTrack track; track.node=*channel.nodeIndex; track.path=int(channel.path); track.step=sampler.interpolation==fastgltf::AnimationInterpolation::Step;
+            if(!targets.emplace(track.node,track.path).second) fail(source,"Duplicate animation channel");
+            const auto& input=asset.accessors.at(sampler.inputAccessor); const auto& values=asset.accessors.at(sampler.outputAccessor);
+            samples+=input.count; if(samples>2000000 || input.count!=values.count || !input.count) fail(source,"Invalid or oversized animation track");
+            fastgltf::iterateAccessor<float>(asset,input,[&](float t){if(!std::isfinite(t) || t<0 || (!track.times.empty() && t<=track.times.back())) fail(source,"Invalid animation time"); track.times.push_back(t);});
+            if(track.path==2) fastgltf::iterateAccessor<fastgltf::math::fvec4>(asset,values,[&](auto v){track.values.push_back({v[0],v[1],v[2],v[3]});});
+            else fastgltf::iterateAccessor<fastgltf::math::fvec3>(asset,values,[&](auto v){track.values.push_back({v[0],v[1],v[2],0});});
+            for(const auto& v:track.values) { for(auto x:v) if(!std::isfinite(x)) fail(source,"Non-finite animation value"); if(track.path==2 && v[0]*v[0]+v[1]*v[1]+v[2]*v[2]+v[3]*v[3]<1e-12f) fail(source,"Zero animation quaternion"); }
+            clip.length=std::max(clip.length,track.times.back()); clip.tracks.push_back(std::move(track));
+        }
+        output.hierarchy.clips.push_back(std::move(clip));
+    }
+    validateHierarchy(output.hierarchy);(void)sampleModel(output.hierarchy,"",0);
     fastgltf::iterateSceneNodes(asset,scene,fastgltf::math::fmat4x4(),[&](fastgltf::Node& node,fastgltf::math::fmat4x4 matrix) {
         if (!node.meshIndex) return;
         const auto& mesh=asset.meshes.at(*node.meshIndex);
         for (const auto& primitive:mesh.primitives) {
             if (primitive.type!=fastgltf::PrimitiveType::Triangles || !primitive.indicesAccessor) fail(source,"Only triangle primitives supported in v0");
-            ModelPartData part; part.name=std::string(node.name)+"/"+std::to_string(output.parts.size());
+            ModelPartData part; part.node=size_t(&node-asset.nodes.data()); part.name=std::string(node.name)+"/"+std::to_string(output.parts.size());
             for (size_t r=0;r<4;++r) for (size_t c=0;c<4;++c) part.transform.values[r*4+c]=matrix[r][c];
             auto position=primitive.findAttribute("POSITION"), normal=primitive.findAttribute("NORMAL"), uv=primitive.findAttribute("TEXCOORD_0");
             if (position==primitive.attributes.end() || normal==primitive.attributes.end()) fail(source,"Static model v0 requires POSITION and NORMAL");
@@ -134,7 +175,7 @@ ModelData compileModel(const std::filesystem::path& source,const std::filesystem
             validatePart(part); output.parts.push_back(std::move(part));
         }
     });
-    if (output.parts.empty()) fail(source,"Model has no drawable mesh");
+    if (output.parts.empty() && std::none_of(output.hierarchy.nodes.begin(),output.hierarchy.nodes.end(),[](const auto& n){return !n.uuid.empty();})) fail(source,"Model has no drawable mesh");
     std::filesystem::create_directories(cache);
     const auto temporary=cache/(key+".tmp.model");
     const auto compiled=Json::to_cbor(encode(output));

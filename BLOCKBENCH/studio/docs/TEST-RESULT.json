@@ -1,0 +1,80 @@
+{
+  "status": "passed",
+  "completedAt": "2026-10-12T22:39:46.536Z",
+  "editor": "Blockbench Desktop 5.2.2",
+  "platform": "win32",
+  "node": "v26.4.0",
+  "pluginSHA256": "894a4e1e16c9f960376e4c81995c4775fd56459024299bb654875d8007cc89d3",
+  "glb": [
+    {
+      "fixture": "player-package",
+      "file": "models/test/player.glb",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "fixture": "complete-package",
+      "file": "models/studio_demo/bow.glb",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "fixture": "complete-package",
+      "file": "models/studio_demo/sword.glb",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "fixture": "complete-package",
+      "file": "models/studio_demo/armor.glb",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "fixture": "complete-package",
+      "file": "models/studio_demo/monster.glb",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "fixture": "complete-package",
+      "file": "models/studio_demo/related_monster.glb",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "fixture": "complete-package",
+      "file": "models/studio_demo/block.glb",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "fixture": "complete-package",
+      "file": "models/studio_demo/item.glb",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "fixture": "complete-package",
+      "file": "models/studio_demo/player.glb",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "fixture": "complete-package",
+      "file": "models/studio_demo/effects.glb",
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "fixture": "sword-package",
+      "file": "models/studio_demo/crystal_sword.glb",
+      "errors": 0,
+      "warnings": 0
+    }
+  ],
+  "companionDocuments": 12,
+  "pluginErrors": 0,
+  "startupErrors": 2,
+  "mtools": "loaded and verified coexistence"
+}

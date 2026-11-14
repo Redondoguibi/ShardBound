@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-13",
+  "platform": "Windows x64 / D3D11",
+  "studioSchema": 1,
+  "exportSource": "Blockbench 5.2.2 / ShardBound Studio 1.3.0",
+  "ctest": {
+    "debug": {
+      "passed": 34,
+      "failed": 0,
+      "seconds": 74.04,
+      "executableSha256": "d6c4b26563d659e50fe75b0eb732e82add42f589563fea1179289147a871c516"
+    },
+    "release": {
+      "passed": 34,
+      "failed": 0,
+      "seconds": 18.4,
+      "executableSha256": "deeae371b0b5f12eb702a2bbe413e788f17ac10e24057378b377fe769549f80e"
+    }
+  },
+  "previewReferenceCases": 48,
+  "previewParticleSamples": 232,
+  "previewTolerance": 0.0001,
+  "checked": [
+    "GLB animation and cache",
+    "package schemas, paths, missing references",
+    "nine exported model entries and all content categories",
+    "D3D11 VFX readback and glow illumination",
+    "reference-player flash targets",
+    "armor and equipped-player transforms",
+    "timeline, loop, seek, pause and inactive entities",
+    "destruction and model replacement",
+    "WAV, OGG and MP3 decode, mix, pause and stop",
+    "adventure equipment and consecutive attacks",
+    "mod registry installation, duplicate rejection, update and backup"
+  ],
+  "visualProof": "runtime-preview.png",
+  "limitations": [
+    "Lighting is not certified pixel-identical to Blockbench",
+    "Rigid animation only; no weighted skinning, morphs or unbaked CUBICSPLINE",
+    "GLB materials OPAQUE/MASK; VFX supports alpha/additive",
+    "2D audio, immediate clip transitions; no hot reload or transient VFX save state"
+  ]
+}

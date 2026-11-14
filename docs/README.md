@@ -2,7 +2,48 @@
 
 Esta pasta registra a visão atual do projeto. Ela deve ser atualizada conforme decisões forem tomadas.
 
+## Editor de mapas em C++
+
+Planejamento da primeira versão do editor e da transição do jogo para um mundo finito.
+
+- [Mundo e mods](editor/01-MUNDO-E-MODS.md) — biomas, catálogo de blocos, estruturas e interiores.
+- [Editor e Blockbench](editor/02-EDITOR-E-BLOCKBENCH.md) — autoria de mapas, importação de saves e integração com o Blockbench instalado.
+- [IA, terminal e linha do tempo](editor/03-IA-E-LINHA-DO-TEMPO.md) — fornecedores, ferramentas, modos de execução e restauração.
+- [Itens, armaduras e animações](editor/04-ITENS-ARMADURAS-E-ANIMACOES.md) — autoria visual de atributos, volumes de ataque, sequências e animações equipadas.
+
 ## Documentos
+
+- [modding/13-ASYNC-AWAIT.md](modding/13-ASYNC-AWAIT.md) — sintaxe e contratos de tarefas cooperativas da linguagem `.sl`.
+
+- [38-ENGINE-EXTENSIONS.md](38-ENGINE-EXTENSIONS.md) — implementação e testes da API de extensão do núcleo por scripts e DLLs.
+- [modding/12-ENGINE-EXTENSIONS.md](modding/12-ENGINE-EXTENSIONS.md) — contrato de fases, configurações e substituições da engine.
+- [37-READINESS-REVIEW.md](37-READINESS-REVIEW.md) — correções de controles, isolamento entre mundos, perfis e apoio de colisores girados.
+- [PLAYING.md](PLAYING.md) — controles, perfis de mods, configurações, medição de desempenho e pacote distribuível.
+- [36-PLAYER-READINESS.md](36-PLAYER-READINESS.md) — implementação e validação das cinco frentes de preparação do jogo.
+
+- [35-WALL-JUMP-FIX.md](35-WALL-JUMP-FIX.md) — correção e regressões do travamento no ar ao andar contra blocos.
+
+- [34-INTEGRATION-BUGFIXES.md](34-INTEGRATION-BUGFIXES.md) — correções de salvamentos, equipamentos, atributos e captura de Escape, com regressões de integração.
+
+- [33-DEVELOPER-MODE.md](33-DEVELOPER-MODE.md) — implementação, correções, testes e limites do modo de desenvolvedor.
+
+- [modding/11-DEVELOPER-CONSOLE-AND-ATTRIBUTES.md](modding/11-DEVELOPER-CONSOLE-AND-ATTRIBUTES.md) — modo de desenvolvedor, câmeras, comandos e atributos.
+
+- [32-RUNTIME-ROBUSTNESS.md](32-RUNTIME-ROBUSTNESS.md) — implementação e validação de armazenamento, compatibilidade e recuperação.
+
+- [modding/10-SAVES-COMPATIBILITY-AND-RECOVERY.md](modding/10-SAVES-COMPATIBILITY-AND-RECOVERY.md) — contratos de compatibilidade, armazenamento e recuperação.
+
+- [31-MOD-SHADERS.md](31-MOD-SHADERS.md) — implementação e validação de shaders extensíveis.
+
+- [modding/09-SHADERS.md](modding/09-SHADERS.md) — contrato executável de shaders de mods.
+
+- [27-PROCEDURAL-WORLDS.md](27-PROCEDURAL-WORLDS.md) — estado atual: menu, configurações, mundos por seed, chunks e conteúdo oficial por mods.
+- [modding/06-WORLD-GENERATION.md](modding/06-WORLD-GENERATION.md) — guia implementado de biomas, solo, relevo, estruturas, herança e extensões de geração.
+- [28-MOD-PLATFORM-FOUNDATIONS.md](28-MOD-PLATFORM-FOUNDATIONS.md) — sistemas, geração volumétrica, edição transacional, IA, equipamentos e widgets por mods.
+- [modding/07-MOD-PLATFORM.md](modding/07-MOD-PLATFORM.md) — contratos e exemplos das novas APIs.
+- [29-MOD-PLATFORM-VALIDATION.md](29-MOD-PLATFORM-VALIDATION.md) — validação, correções e limitações da plataforma.
+- [modding/08-STREAMING-AND-DEVELOPER-TOOLS.md](modding/08-STREAMING-AND-DEVELOPER-TOOLS.md) — streaming, persistência paginada, diagnóstico e fluxos avançados.
+- [30-MOD-PLATFORM-EXPANSION.md](30-MOD-PLATFORM-EXPANSION.md) — implementação e validação da evolução da plataforma.
 
 - [01-VISION.md](01-VISION.md) — visão, objetivos e princípios.
 - [02-CORE-ARCHITECTURE.md](02-CORE-ARCHITECTURE.md) — arquitetura conceitual do runtime.

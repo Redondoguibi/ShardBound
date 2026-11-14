@@ -16,6 +16,9 @@ struct ModManifest {
     std::filesystem::path root;
     std::vector<Dependency> dependencies;
     bool dependencyCycle = false;
+    unsigned saveSchema=1;
+    std::string compatibleFrom;
+    bool acceptsSave(const std::string& saved,unsigned schema) const;
 };
 ModManifest readManifest(const std::filesystem::path& root);
 struct Discovery { std::vector<ModManifest> mods; std::vector<Diagnostic> diagnostics; };

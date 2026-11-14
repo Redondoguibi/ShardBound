@@ -19,7 +19,7 @@ int main(int argc,char**) {
         World world; PhysicsSystem physics(world); PlayerController player(world,physics); InputSystem input; AudioSystem audio(true);
         script::Runtime runtime; bindRuntimeApi(runtime,world,assets); bindGameplayApi(runtime,world,physics,player,input,audio,assets);
         Components components; SaveGame saves("user/equipment-saves",world,physics,player,assets); ExtensionBridge extension(runtime,world,components,saves); GameUi ui(runtime,renderer);
-        runtime.load("adventure","content/adventure","main.sl");
+        runtime.load("adventure","examples/legacy/adventure","main.sl");
         runtime.load("trailcraft","examples/adventure-extension/trailcraft","main.sl",{"adventure"});
         saves.setMods({{"adventure","0.1.0"},{"trailcraft","0.1.0"}});
         auto emit=[&](const std::string& name,std::vector<script::Value> args=std::vector<script::Value>{}) {

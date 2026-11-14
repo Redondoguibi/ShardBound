@@ -27,6 +27,8 @@ A implementação interna pode usar tipos fortes no runtime/compiler, mas o sour
 
 # 2. Extensão
 
+Extensão implementada após a baseline v0: `async func nome(parametros):` e `await expressao`. Chamadas assíncronas retornam `Task`; o operador só é válido no corpo assíncrono. A especificação complementar de sintaxe, precedência, estados, erros, cancelamento, orçamento e integração está em [modding/13-ASYNC-AWAIT.md](modding/13-ASYNC-AWAIT.md). As regras v0 seguintes permanecem aplicáveis aos trechos síncronos.
+
 Para a v0, usar:
 
 ```text

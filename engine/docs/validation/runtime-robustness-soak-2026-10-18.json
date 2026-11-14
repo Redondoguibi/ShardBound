@@ -1,0 +1,12 @@
+{
+  "backup_gc_removed": 2,
+  "device": "Intel(R) UHD Graphics 630",
+  "index_bytes": 20888890,
+  "index_pages": 500000,
+  "iterations": 4096,
+  "mods": 25,
+  "private_end": 78856192,
+  "private_peak_sampled": 87887872,
+  "private_start": 71827456,
+  "update_p95_ms": 4.8004
+}

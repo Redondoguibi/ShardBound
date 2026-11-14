@@ -1,0 +1,1 @@
+{"id":"plains","name":"ShardBound - Planicies","version":"0.1.0","api":"0.1","dependencies":["foundation >= 0.2.0"],"entry":"main.sl","save_compatibility":{"minimum_version":"0.1.0","schema":1}}

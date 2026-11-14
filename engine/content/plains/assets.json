@@ -1,0 +1,25 @@
+{
+  "textures": {
+    "plains:grass": {
+      "source": "textures/grass.png"
+    },
+    "plains:dirt": {
+      "source": "textures/dirt.png"
+    },
+    "plains:stone": {
+      "source": "textures/stone.png"
+    },
+    "plains:wood": {
+      "source": "textures/wood.png"
+    },
+    "plains:leaves": {
+      "source": "textures/leaves.png"
+    },
+    "plains:flower": {
+      "source": "textures/flower.png"
+    },
+    "plains:brick": {
+      "source": "textures/brick.png"
+    }
+  }
+}

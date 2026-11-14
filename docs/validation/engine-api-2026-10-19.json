@@ -1,0 +1,187 @@
+{
+  "recorded_utc": "2026-10-20T01:41:26.915990+00:00",
+  "engine_api": 1,
+  "native_abi": 1,
+  "save_format_changed": false,
+  "stages": [
+    "fixed",
+    "movement",
+    "physics",
+    "update",
+    "streaming",
+    "render"
+  ],
+  "configuration_services": [
+    "physics",
+    "render",
+    "scheduler"
+  ],
+  "validation": {
+    "release": {
+      "passed": 48,
+      "failed": 0,
+      "seconds": 35.05,
+      "compiler_warnings": 0,
+      "compiler_errors": 0,
+      "log": "build/engine-api-release-accepted.log",
+      "sha256": "548355f8913340bc3e60da42e248c810a05dfd004df548359fb2d137d9c49b49"
+    },
+    "debug": {
+      "passed": 48,
+      "failed": 0,
+      "seconds": 113.8,
+      "compiler_warnings": 0,
+      "compiler_errors": 0,
+      "log": "build/engine-api-debug-accepted.log",
+      "sha256": "c0d1549d0854256d246ec0cd08301645b3e25ed85ac0f943bab64cd236b3d6b2"
+    },
+    "warp": {
+      "passed": 3,
+      "failed": 0,
+      "seconds": 5.09,
+      "compiler_warnings": 0,
+      "compiler_errors": 0,
+      "log": "build/engine-api-warp.log",
+      "sha256": "a7031b63e395f628e28dd8e5f34bb307461f72dedb8fc70e25c0821356db6ebc"
+    }
+  },
+  "coverage": [
+    "Default compatibility and six real Application stages",
+    "Replacement ownership, explicit target and dependency conflicts",
+    "Before/after priority, restoration and dispatch snapshots",
+    "Invalid API versions, limits and foreign IDs",
+    "Failing callbacks, instruction budget SCRIPT304, reentrancy and core failure propagation",
+    "Exactly-once default delegation with validation before mutation",
+    "Independent configuration provenance and rejected partial publication",
+    "Real gravity, waking sleeping bodies, configurable walkable slopes",
+    "Actual GPU pixels affected by configured point lights",
+    "Protected pause scene unaffected by custom rendering provider",
+    "Actual native DLL ABI 1, buffer-size queries and delegated physics",
+    "Actual execution ordering, save/load rules and cleanup on world close"
+  ],
+  "bugs_corrected_during_validation": [
+    {
+      "issue": "Sleeping bodies remained floating after a live gravity change",
+      "reproduction_log": "build/engine-api-sleep-before.log",
+      "fix": "Wake dynamic bodies only when gravity changes"
+    },
+    {
+      "issue": "Public example used unsupported vector addition",
+      "reproduction_log": "build/engine-example-010069a0/game.err",
+      "fix": "Construct local light position from explicit numeric components"
+    },
+    {
+      "issue": "Initial budget fixture failed for syntax instead of instruction exhaustion",
+      "fix": "Nested supported ranges plus explicit SCRIPT304 assertion"
+    },
+    {
+      "issue": "Potential partial configuration, duplicate defaults, stale render statistics and pause interference",
+      "fix": "Prevalidation, once-only delegation, mandatory presentation and protected pause rendering"
+    }
+  ],
+  "example": {
+    "root": "build/engine-example-57026ed2",
+    "modcheck": {
+      "diagnostics": [],
+      "mods": 3,
+      "scripts": 10,
+      "valid": true
+    },
+    "runtime_exit": 0,
+    "runtime_error_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "performance_report": "build/engine-example-57026ed2/user/performance/session-17924603542115062.json",
+    "extensions": [
+      {
+        "calls": 80.0,
+        "enabled": true,
+        "errors": 0.0,
+        "id": "low_gravity:lighting",
+        "last_ms": 0.0731,
+        "mode": "before",
+        "owner": "low_gravity",
+        "peak_ms": 0.3362,
+        "priority": 0.0,
+        "stage": "render",
+        "total_ms": 8.4426
+      },
+      {
+        "calls": 54.0,
+        "enabled": true,
+        "errors": 0.0,
+        "id": "low_gravity:movement",
+        "last_ms": 0.0811,
+        "mode": "replace",
+        "owner": "low_gravity",
+        "peak_ms": 0.2729,
+        "priority": 0.0,
+        "stage": "movement",
+        "total_ms": 6.027400000000001
+      }
+    ]
+  },
+  "distribution": {
+    "archive": "dist/ShardBound-win64-2026-10-19-engine-api1.zip",
+    "bytes": 6603826,
+    "sha256": "a1f62480a99152e2b86321d7d45e47a1f6ac2d9ac943a93405bfaf71f142601e",
+    "verification": "dist/ShardBound-win64-2026-10-19-engine-api1-verification.json",
+    "verification_sha256": "9bb5f39b301a3929e25265170fda029a023757edde0f2785c67d5a4a3e372aeb",
+    "restricted_path": true,
+    "modcheck_exit": 0,
+    "create_exit": 0,
+    "resume_exit": 0,
+    "extracted_hashes": "passed",
+    "profiles": [
+      {
+        "path": "dist/portable-check-d80c5819bd044df3b05bc81ba83a2965/user/performance/session-17924603582628762.json",
+        "gpu": "Intel(R) UHD Graphics 630",
+        "frames": 119.0,
+        "gpu_samples": 116.0,
+        "sha256": "a1f7d3bbacabd4a26dfa123794c0a970878b389f7829b021de4932ecf5a38552"
+      },
+      {
+        "path": "dist/portable-check-d80c5819bd044df3b05bc81ba83a2965/user/performance/session-17924603595160056.json",
+        "gpu": "Intel(R) UHD Graphics 630",
+        "frames": 119.0,
+        "gpu_samples": 116.0,
+        "sha256": "648d49c1d5cf3a472c0b1503937c3f3033762203de9be3dcb7e22235ba536202"
+      }
+    ],
+    "log": "build/engine-api-package.log"
+  },
+  "limits": [
+    "Core window lifecycle, persistence housekeeping and binary backend replacement remain outside this API",
+    "No memory isolation or instruction-budget interruption for native DLLs",
+    "No general rollback of arbitrary effects already performed by callbacks",
+    "Engine configuration provenance applies to configure_engine; legacy APIs retain prior contracts",
+    "Configurations and callbacks are session-owned; mods persist dynamic settings through existing save state",
+    "Wrapper CPU metrics include delegated core time; no per-mod GPU attribution",
+    "No fresh Windows VM, other physical GPU, remote CI or extended manual playtest"
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "8a6c6634e7bb8f676aab59d1f39d8b8a4bbc8e37c42964204c7c6df77c393f71",
+    "src/extensions/EnginePipeline.h": "f93682ed86b0b858a61fa6554b3af215bdbcce36967f3fea96acdb781cba2038",
+    "src/extensions/EnginePipeline.cpp": "e471001921a0113a046bbc43620d273c0066dee9ab2a571b3f53ba75bc8ada84",
+    "src/scripting/EngineBridge.h": "903996e8352e6c86b8973aa5bddf6c1c948c3de5d9af43077e5421ca2bce2245",
+    "src/scripting/EngineBridge.cpp": "8a03131f3d9b36d6796f096425e7f966205ae49e05fc6aa4bf5d50be492e1348",
+    "src/scripting/EngineServices.h": "a3d14558fdf27d536cb2852eeb4447a5c15c937ca50c9a7961772a79fbba3c5b",
+    "src/scripting/EngineServices.cpp": "727a024016da09bc5b079df72e63d9660dcfa87fca71e59f00cda28c2a071dd6",
+    "src/scripting/Registry.h": "910e891cd968b376af7f2acd1c4e49a50d1842786a6b289acc6804d51bccba7f",
+    "src/core/Application.cpp": "0497f7e34bd59b7669b19bb33bf0fc101af14af27e5b66db4de0268c67cbea75",
+    "src/core/Application.h": "6204551059ad33328f71abc0f52e910b6a4b7856e084b06fc1d9c1fb9a5b4f6e",
+    "src/extensions/NativeMods.cpp": "aeb5af9a4a44c014d87a7c4ae37a50abeb0b0dac7aee5242822d6cd6406c0968",
+    "src/extensions/NativeMods.h": "579a1c5c85d9844eb4a280374edf68251eb8c3e6d2d7447be223f67759e21e26",
+    "src/physics/PhysicsWorld.cpp": "866d62cb8dc3073ad14ca43b95c9bf453dc204f630115e8eeca666978daf902e",
+    "src/physics/PhysicsWorld.h": "ce57bcf8fd4ddf026f5c318258a9b52ea8a07bceec4836330e84d82b353ca21a",
+    "src/game/PhysicsSystem.h": "4a5a7f833168401b815aca7a774271bf163b1b145222a689b8cb52b90a07647a",
+    "src/persistence/SaveGame.cpp": "4c6045742ef8ad49f00db583ea89bbbacc7e5d27910b4c884ca239f9e0dea128",
+    "src/renderer/Renderer.h": "1d3a50ea431bf2e47d49c7c6611710eb049ddb5223535a9c340b6eda885bc98d",
+    "src/renderer/d3d11/Renderer.cpp": "936d9cdb12dc713b0db5504ba44a1725ebb98c664eecfe1e2092206fb7ffd1b2",
+    "tests/EngineApiTests.cpp": "97b911e0bbcbc266c5302c97fb81bc27f34ea04b602c9c694183842fd67c2841",
+    "examples/engine-extensions/native_probe.cpp": "b8640f78cc92965eff332e08a030e493d23cab9fb0f80359393aa24ffba2100d",
+    "examples/engine-extensions/low_gravity/main.sl": "bc8e75b373d3ff8bc117ee87243bcec2871e4cedb747c5d75cb4a33506c55baf",
+    "examples/engine-extensions/low_gravity/mod.json": "2c46f655eecf342779ea2aa4e41f83220eff8ac2344970e7bd4f257daa31ce32",
+    "docs/38-ENGINE-EXTENSIONS.md": "902fbc457c15462a32b63638d1ece21d57f17003a3c4893d53a7ab4761966ef3",
+    "docs/modding/12-ENGINE-EXTENSIONS.md": "5821b2f4a82c27ffd71cdef657d5e1b81a2d0b0adcffe961a37f4e7e6d07661b",
+    "sdk/native/README.md": "998a3887bb4cae1c9bc8c3c03bec326896bf156e984ab56477e62316b98875b2"
+  }
+}

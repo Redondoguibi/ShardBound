@@ -14,7 +14,7 @@
 6. Editor de armas com **player padrão sem skin**, para configurar posição da arma na mão e animar movimentos/poses do player no mesmo ambiente.
 7. Projetos com um modelo ou vários modelos independentes relacionados, conforme o caso.
 8. Monstros com **hierarquia de pastas totalmente livre**, sem estrutura anatômica obrigatória.
-9. Armaduras como **peças sobrepostas** ao player, organizadas em pastas por região do corpo (braço esquerdo/direito etc.) e acompanhando seus movimentos; animações adicionais da armadura opcionais. Não obrigar criar poses de player para editar armadura.
+9. Armaduras como **peças sobrepostas** ao player, organizadas em pastas por região do corpo (braço esquerdo/direito etc.) e acompanhando seus movimentos pelo encaixe, sem clipes próprios.
 10. O mundo utiliza amplamente **blocos como construção visual dos cenários**, inspirado em Minecraft Dungeons II.
 11. A referência a GeckoLib é apenas a **experiência de autoria**, não compatibilidade obrigatória de formatos.
 12. Desenvolver **primeiro as ferramentas do plugin no Blockbench** e integrar ao runtime ShardBound **depois**.
@@ -34,7 +34,7 @@
 | 9 | Preview | **DEFINIDO — Idêntico.** A aparência dos efeitos dentro do Blockbench deve corresponder à aparência no jogo. É um **requisito de fidelidade**, não alegação de que já é tecnicamente possível; precisa de testes visuais e contratos de renderização/VFX. |
 | 10 | Plugin pré-existente | **DEFINIDO — Criar outro plugin.** Não tratar o plugin/exportador Blockbench antigo do repositório como o produto a ser evoluído. |
 | 11 | Flechas/modelos relacionados | **DEFINIDO — Flechas padrão compartilhadas** pelas armas de longa distância que usam flechas. Mods poderão contornar/substituir isso. A possibilidade geral de projetos compostos (item 7 anterior) continua. Não exigir uma nova flecha exclusiva por cada arma. |
-| 12 | Pergunta sobre armaduras avançadas | **RETIRADA.** O autor considerou a pergunta sem sentido. Não reabrir sem um problema concreto de implementação. Vale apenas o contrato já fechado: armaduras sobrepostas, por pastas, acompanhando o corpo; animações opcionais. |
+| 12 | Pergunta sobre armaduras avançadas | **RESOLVIDA.** Armaduras sobrepostas ao corpo acompanham o grupo corporal correspondente, sem clipes próprios. |
 | 13 | Armas de longa distância | **DEFINIDO — Sim.** Mesmo editor contextual com **player de referência** e animações do jogador junto à arma, adaptado a arcos e demais armas ranged. |
 
 ## 2.1 Três decisões complementares — 2026-10-12

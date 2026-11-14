@@ -1,0 +1,7 @@
+{
+  "id": "studio_demo",
+  "name": "ShardBound Studio runtime showcase",
+  "version": "1.0.0",
+  "api": "0.1",
+  "entry": "main.sl"
+}

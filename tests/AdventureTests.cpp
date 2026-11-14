@@ -20,7 +20,7 @@ int main(int argc,char**) {
         World world; PhysicsSystem physics(world); PlayerController player(world,physics); InputSystem input; AudioSystem audio(true);
         script::Runtime runtime; bindRuntimeApi(runtime,world,assets); bindGameplayApi(runtime,world,physics,player,input,audio,assets);
         Components components; SaveGame saves("user/adventure-test-saves",world,physics,player,assets); ExtensionBridge extension(runtime,world,components,saves); GameUi ui(runtime,renderer);
-        ModLoader loader(vfs,assets); auto report=loader.load("content"); require(report.diagnostics.empty(),"Content discovery failed");
+        ModLoader loader(vfs,assets); auto report=loader.load("examples/legacy"); require(report.diagnostics.empty(),"Content discovery failed");
         for(const auto& mod:report.mods) runtime.load(mod.id,mod.root,mod.entry);
         saves.setMods({{"adventure","0.1.0"}});
         auto emit=[&](const std::string& event,std::vector<script::Value> args=std::vector<script::Value>{}) {

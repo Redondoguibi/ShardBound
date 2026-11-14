@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, stat, writeFile, realpath, open } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { tools } from '../shared/tools.mjs';
@@ -9,18 +9,26 @@ function isInside(root, target) {
   return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
 }
 
-function resolveAssetPath(config, relativePath) {
+async function resolveAssetPath(config, relativePath) {
   const full = path.resolve(config.projectRoot, ...relativePath.split('/'));
   if (
     !isInside(config.projectRoot, full) ||
     !config.assetRoots.some((root) => isInside(root, full))
   )
     throw new Error('Path is outside the configured asset roots.');
+  // Also verify existing ancestors: a junction/symlink under assets must not escape.
+  const realProject = await realpath(config.projectRoot);
+  async function resolveExisting(target) { let ancestor = target;
+    while (true) { try { return path.resolve(await realpath(ancestor), path.relative(ancestor, target)); }
+      catch (error) { if (error.code !== 'ENOENT') throw error; const parent = path.dirname(ancestor); if (parent === ancestor) throw error; ancestor = parent; } }
+  }
+  const actual = await resolveExisting(full), actualRoots = await Promise.all(config.assetRoots.map(resolveExisting));
+  if (!isInside(realProject, actual) || !actualRoots.some(root => isInside(realProject, root) && isInside(root, actual))) throw new Error('Asset symlink/junction escapes configured asset roots.');
   return full;
 }
 
 async function listModels(config, args) {
-  const base = resolveAssetPath(config, args.directory);
+  const base = await resolveAssetPath(config, args.directory);
   const extensions = new Set(
     args.extensions.map((ext) => `.${ext.toLowerCase()}`),
   );
@@ -43,6 +51,7 @@ async function listModels(config, args) {
         entry.isFile() &&
         extensions.has(path.extname(entry.name).toLowerCase())
       ) {
+        await resolveAssetPath(config, path.relative(config.projectRoot, full).split(path.sep).join('/'));
         const info = await stat(full);
         results.push({
           path: path
@@ -65,11 +74,11 @@ async function listModels(config, args) {
 }
 
 async function readEditableProject(config, relativePath) {
-  const full = resolveAssetPath(config, relativePath);
+  const full = await resolveAssetPath(config, relativePath);
   const info = await stat(full);
   if (!info.isFile()) throw new Error('Project path is not a file.');
-  if (info.size > 6 * 1024 * 1024)
-    throw new Error('Editable project is larger than the 6 MiB bridge limit.');
+  if (info.size > 32 * 1024 * 1024)
+    throw new Error('Editable project is larger than the 32 MiB bridge limit.');
   return { full, content: await readFile(full, 'utf8') };
 }
 
@@ -80,9 +89,9 @@ function expectedExtension(format) {
 async function writeResult(config, args, result, kind) {
   let filename;
   if (args.path) {
-    filename = resolveAssetPath(config, args.path);
+    filename = await resolveAssetPath(config, args.path);
     const expected = expectedExtension(
-      kind === 'save' ? 'bbmodel' : args.format,
+      kind === 'save' ? result.format : args.format,
     );
     if (path.extname(filename).toLowerCase() !== expected)
       throw new Error(`Destination must end in ${expected}.`);
@@ -120,12 +129,53 @@ async function writeResult(config, args, result, kind) {
   return result;
 }
 
+async function readResource(config, relative, extensions, maxBytes) {
+  if (!relative || !extensions.includes(path.extname(relative).toLowerCase())) throw new Error(`Use a real asset file: ${extensions.join(', ')}.`);
+  const full = await resolveAssetPath(config, relative), info = await stat(full);
+  if (!info.isFile() || info.size > maxBytes) throw new Error('Resource is not a file or exceeds the import size limit.');
+  return readFile(full);
+}
+
+async function exportStudio(call, config, args) {
+  const parent = args.directory ? await resolveAssetPath(config, args.directory) : config.outputs;
+  // Reserve a fresh, exclusive directory before compiling. No overwrite option.
+  await mkdir(parent, { recursive: true });
+  const destination = path.join(parent, `studio-${Date.now()}-${randomUUID().slice(0, 8)}`);
+  await mkdir(destination);
+  let result;
+  try {
+    result = await call('studio_export', args);
+    if (!result.session || !Array.isArray(result.files) || !result.files.length || result.files.length > 10000) throw new Error('Invalid Studio package transfer manifest.');
+    let total = 0; const names = new Set();
+    for (const file of result.files) {
+      if (typeof file.name !== 'string' || !file.name || file.name.includes('\\') || file.name.includes(':') || file.name.split('/').some(p => !p || p === '.' || p === '..') || !Number.isInteger(file.bytes) || file.bytes < 0 || names.has(file.name.toLowerCase())) throw new Error('Invalid/duplicate package file path or size.');
+      total += file.bytes; names.add(file.name.toLowerCase());
+    }
+    if (total > 256 * 1024 * 1024) throw new Error('Studio package exceeds the 256 MiB MCP limit.');
+    for (const file of result.files) {
+      const target = path.resolve(destination, ...file.name.split('/')); if (!isInside(destination, target)) throw new Error('Invalid package path.');
+      await mkdir(path.dirname(target), { recursive: true });
+      const stream = await open(target, 'wx');
+      try { for (let offset = 0; offset < file.bytes;) {
+        const chunk = await call('__studio_export_chunk', { session: result.session, file: file.name, offset });
+        if (chunk.total !== file.bytes || typeof chunk.data !== 'string' || !/^[A-Za-z0-9+/=]+$/.test(chunk.data)) throw new Error('Invalid Studio package chunk.');
+        const bytes = Buffer.from(chunk.data, 'base64'); if (!bytes.length || bytes.length > 1024 * 1024 || offset + bytes.length > file.bytes) throw new Error('Invalid Studio chunk length.');
+        let written = 0; while (written < bytes.length) { const part = await stream.write(bytes, written, bytes.length - written); if (!part.bytesWritten) throw new Error('Package write made no progress.'); written += part.bytesWritten; }
+        offset += bytes.length;
+      } } finally { await stream.close(); }
+    }
+    return { project_id: result.project_id, revision: result.revision, directory: destination, files: result.files, warnings: result.warnings, bytes: total,
+      note: 'Complete Studio package saved on the Blockbench computer. Runtime integration remains phase B; this path is not a ChatGPT download URL.' };
+  } catch (error) { throw new Error(`${error.message} Partial output (if any): ${destination}`); }
+  finally { if (result?.session) await call('__studio_export_release', { session: result.session }).catch(() => {}); }
+}
+
 export function createMcp(call, config, oauth = false) {
   const server = new McpServer(
-    { name: 'shardbound-blockbench', version: '0.4.0' },
+    { name: 'shardbound-blockbench', version: '0.5.0' },
     {
       instructions:
-        "Control the user's open Blockbench Generic Model. Start with status and read_project; use current project_id and expected_revision for edits. Cubes support per-face UVs/textures. Use list_model_files/open_project_file for editable .bbmodel sources and save_project/export_project for repository-safe writes. Select components before MTools. Inspect mtools_list and capture_view to verify results. Operations are serialized. A timeout may have changed the model: inspect before retrying. Do not assume unlisted MTools actions are supported.",
+        "Control Generic Model and ShardBound Studio in Blockbench 5.2.2. Start status, read_project, capture_view; show the actual capture before editing. For Studio call studio_read, use native model roots and reference-player folders, and use studio_* tools for clips, numeric group keyframes, FX/audio and export. Always use current project_id and expected_revision for edits; re-read after every mutation or timeout. Studio GLBs require studio_export (full package, excludes reference geometry). Use assets/ for editable .bbmodel/.sbstudio and sound/skin imports. MTools requires mtools_list and exact mesh/component selection; only automated actions are supported. Never execute arbitrary scripts or modify gameplay runtime.",
     },
   );
   for (const [name, def] of Object.entries(tools))
@@ -151,7 +201,17 @@ export function createMcp(call, config, oauth = false) {
         try {
           const args = def.schema.parse(rawArgs);
           let result;
-          if (name === 'list_model_files') {
+          if (name === 'studio_export') {
+            result = await exportStudio(call, config, args);
+          } else if (name === 'studio_sound' && args.action === 'import') {
+            const bytes = await readResource(config, args.path, ['.wav', '.ogg', '.mp3'], 24 * 1024 * 1024);
+            const mime = { '.wav': 'wav', '.ogg': 'ogg', '.mp3': 'mpeg' }[path.extname(args.path).toLowerCase()];
+            result = await call('__studio_import_sound', { ...args, data: `data:audio/${mime};base64,${bytes.toString('base64')}`, filename: path.basename(args.path) });
+          } else if (name === 'studio_skin' && args.action === 'import' && args.path) {
+            if (args.texture) throw new Error('Provide path or texture, not both.');
+            const bytes = await readResource(config, args.path, ['.png'], 4 * 1024 * 1024);
+            result = await call('__studio_import_skin', { ...args, data: `data:image/png;base64,${bytes.toString('base64')}` });
+          } else if (name === 'list_model_files') {
             result = await listModels(config, args);
           } else if (name === 'open_project_file') {
             const file = await readEditableProject(config, args.path);

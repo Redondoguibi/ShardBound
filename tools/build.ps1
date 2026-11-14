@@ -1,5 +1,6 @@
-param([ValidateSet('debug', 'release')][string]$Preset = 'debug')
+param([ValidateSet('debug', 'release')][string]$Preset = 'debug', [string]$TestRegex = '',[string[]]$Targets = @())
 $ErrorActionPreference = 'Stop'
+if (-not $env:CMAKE_BUILD_PARALLEL_LEVEL) { $env:CMAKE_BUILD_PARALLEL_LEVEL = [string][Math]::Min(4,[Environment]::ProcessorCount) }
 $root = Split-Path -Parent $PSScriptRoot
 $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
 $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
@@ -14,8 +15,10 @@ Push-Location $root
 try {
     & cmake --preset $Preset
     if ($LASTEXITCODE) { throw 'Configure failed' }
-    & cmake --build --preset $Preset
+    if ($Targets.Count) { & cmake --build --preset $Preset --target $Targets }
+    else { & cmake --build --preset $Preset }
     if ($LASTEXITCODE) { throw 'Build failed' }
-    & ctest --preset $Preset
+    if ($TestRegex) { & ctest --preset $Preset -R $TestRegex }
+    else { & ctest --preset $Preset }
     if ($LASTEXITCODE) { throw 'Tests failed' }
 } finally { Pop-Location }

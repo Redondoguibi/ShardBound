@@ -1,5 +1,6 @@
 #include "scripting/ScriptCheck.h"
 #include "assets/VirtualFileSystem.h"
+#include "core/PathText.h"
 #include <fstream>
 #include <functional>
 #include <map>
@@ -27,7 +28,7 @@ CheckResult checkScripts(const std::filesystem::path& root,const std::string& en
             states[path]=1;
             std::ifstream input(path); std::ostringstream source; source<<input.rdbuf();
             if(!input) fail(at,"SCRIPT310","Cannot read script: "+file);
-            const auto ast=parse(source.str(),path.string()); ++result.files;
+            const auto ast=parse(source.str(),pathText(path)); ++result.files;
             walk(ast,depth+1);
             states[path]=2;
         } catch(const DiagnosticError& error) {
@@ -40,7 +41,7 @@ CheckResult checkScripts(const std::filesystem::path& root,const std::string& en
             if(!path.empty()) states[path]=2;
         }
     };
-    if(!entry.empty()) visit(entry,{(root/entry).string(),1,1},0);
+    if(!entry.empty()) visit(entry,{pathText(root/entry),1,1},0);
     return result;
 }
 }

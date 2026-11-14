@@ -1,4 +1,5 @@
 #include "game/InventorySystem.h"
+#include "game/Equipment.h"
 #include "core/Diagnostic.h"
 #include <limits>
 namespace game {
@@ -15,6 +16,10 @@ bool takeItem(World& world,EntityId entity,const AssetId& item,std::uint32_t cou
     if(!world.has<InventoryComponent>(entity)) return false;
     auto& items=world.get<InventoryComponent>(entity).items; const auto found=items.find(item.str());
     if(found==items.end() || found->second<count) return false;
+    // Do not silently invalidate a mod-owned equipment slot by consuming its copy.
+    // An author must explicitly unequip before removing the reserved inventory count.
+    const auto equipped=reservedItems(world,entity,item.str());
+    if(found->second-count<equipped) return false;
     found->second-=count; if(!found->second) items.erase(found); return true;
 }
 std::uint32_t itemCount(World& world,EntityId entity,const AssetId& item) {

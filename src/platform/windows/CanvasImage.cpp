@@ -27,6 +27,17 @@ struct Surface {
     }
 };
 }
+std::vector<std::pair<size_t,int>> textAdvances(const std::string& text,int size) {
+    const int count=MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,text.data(),int(text.size()),nullptr,0);
+    if(!count && !text.empty()) throw std::runtime_error("Invalid UTF-8 text");std::wstring wide(size_t(count),L'\0');MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,text.data(),int(text.size()),wide.data(),count);
+    struct Measure { HDC dc=nullptr;HFONT font=nullptr;HGDIOBJ old=nullptr;~Measure() { if(dc && old) SelectObject(dc,old);if(font) DeleteObject(font);if(dc) DeleteDC(dc); } } scope;
+    scope.dc=CreateCompatibleDC(nullptr);if(!scope.dc) throw std::runtime_error("Cannot measure text");scope.font=CreateFontW(-size,0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,ANTIALIASED_QUALITY,DEFAULT_PITCH,L"Bahnschrift");
+    if(!scope.font) throw std::runtime_error("Cannot create text font");scope.old=SelectObject(scope.dc,scope.font);
+    SIZE extent{};std::vector<int> widths(size_t(count),0);if(count && !GetTextExtentExPointW(scope.dc,wide.data(),count,0,nullptr,widths.data(),&extent)) throw std::runtime_error("Cannot measure text");
+    std::vector<std::pair<size_t,int>> result{{0,0}};size_t byte=0,unit=0;
+    while(byte<text.size()) { const auto c=static_cast<unsigned char>(text[byte]);const size_t length=c<128?1:c<224?2:c<240?3:4;byte+=length;unit+=length==4?2:1;result.emplace_back(byte,widths[unit-1]); }
+    return result;
+}
 std::vector<std::uint8_t> canvasImage(const std::vector<CanvasCommand>& commands) {
     std::vector<std::uint8_t> result(width*height*4,0); Surface surface;
     auto over=[&](int x,int y,const std::array<unsigned char,4>& color,float coverage) {
@@ -36,14 +47,14 @@ std::vector<std::uint8_t> canvasImage(const std::vector<CanvasCommand>& commands
         result[i+3]=static_cast<std::uint8_t>(total*255+.5f);
     };
     for(const auto& command:commands) {
-        const int left=std::clamp(command.x,0,width),top=std::clamp(command.y,0,height);
-        const int right=std::clamp(command.x+command.w,0,width),bottom=std::clamp(command.y+command.h,0,height);
+        const int left=std::clamp(std::max(command.x,command.clipX),0,width),top=std::clamp(std::max(command.y,command.clipY),0,height);
+        const int right=std::clamp(std::min(command.x+command.w,command.clipX+command.clipW),0,width),bottom=std::clamp(std::min(command.y+command.h,command.clipY+command.clipH),0,height);
         if(left>=right || top>=bottom) continue;
         if(command.kind=="text") {
             const int count=MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,command.text.data(),int(command.text.size()),nullptr,0);
             if(!count && !command.text.empty()) throw std::runtime_error("Invalid UTF-8 canvas text");
             std::wstring text(size_t(count),L'\0'); MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,command.text.data(),int(command.text.size()),text.data(),count);
-            RECT area{left,top,right,bottom}; FillRect(surface.dc,&area,static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
+            RECT area{left,top,right,bottom}; FillRect(surface.dc,&area,static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));area={command.x,command.y,command.x+command.w,command.y+command.h};
             auto oldFont=SelectObject(surface.dc,surface.font(command.size));
             UINT flags=DT_NOPREFIX|DT_SINGLELINE|DT_END_ELLIPSIS|DT_VCENTER;
             flags|=command.align=="center" ? DT_CENTER : command.align=="right" ? DT_RIGHT : DT_LEFT;

@@ -1,0 +1,13 @@
+{
+  "models": {
+    "foundation:player": {"source":"models/player.glb"},
+    "foundation:sword": {"source":"models/sword.glb"},
+    "foundation:scout": {"source":"models/scout.glb"},
+    "foundation:brute": {"source":"models/brute.glb"}
+  },
+  "sounds": {
+    "foundation:swing": {"source":"audio/swing.wav"},
+    "foundation:hit": {"source":"audio/hit.wav"},
+    "foundation:pickup": {"source":"audio/pickup.wav"}
+  }
+}

@@ -1,0 +1,596 @@
+{
+  "date": "2026-10-18",
+  "configurations": {
+    "debug": {
+      "passed": 43,
+      "failed": 0,
+      "compiler_warnings": 0,
+      "ctest_seconds": 137.44,
+      "focused_robustness_after_workload_adjustment": "passed",
+      "tests": [
+        {
+          "number": 1,
+          "name": "robustness",
+          "seconds": 8.14,
+          "status": "passed"
+        },
+        {
+          "number": 2,
+          "name": "shaders",
+          "seconds": 1.22,
+          "status": "passed"
+        },
+        {
+          "number": 3,
+          "name": "shader_modcheck",
+          "seconds": 0.19,
+          "status": "passed"
+        },
+        {
+          "number": 4,
+          "name": "shader_smoke",
+          "seconds": 1.74,
+          "status": "passed"
+        },
+        {
+          "number": 5,
+          "name": "mod_expansion",
+          "seconds": 7.48,
+          "status": "passed"
+        },
+        {
+          "number": 6,
+          "name": "mod_platform",
+          "seconds": 2.58,
+          "status": "passed"
+        },
+        {
+          "number": 7,
+          "name": "world_generation",
+          "seconds": 0.27,
+          "status": "passed"
+        },
+        {
+          "number": 8,
+          "name": "procedural",
+          "seconds": 10.71,
+          "status": "passed"
+        },
+        {
+          "number": 9,
+          "name": "procedural_smoke",
+          "seconds": 4.9,
+          "status": "passed"
+        },
+        {
+          "number": 10,
+          "name": "movement",
+          "seconds": 0.07,
+          "status": "passed"
+        },
+        {
+          "number": 11,
+          "name": "adventure",
+          "seconds": 9.07,
+          "status": "passed"
+        },
+        {
+          "number": 12,
+          "name": "equipment_world",
+          "seconds": 10.37,
+          "status": "passed"
+        },
+        {
+          "number": 13,
+          "name": "presentation",
+          "seconds": 10.86,
+          "status": "passed"
+        },
+        {
+          "number": 14,
+          "name": "combat_content",
+          "seconds": 6.65,
+          "status": "passed"
+        },
+        {
+          "number": 15,
+          "name": "adventure_smoke",
+          "seconds": 7.07,
+          "status": "passed"
+        },
+        {
+          "number": 16,
+          "name": "modcheck_adventure",
+          "seconds": 0.11,
+          "status": "passed"
+        },
+        {
+          "number": 17,
+          "name": "studio",
+          "seconds": 5.23,
+          "status": "passed"
+        },
+        {
+          "number": 18,
+          "name": "studio_smoke",
+          "seconds": 35.34,
+          "status": "passed"
+        },
+        {
+          "number": 19,
+          "name": "studio_package_check",
+          "seconds": 0.19,
+          "status": "passed"
+        },
+        {
+          "number": 20,
+          "name": "studio_modcheck",
+          "seconds": 0.21,
+          "status": "passed"
+        },
+        {
+          "number": 21,
+          "name": "core",
+          "seconds": 0.01,
+          "status": "passed"
+        },
+        {
+          "number": 22,
+          "name": "runtime_smoke",
+          "seconds": 5.56,
+          "status": "passed"
+        },
+        {
+          "number": 23,
+          "name": "renderer",
+          "seconds": 0.26,
+          "status": "passed"
+        },
+        {
+          "number": 24,
+          "name": "assets",
+          "seconds": 1.26,
+          "status": "passed"
+        },
+        {
+          "number": 25,
+          "name": "world",
+          "seconds": 0.02,
+          "status": "passed"
+        },
+        {
+          "number": 26,
+          "name": "mods",
+          "seconds": 0.02,
+          "status": "passed"
+        },
+        {
+          "number": 27,
+          "name": "scripting",
+          "seconds": 0.1,
+          "status": "passed"
+        },
+        {
+          "number": 28,
+          "name": "bridge",
+          "seconds": 0.4,
+          "status": "passed"
+        },
+        {
+          "number": 29,
+          "name": "simulation",
+          "seconds": 0.37,
+          "status": "passed"
+        },
+        {
+          "number": 30,
+          "name": "gameplay",
+          "seconds": 1.32,
+          "status": "passed"
+        },
+        {
+          "number": 31,
+          "name": "gameplay_smoke",
+          "seconds": 1.15,
+          "status": "passed"
+        },
+        {
+          "number": 32,
+          "name": "asset_gallery_smoke",
+          "seconds": 0.92,
+          "status": "passed"
+        },
+        {
+          "number": 33,
+          "name": "script_check",
+          "seconds": 0.04,
+          "status": "passed"
+        },
+        {
+          "number": 34,
+          "name": "modcheck_example",
+          "seconds": 0.05,
+          "status": "passed"
+        },
+        {
+          "number": 35,
+          "name": "modcheck_gameplay",
+          "seconds": 0.05,
+          "status": "passed"
+        },
+        {
+          "number": 36,
+          "name": "modcheck_asset_gallery",
+          "seconds": 0.05,
+          "status": "passed"
+        },
+        {
+          "number": 37,
+          "name": "modcheck_missing",
+          "seconds": 0.15,
+          "status": "passed"
+        },
+        {
+          "number": 38,
+          "name": "extensions",
+          "seconds": 1.04,
+          "status": "passed"
+        },
+        {
+          "number": 39,
+          "name": "native_smoke",
+          "seconds": 0.51,
+          "status": "passed"
+        },
+        {
+          "number": 40,
+          "name": "native_disabled_smoke",
+          "seconds": 0.49,
+          "status": "passed"
+        },
+        {
+          "number": 41,
+          "name": "modcheck_native",
+          "seconds": 0.07,
+          "status": "passed"
+        },
+        {
+          "number": 42,
+          "name": "save_inspect",
+          "seconds": 0.05,
+          "status": "passed"
+        },
+        {
+          "number": 43,
+          "name": "extension_sample_smoke",
+          "seconds": 1.1,
+          "status": "passed"
+        }
+      ]
+    },
+    "release": {
+      "passed": 43,
+      "failed": 0,
+      "compiler_warnings": 0,
+      "ctest_seconds": 69.8,
+      "focused_robustness_after_workload_adjustment": "passed",
+      "tests": [
+        {
+          "number": 1,
+          "name": "robustness",
+          "seconds": 2.42,
+          "status": "passed"
+        },
+        {
+          "number": 2,
+          "name": "shaders",
+          "seconds": 1.23,
+          "status": "passed"
+        },
+        {
+          "number": 3,
+          "name": "shader_modcheck",
+          "seconds": 0.17,
+          "status": "passed"
+        },
+        {
+          "number": 4,
+          "name": "shader_smoke",
+          "seconds": 1.1,
+          "status": "passed"
+        },
+        {
+          "number": 5,
+          "name": "mod_expansion",
+          "seconds": 1.41,
+          "status": "passed"
+        },
+        {
+          "number": 6,
+          "name": "mod_platform",
+          "seconds": 0.52,
+          "status": "passed"
+        },
+        {
+          "number": 7,
+          "name": "world_generation",
+          "seconds": 0.08,
+          "status": "passed"
+        },
+        {
+          "number": 8,
+          "name": "procedural",
+          "seconds": 1.62,
+          "status": "passed"
+        },
+        {
+          "number": 9,
+          "name": "procedural_smoke",
+          "seconds": 2.6,
+          "status": "passed"
+        },
+        {
+          "number": 10,
+          "name": "movement",
+          "seconds": 0.02,
+          "status": "passed"
+        },
+        {
+          "number": 11,
+          "name": "adventure",
+          "seconds": 0.98,
+          "status": "passed"
+        },
+        {
+          "number": 12,
+          "name": "equipment_world",
+          "seconds": 1.06,
+          "status": "passed"
+        },
+        {
+          "number": 13,
+          "name": "presentation",
+          "seconds": 2.1,
+          "status": "passed"
+        },
+        {
+          "number": 14,
+          "name": "combat_content",
+          "seconds": 1.04,
+          "status": "passed"
+        },
+        {
+          "number": 15,
+          "name": "adventure_smoke",
+          "seconds": 2.58,
+          "status": "passed"
+        },
+        {
+          "number": 16,
+          "name": "modcheck_adventure",
+          "seconds": 0.03,
+          "status": "passed"
+        },
+        {
+          "number": 17,
+          "name": "studio",
+          "seconds": 0.86,
+          "status": "passed"
+        },
+        {
+          "number": 18,
+          "name": "studio_smoke",
+          "seconds": 39.49,
+          "status": "passed"
+        },
+        {
+          "number": 19,
+          "name": "studio_package_check",
+          "seconds": 0.03,
+          "status": "passed"
+        },
+        {
+          "number": 20,
+          "name": "studio_modcheck",
+          "seconds": 0.03,
+          "status": "passed"
+        },
+        {
+          "number": 21,
+          "name": "core",
+          "seconds": 0.01,
+          "status": "passed"
+        },
+        {
+          "number": 22,
+          "name": "runtime_smoke",
+          "seconds": 5.26,
+          "status": "passed"
+        },
+        {
+          "number": 23,
+          "name": "renderer",
+          "seconds": 0.26,
+          "status": "passed"
+        },
+        {
+          "number": 24,
+          "name": "assets",
+          "seconds": 0.32,
+          "status": "passed"
+        },
+        {
+          "number": 25,
+          "name": "world",
+          "seconds": 0.02,
+          "status": "passed"
+        },
+        {
+          "number": 26,
+          "name": "mods",
+          "seconds": 0.01,
+          "status": "passed"
+        },
+        {
+          "number": 27,
+          "name": "scripting",
+          "seconds": 0.07,
+          "status": "passed"
+        },
+        {
+          "number": 28,
+          "name": "bridge",
+          "seconds": 0.26,
+          "status": "passed"
+        },
+        {
+          "number": 29,
+          "name": "simulation",
+          "seconds": 0.04,
+          "status": "passed"
+        },
+        {
+          "number": 30,
+          "name": "gameplay",
+          "seconds": 0.25,
+          "status": "passed"
+        },
+        {
+          "number": 31,
+          "name": "gameplay_smoke",
+          "seconds": 0.83,
+          "status": "passed"
+        },
+        {
+          "number": 32,
+          "name": "asset_gallery_smoke",
+          "seconds": 0.51,
+          "status": "passed"
+        },
+        {
+          "number": 33,
+          "name": "script_check",
+          "seconds": 0.03,
+          "status": "passed"
+        },
+        {
+          "number": 34,
+          "name": "modcheck_example",
+          "seconds": 0.02,
+          "status": "passed"
+        },
+        {
+          "number": 35,
+          "name": "modcheck_gameplay",
+          "seconds": 0.02,
+          "status": "passed"
+        },
+        {
+          "number": 36,
+          "name": "modcheck_asset_gallery",
+          "seconds": 0.02,
+          "status": "passed"
+        },
+        {
+          "number": 37,
+          "name": "modcheck_missing",
+          "seconds": 0.02,
+          "status": "passed"
+        },
+        {
+          "number": 38,
+          "name": "extensions",
+          "seconds": 0.67,
+          "status": "passed"
+        },
+        {
+          "number": 39,
+          "name": "native_smoke",
+          "seconds": 0.61,
+          "status": "passed"
+        },
+        {
+          "number": 40,
+          "name": "native_disabled_smoke",
+          "seconds": 0.57,
+          "status": "passed"
+        },
+        {
+          "number": 41,
+          "name": "modcheck_native",
+          "seconds": 0.02,
+          "status": "passed"
+        },
+        {
+          "number": 42,
+          "name": "save_inspect",
+          "seconds": 0.02,
+          "status": "passed"
+        },
+        {
+          "number": 43,
+          "name": "extension_sample_smoke",
+          "seconds": 0.51,
+          "status": "passed"
+        }
+      ]
+    }
+  },
+  "soak": {
+    "backup_gc_removed": 2,
+    "device": "Intel(R) UHD Graphics 630",
+    "index_bytes": 20888890,
+    "index_pages": 500000,
+    "iterations": 4096,
+    "mods": 25,
+    "private_end": 78856192,
+    "private_peak_sampled": 87887872,
+    "private_start": 71827456,
+    "update_p95_ms": 4.8004
+  },
+  "compatibility_smoke": {
+    "create_exit_code": 0,
+    "stale_metadata_open_exit_code": 0,
+    "future_version_open_exit_code": 1,
+    "rejected_checkpoint_preserved": true,
+    "metadata_preserved_on_rejection": true,
+    "world_id": "73032043582232799"
+  },
+  "note": "After the full suites, only the soak test volume changed from 400000 to 500000 pages. Both configurations rebuilt and reran robustness; the final Release soak passed. Engine sources unchanged after the full suites.",
+  "source_sha256": {
+    "CMakeLists.txt": "e083d59b9001228f08d603ce656b93a7caa75f187d42a4b830cb2ea29f550085",
+    "src/core/AtomicFile.cpp": "a1b5ded913a76ff34650eadb5e7f6046ebac6cdf5145a7ecdfe9055ba8df0ebf",
+    "src/core/AtomicFile.h": "e80a6bcd739c119399f245b7e97f0c264ea41947f5a9a6a32be22e36f6cf603c",
+    "src/core/IoExecutor.cpp": "fcec2d90a6e2d7111281fcbd114455ce5ffee6a005ed969b946451a097bff5a1",
+    "src/core/IoExecutor.h": "0c0acf76bdde7dd5106202b8f64eb4c9bbb5e0a711c9c49a5c677a2e52e00e52",
+    "src/core/Application.cpp": "22686bcb86b03c9920c9cae3912d3fac5fda38a6a4f4046f6eff574ec3aaa174",
+    "src/core/Application.h": "9d612e6ea93344ee182e4580f6515d58fa817362cddae9a702fea703023341ff",
+    "src/world/RegionEdits.cpp": "be07c27b6c5c292fb0f01f8082e628addc7553db101915eb15f4dfc5cd5f9cff",
+    "src/world/RegionEdits.h": "32e5751e36b4921451399fa9d2d2c253736f7db2ec3a53322b53559d6972673c",
+    "src/world/ChunkWorld.cpp": "f176c3a2709fc34388e9fcc05bc7779a4ebe4e9315ad3c21933e95f0c59e2842",
+    "src/world/WorldStorage.cpp": "50289665f085233d47a37dc541a18cf2f5bf2f70f7924072db80b72cc8ea2f94",
+    "src/world/WorldStorage.h": "0c159ed59dc4af911259503a1d7e609ac9f2f1e510489381951b06b94a57b35e",
+    "src/world/WorldMaintenance.cpp": "4116b5547178d1e0e84f831873b2d329ff4968ff0f79d2a4a3604fb932a8efcb",
+    "src/world/WorldBridge.cpp": "57d39dcb9ce884d1acd8af500d6dcf7ceb3ad1c4f8da1e4e5c51d298d1060756",
+    "src/game/FrontEnd.cpp": "cc73fe60e87fccf41d7dd0c1d204fc8e0c7604e9afb0aa38baf3a20e7f530de1",
+    "src/game/FrontEnd.h": "235b85eeb5b59c3c0f617135fb1f17131deba0400aac54497c85171ab90fb3b6",
+    "src/mods/ModLoader.cpp": "c445d7ed889cc3d7eb0263bcf126eb34fa7cc12a336a4122927a9793ea569082",
+    "src/mods/Manifest.cpp": "b8b3a2f221c75eafa208af951c26cf5cc23304b7277ff679b828bad1d4fc704c",
+    "src/mods/Manifest.h": "2fa703ac02738a53badcf3a6cf7d90b9da6ce101151eda0d8cdddb2f85ebd300",
+    "src/assets/AssetManager.cpp": "2e36af7b9413fd57dfc59862dc261a92e8af2e879d73702684092de1722661b2",
+    "src/assets/AssetManager.h": "3399f8783522de00a83b26b50eb0bedf34b7ae9462a2dcf600e00d44a0d0eeee",
+    "src/assets/VirtualFileSystem.h": "28c4d930b3f520d9cf8d8b490ff7ad887b2f3e3a64806703915798a004081072",
+    "src/persistence/SaveGame.cpp": "c072ece2c89d5f46b72c043ca37831f11ff31d88bb42ff0ada370186b5251d90",
+    "src/persistence/SaveGame.h": "506004b6124f504264e00e771a6db881c23880357e5a3d91882267c3bf6cdcbe",
+    "src/scripting/Runtime.cpp": "ac74e0622d68abc00fa65995e25a6220fdc3eaa2e1ea1628edcf553fd841a7b3",
+    "src/scripting/Runtime.h": "75b27ab57b148bf54e9e2dad18d24e5b1175ef1d0ab4781289a27f3d59f3866f",
+    "src/scripting/ExtensionBridge.cpp": "b7dd2decea9744ba1f6425a3d436d795ca160c5b4106584f0f28f3d3da1bac79",
+    "src/renderer/Renderer.h": "0a16b2c6240613c095289bef7fccfafdc2ed6e91501e93868576ed002df52a52",
+    "src/renderer/d3d11/Renderer.cpp": "dec14fb01a0636f715959694a920f7e16fc7a3cc13133bc985bc18cd3cc38415",
+    "tests/RobustnessTests.cpp": "9459abc348e949b16f39b9559061598d3e35b9aa218efbc76b40b248c238212f",
+    "tests/ModExpansionTests.cpp": "497d8441ff2fdce0f5b295b6a3137f63d85d3185f42fd2f6353be565d1e38f3f",
+    "content/foundation/mod.json": "7d4ca9c0ae7b7373fcd7bcd68bbaf2636b423f1e7d9613b76190baf64be82a5e",
+    "content/plains/mod.json": "47828b26b1d6664b8235a8c42ee2d8f8e7daf3fe938e00c30e32ea4f785d46fe",
+    "src/world/ChunkWorld.h": "64338d95f888f786049201d66d98042d2d042f270e8fdf992b34c5f0f761523b"
+  }
+}

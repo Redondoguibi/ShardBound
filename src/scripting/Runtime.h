@@ -1,5 +1,6 @@
 #pragma once
 #include "scripting/Registry.h"
+#include "core/Data.h"
 #include <filesystem>
 namespace game::script {
 class Runtime {
@@ -14,10 +15,16 @@ public:
     std::vector<Diagnostic> emit(const std::string& event,const std::vector<Value>& args={});
     Registry& registry();
     std::string currentMod() const;
+    std::filesystem::path moduleRoot(const std::string& mod) const;
     std::uint64_t subscribe(std::string event,Value handler,bool hook=false,std::string owner={});
     bool unsubscribe(std::uint64_t token);
     Value filter(const std::string& hook,Value value);
     Value invoke(const Value& function,const std::vector<Value>& args);
+    Value call(const std::string& builtin,const std::vector<Value>& args={});
+    // Cooperative main-thread tasks. Delta is game time; no wall-clock waits.
+    std::vector<Diagnostic> advanceTasks(double delta);
+    void cancelTasks();
+    Data debugSnapshot() const;
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

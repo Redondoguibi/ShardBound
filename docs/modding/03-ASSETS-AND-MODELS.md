@@ -209,3 +209,11 @@ Evite:
 - objetos repetidos com meshes diferentes sem motivo.
 
 O renderer foi projetado para aproveitar instancing de objetos repetidos.
+
+## ShardBound Studio v1
+
+O registro `assets.json → studio` importa pacotes com GLB animado, efeitos, eventos e animações do player. Veja [instalação, API executável e limitações](../shardbound-studio/05-RUNTIME-E-USO.md). Este suporte substitui a limitação anterior de importação exclusivamente estática; skinning e materiais GLB BLEND continuam fora do subconjunto aceito.
+
+## Shaders de mods
+
+O registro `assets.json → shaders` e as APIs de material e pós-processamento estão documentados em [09-SHADERS.md](09-SHADERS.md). Vínculos de entidade também funcionam com modelos Studio.

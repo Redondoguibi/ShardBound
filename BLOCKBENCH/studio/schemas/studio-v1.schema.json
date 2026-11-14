@@ -1,0 +1,1040 @@
+{
+  "$defs": {
+    "effect": {
+      "additionalProperties": false,
+      "properties": {
+        "angularVelocity": {
+          "type": "number"
+        },
+        "blend": {
+          "enum": [
+            "alpha",
+            "additive"
+          ]
+        },
+        "burst": {
+          "maximum": 4096,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "color": {
+          "pattern": "^#[a-fA-F0-9]{6}$",
+          "type": "string"
+        },
+        "colorEnd": {
+          "pattern": "^#[a-fA-F0-9]{6}$",
+          "type": "string"
+        },
+        "columns": {
+          "maximum": 256,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "curves": {
+          "additionalProperties": false,
+          "properties": {
+            "color": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "age": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "value": {
+                    "pattern": "^#[a-fA-F0-9]{6}$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "age",
+                  "value"
+                ],
+                "type": "object"
+              },
+              "maxItems": 64,
+              "minItems": 2,
+              "type": "array"
+            },
+            "opacity": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "age": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "value": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "age",
+                  "value"
+                ],
+                "type": "object"
+              },
+              "maxItems": 64,
+              "minItems": 2,
+              "type": "array"
+            },
+            "rotation": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "age": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "value": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "age",
+                  "value"
+                ],
+                "type": "object"
+              },
+              "maxItems": 64,
+              "minItems": 2,
+              "type": "array"
+            },
+            "size": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "age": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "value": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "age",
+                  "value"
+                ],
+                "type": "object"
+              },
+              "maxItems": 64,
+              "minItems": 2,
+              "type": "array"
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
+        "direction": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "distance": {
+          "type": "number"
+        },
+        "drag": {
+          "type": "number"
+        },
+        "duration": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "endOffset": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "follow": {
+          "type": "boolean"
+        },
+        "fps": {
+          "type": "number"
+        },
+        "frames": {
+          "maximum": 65536,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "gravity": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "id": {
+          "not": {
+            "pattern": "(^|[:/])\\.\\.?([:/]|$)"
+          },
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        "intensity": {
+          "type": "number"
+        },
+        "kind": {
+          "enum": [
+            "particle",
+            "trail",
+            "flash",
+            "glow"
+          ]
+        },
+        "lifetime": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "opacity": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "opacityEnd": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "rate": {
+          "maximum": 4096,
+          "minimum": 0,
+          "type": "number"
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "rows": {
+          "maximum": 256,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "seed": {
+          "maximum": 4294967295,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "shape": {
+          "enum": [
+            "point",
+            "box",
+            "sphere",
+            "cone"
+          ]
+        },
+        "shapeSize": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "size": {
+          "minimum": 0,
+          "type": "number"
+        },
+        "sizeEnd": {
+          "minimum": 0,
+          "type": "number"
+        },
+        "speed": {
+          "type": "number"
+        },
+        "speedSpread": {
+          "type": "number"
+        },
+        "spread": {
+          "type": "number"
+        },
+        "startOffset": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "texture": {
+          "type": "string"
+        },
+        "trailLength": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "trailSamples": {
+          "maximum": 240,
+          "minimum": 2,
+          "type": "integer"
+        },
+        "width": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "duration",
+        "lifetime",
+        "burst",
+        "rate",
+        "seed",
+        "shape",
+        "shapeSize",
+        "speed",
+        "speedSpread",
+        "direction",
+        "spread",
+        "gravity",
+        "drag",
+        "size",
+        "sizeEnd",
+        "color",
+        "colorEnd",
+        "opacity",
+        "opacityEnd",
+        "rotation",
+        "angularVelocity",
+        "texture",
+        "blend",
+        "columns",
+        "rows",
+        "frames",
+        "fps",
+        "curves",
+        "trailLength",
+        "trailSamples",
+        "width",
+        "startOffset",
+        "endOffset",
+        "intensity",
+        "distance",
+        "follow"
+      ],
+      "type": "object"
+    },
+    "effects": {
+      "additionalProperties": false,
+      "properties": {
+        "definitions": {
+          "items": {
+            "$ref": "#/$defs/effect"
+          },
+          "type": "array"
+        },
+        "generator": {
+          "type": "string"
+        },
+        "project": {
+          "not": {
+            "pattern": "(^|[:/])\\.\\.?([:/]|$)"
+          },
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        "renderContract": {
+          "$ref": "#/$defs/renderContract"
+        },
+        "schema": {
+          "const": "shardbound.studio.effects"
+        },
+        "version": {
+          "const": 1
+        }
+      },
+      "required": [
+        "schema",
+        "version",
+        "generator",
+        "project",
+        "renderContract",
+        "definitions"
+      ],
+      "type": "object"
+    },
+    "event": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "enum": [
+            "burst",
+            "start",
+            "stop"
+          ]
+        },
+        "follow": {
+          "type": "boolean"
+        },
+        "fps": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "frame": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "instance": {
+          "type": "string"
+        },
+        "loop": {
+          "type": "boolean"
+        },
+        "offset": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "order": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "pitch": {
+          "maximum": 4,
+          "minimum": 0.1,
+          "type": "number"
+        },
+        "resource": {
+          "not": {
+            "pattern": "(^|[:/])\\.\\.?([:/]|$)"
+          },
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "time": {
+          "minimum": 0,
+          "type": "number"
+        },
+        "type": {
+          "enum": [
+            "particle",
+            "trail",
+            "flash",
+            "glow",
+            "sound"
+          ]
+        },
+        "volume": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "resource",
+        "action",
+        "target",
+        "offset",
+        "follow",
+        "instance",
+        "volume",
+        "pitch",
+        "loop",
+        "order",
+        "time",
+        "frame",
+        "fps"
+      ],
+      "type": "object"
+    },
+    "events": {
+      "additionalProperties": false,
+      "properties": {
+        "clips": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "events": {
+                "items": {
+                  "$ref": "#/$defs/event"
+                },
+                "type": "array"
+              },
+              "fps": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "length": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "loop": {
+                "enum": [
+                  "once",
+                  "loop",
+                  "hold"
+                ]
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "length",
+              "loop",
+              "fps",
+              "events"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "generator": {
+          "type": "string"
+        },
+        "locators": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "parent": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "position": {
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 3,
+                "minItems": 3,
+                "type": "array"
+              },
+              "rotation": {
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 3,
+                "minItems": 3,
+                "type": "array"
+              },
+              "uuid": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "uuid",
+              "name",
+              "parent",
+              "position",
+              "rotation"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "project": {
+          "not": {
+            "pattern": "(^|[:/])\\.\\.?([:/]|$)"
+          },
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        "schema": {
+          "const": "shardbound.studio.events"
+        },
+        "sounds": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "duration": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "file": {
+                "type": "string"
+              },
+              "id": {
+                "not": {
+                  "pattern": "(^|[:/])\\.\\.?([:/]|$)"
+                },
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "file",
+              "duration"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "version": {
+          "const": 1
+        }
+      },
+      "required": [
+        "schema",
+        "version",
+        "generator",
+        "project",
+        "clips",
+        "sounds",
+        "locators"
+      ],
+      "type": "object"
+    },
+    "package": {
+      "additionalProperties": false,
+      "properties": {
+        "editorVersion": {
+          "type": "string"
+        },
+        "effects": {
+          "type": "string"
+        },
+        "events": {
+          "type": "string"
+        },
+        "generator": {
+          "type": "string"
+        },
+        "models": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "bindings": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "group": {
+                      "type": "string"
+                    },
+                    "referenceGroup": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "enum": [
+                        "Head",
+                        "Body",
+                        "LeftArm",
+                        "RightArm",
+                        "LeftLeg",
+                        "RightLeg"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "group",
+                    "target",
+                    "referenceGroup"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "file": {
+                "type": "string"
+              },
+              "id": {
+                "not": {
+                  "pattern": "(^|[:/])\\.\\.?([:/]|$)"
+                },
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+                "type": "string"
+              },
+              "roots": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "skin": {
+                "additionalProperties": false,
+                "properties": {
+                  "height": {
+                    "const": 64
+                  },
+                  "layers": {
+                    "const": true
+                  },
+                  "variant": {
+                    "enum": [
+                      "wide",
+                      "slim"
+                    ]
+                  },
+                  "width": {
+                    "const": 64
+                  }
+                },
+                "required": [
+                  "variant",
+                  "width",
+                  "height",
+                  "layers"
+                ],
+                "type": "object"
+              },
+              "type": {
+                "enum": [
+                  "player",
+                  "item",
+                  "melee",
+                  "ranged",
+                  "block",
+                  "armor",
+                  "monster",
+                  "effect"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "file",
+              "roots",
+              "bindings"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "playerAnimations": {
+          "type": "string"
+        },
+        "project": {
+          "not": {
+            "pattern": "(^|[:/])\\.\\.?([:/]|$)"
+          },
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        "projectileVisual": {
+          "anyOf": [
+            {
+              "not": {
+                "pattern": "(^|[:/])\\.\\.?([:/]|$)"
+              },
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "runtimeIntegration": {
+          "const": "not-yet-implemented"
+        },
+        "schema": {
+          "const": "shardbound.studio.package"
+        },
+        "unitsPerMeter": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "version": {
+          "const": 1
+        }
+      },
+      "required": [
+        "schema",
+        "version",
+        "generator",
+        "project",
+        "editorVersion",
+        "unitsPerMeter",
+        "models",
+        "effects",
+        "events",
+        "playerAnimations",
+        "projectileVisual",
+        "runtimeIntegration"
+      ],
+      "type": "object"
+    },
+    "playerAnimations": {
+      "additionalProperties": false,
+      "properties": {
+        "clips": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "channels": {
+                "additionalProperties": false,
+                "properties": {
+                  "Body": {
+                    "$ref": "#/$defs/track"
+                  },
+                  "Head": {
+                    "$ref": "#/$defs/track"
+                  },
+                  "LeftArm": {
+                    "$ref": "#/$defs/track"
+                  },
+                  "LeftLeg": {
+                    "$ref": "#/$defs/track"
+                  },
+                  "RightArm": {
+                    "$ref": "#/$defs/track"
+                  },
+                  "RightLeg": {
+                    "$ref": "#/$defs/track"
+                  }
+                },
+                "required": [
+                  "Head",
+                  "Body",
+                  "LeftArm",
+                  "RightArm",
+                  "LeftLeg",
+                  "RightLeg"
+                ],
+                "type": "object"
+              },
+              "fps": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "length": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "loop": {
+                "enum": [
+                  "once",
+                  "loop",
+                  "hold"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "root": {
+                "$ref": "#/$defs/track"
+              }
+            },
+            "required": [
+              "name",
+              "length",
+              "loop",
+              "fps",
+              "root",
+              "channels"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "context": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "geometryIncluded": {
+                  "const": false
+                },
+                "groups": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "Body": {
+                      "type": "string"
+                    },
+                    "Head": {
+                      "type": "string"
+                    },
+                    "LeftArm": {
+                      "type": "string"
+                    },
+                    "LeftLeg": {
+                      "type": "string"
+                    },
+                    "RightArm": {
+                      "type": "string"
+                    },
+                    "RightLeg": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "Head",
+                    "Body",
+                    "LeftArm",
+                    "RightArm",
+                    "LeftLeg",
+                    "RightLeg"
+                  ],
+                  "type": "object"
+                },
+                "root": {
+                  "type": "string"
+                },
+                "variant": {
+                  "enum": [
+                    "wide",
+                    "slim"
+                  ]
+                }
+              },
+              "required": [
+                "variant",
+                "geometryIncluded",
+                "root",
+                "groups"
+              ],
+              "type": "object"
+            }
+          ]
+        },
+        "generator": {
+          "type": "string"
+        },
+        "project": {
+          "not": {
+            "pattern": "(^|[:/])\\.\\.?([:/]|$)"
+          },
+          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+          "type": "string"
+        },
+        "schema": {
+          "const": "shardbound.studio.player_animations"
+        },
+        "version": {
+          "const": 1
+        }
+      },
+      "required": [
+        "schema",
+        "version",
+        "generator",
+        "project",
+        "context",
+        "clips"
+      ],
+      "type": "object"
+    },
+    "renderContract": {
+      "additionalProperties": false,
+      "properties": {
+        "colorSpace": {
+          "const": "srgb"
+        },
+        "filtering": {
+          "const": "nearest"
+        },
+        "glow": {
+          "const": "additive-sprite-and-point-light"
+        },
+        "gravitySpace": {
+          "const": "emitter-local"
+        },
+        "particleLighting": {
+          "const": "unlit"
+        },
+        "particleMotion": {
+          "const": "analytic-linear-drag"
+        },
+        "spriteOrientation": {
+          "const": "camera-facing"
+        },
+        "trail": {
+          "const": "world-space-ribbon"
+        },
+        "transparency": {
+          "const": "alpha-or-additive"
+        },
+        "version": {
+          "const": 1
+        }
+      },
+      "required": [
+        "version",
+        "filtering",
+        "colorSpace",
+        "particleLighting",
+        "transparency",
+        "gravitySpace",
+        "particleMotion",
+        "spriteOrientation",
+        "trail",
+        "glow"
+      ],
+      "type": "object"
+    },
+    "track": {
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "quaternion": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "scale": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "times": {
+          "items": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "times",
+        "position",
+        "quaternion",
+        "scale"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://shardbound.local/schemas/studio-v1",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/package"
+    },
+    {
+      "$ref": "#/$defs/effects"
+    },
+    {
+      "$ref": "#/$defs/events"
+    },
+    {
+      "$ref": "#/$defs/playerAnimations"
+    }
+  ],
+  "title": "ShardBound Studio companion contracts v1"
+}

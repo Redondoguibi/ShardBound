@@ -627,3 +627,7 @@ erro de referência gera diagnóstico claro
 - carregamento assíncrono v1 vs etapa posterior;
 - formato interno de áudio;
 - formato de mapas/scenes.
+
+## ShardBound Studio v1
+
+O registro `assets.json → studio` importa pacotes com GLB animado, efeitos, eventos e animações do player. Veja [instalação, API executável e limitações](shardbound-studio/05-RUNTIME-E-USO.md). Este suporte substitui a limitação anterior de importação exclusivamente estática; skinning e materiais GLB BLEND continuam fora do subconjunto aceito.

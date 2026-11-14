@@ -1,0 +1,46 @@
+{
+  "recorded_utc": "2026-10-19T16:26:07.4853756+00:00",
+  "platform": "Windows x64 / MSVC / SDL3 / D3D11 / Jolt",
+  "before_fix": {
+    "failure": "Holding movement into a wall left the player suspended",
+    "log": "build/wall-jump-before.log",
+    "reproduced": true
+  },
+  "validation": {
+    "debug": {
+      "build": "passed",
+      "tests_passed": 45,
+      "tests_failed": 0,
+      "test_seconds": 127.17,
+      "compiler_warnings": 0,
+      "log": "build/wall-jump-debug-final.log",
+      "log_sha256": "67c86016281763b3236b3d28defa39d35d471da272c3c487c43cb39a12919b44"
+    },
+    "release": {
+      "build": "passed",
+      "tests_passed": 45,
+      "tests_failed": 0,
+      "test_seconds": 49.93,
+      "compiler_warnings": 0,
+      "log": "build/wall-jump-release-final.log",
+      "log_sha256": "43f37d1e7af70dab843d964ad23a034c98813a7b129ad836e807ca8025564877"
+    }
+  },
+  "focused": {
+    "log": "build/wall-jump-release-focused.log",
+    "tests_failed": 0,
+    "tests_passed": 5
+  },
+  "regression_test": "movement",
+  "manual_playtest": false,
+  "source_sha256": {
+    "src/physics/PhysicsWorld.cpp": "5d81ce62c1215c92619fd69495beb61848531fe08302210b28993db1b1598000",
+    "src/physics/PhysicsWorld.h": "5f9d8544241ab3063dc3ea44c905eb1d248313d87d77c5621e2282676e30d6bd",
+    "src/game/PhysicsSystem.cpp": "9f0d3de2ef61b43bfa930f729133cd61bdf9dcef03de19037b6aa1bd351398a4",
+    "src/game/PhysicsSystem.h": "59400144a34e38d597d025b6e5cfd2e344a77a26550b73d34ff86ad25a980a00",
+    "src/game/PlayerController.cpp": "50e81561185b4ba0b0b43c97e9582d72282b465980119a1b655f688e52a6f430",
+    "tests/MovementTests.cpp": "5f9bda0314f76f4d729af8e8bc04c069493392da3665c58769ad2da4f0a78e16",
+    "docs/35-WALL-JUMP-FIX.md": "89f1fda8e327658f362479893d7602ce7fdbb51703f2a6f6dd7556805beab8ad",
+    "docs/README.md": "7c3633e619cea65e29d39339e3d5adeddb19521d33d61933a1fabec26fbbf87e"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "create_exit_code": 0,
+  "stale_metadata_open_exit_code": 0,
+  "future_version_open_exit_code": 1,
+  "rejected_checkpoint_preserved": true,
+  "metadata_preserved_on_rejection": true,
+  "world_id": "73032043582232799"
+}

@@ -29,13 +29,15 @@ TextureData pixels(const DirectX::ScratchImage& image) {
 }
 }
 TextureData decodeTexture(const std::uint8_t* bytes, size_t size) {
-    ComScope com;
+    // DirectXTex retains its WIC factory. Keep COM alive for all decodes on this thread.
+    thread_local ComScope com;
     DirectX::ScratchImage image;
     check(DirectX::LoadFromWICMemory(bytes,size,DirectX::WIC_FLAGS_FORCE_RGB,nullptr,image),{});
     return pixels(image);
 }
 TextureData compileTexture(const std::filesystem::path& source, const std::filesystem::path& cache, bool srgb, bool nearest) {
-    ComScope com;
+    // DirectXTex retains its WIC factory. Keep COM alive for all decodes on this thread.
+    thread_local ComScope com;
     const auto key = fingerprint(source,std::string("texture-v1|")+(srgb?"srgb":"linear")+(nearest?"nearest":"linear"));
     const auto target = cache / (key + ".dds");
     DirectX::ScratchImage image;

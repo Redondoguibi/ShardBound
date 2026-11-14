@@ -69,7 +69,7 @@ test("protocol audit records successful requests without arguments or results", 
     const events = text.trim().split("\n").map(JSON.parse);
     assert.ok(events.some((e) => e.method === "initialize" && e.success));
     assert.ok(
-      events.some((e) => e.method === "tools/list" && e.tools.length === 18),
+      events.some((e) => e.method === "tools/list" && e.tools.length === Object.keys(tools).length),
     );
     assert.ok(events.some((e) => e.tool === "read_project" && e.success));
     assert.doesNotMatch(text, /PRIVATE_RESULT|geometry|arguments|content/);

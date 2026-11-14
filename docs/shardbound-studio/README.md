@@ -11,7 +11,7 @@
 - **Definido:** suportar autoria de skins de player, itens, armas corpo a corpo, armas de longa distância, blocos, armaduras, monstros, partículas e efeitos.
 - **Definido:** configurar partículas e efeitos na **mesma sessão de animação do modelo**, disparados por keyframes em tempos/frames escolhidos.
 - **Definido (armas melee e ranged):** editor/preview com **player padrão sem skin**, ajustes da arma na mão, poses do player e animações completas do jogador **correndo, pulando e atacando/disparando com a arma equipada**, no mesmo ambiente/timeline.
-- **Definido (armaduras):** sobrepor as peças ao modelo do player, vinculadas a **pastas/grupos** por parte do corpo (braço esquerdo/direito etc.); editor análogo de encaixe, **sem exigir poses do player**, com animações opcionais.
+- **Definido (armaduras):** sobrepor as peças ao modelo do player e vinculá-las a **pastas/grupos** por parte do corpo (braço esquerdo/direito etc.). As peças acompanham as animações do player pelo encaixe, sem clipes próprios.
 - **Definido (monstros):** hierarquia de grupos totalmente livre, sem estrutura corporal predefinida obrigatória.
 - **Definido (projetos):** aceitar tanto um objeto isolado quanto vários modelos independentes relacionados, conforme o tipo de criação.
 - **Definido (GeckoLib):** replicar a **experiência de autoria**, não exigir importação/exportação compatível com formatos específicos do GeckoLib.

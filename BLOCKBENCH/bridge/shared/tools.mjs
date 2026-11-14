@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { studioTools } from './studio-tools.mjs';
 
 const number = z.number().finite().min(-1e6).max(1e6);
 // Homogeneous fixed-length arrays publish an object-valued JSON Schema items.
@@ -348,6 +349,7 @@ export const tools = {
               .object({
                 id,
                 name: name.optional(),
+                parent: id.optional(),
                 origin: vec3.optional(),
                 rotation: vec3.optional(),
                 visibility: z.boolean().optional(),
@@ -491,10 +493,10 @@ export const tools = {
         directory: assetPath.default('assets/core/models'),
         recursive: z.boolean().default(false),
         extensions: z
-          .array(z.enum(['bbmodel', 'gltf', 'glb']))
+          .array(z.enum(['bbmodel', 'sbstudio', 'gltf', 'glb']))
           .min(1)
-          .max(3)
-          .default(['bbmodel', 'gltf', 'glb']),
+          .max(4)
+          .default(['bbmodel', 'sbstudio', 'gltf', 'glb']),
       })
       .strict(),
   },
@@ -504,8 +506,8 @@ export const tools = {
     schema: z
       .object({
         path: assetPath.refine(
-          (v) => v.toLowerCase().endsWith('.bbmodel'),
-          'Only .bbmodel editable sources can be opened.',
+          (v) => /\.(bbmodel|sbstudio)$/i.test(v),
+          'Only .bbmodel or .sbstudio editable sources can be opened.',
         ),
       })
       .strict(),
@@ -517,8 +519,8 @@ export const tools = {
       .object({
         ...guard,
         path: assetPath.refine(
-          (v) => v.toLowerCase().endsWith('.bbmodel'),
-          'Save path must end in .bbmodel.',
+          (v) => /\.(bbmodel|sbstudio)$/i.test(v),
+          'Save path must end in .bbmodel or .sbstudio.',
         ),
         overwrite: z.boolean().default(false),
       })
@@ -530,7 +532,8 @@ export const tools = {
     schema: z
       .object({
         project_id: id,
-        format: z.enum(['bbmodel', 'obj', 'gltf', 'glb']).default('bbmodel'),
+        format: z.enum(['bbmodel', 'sbstudio', 'obj', 'gltf', 'glb']).default('bbmodel'),
+        expected_revision: z.number().int().nonnegative().optional(),
         filename: z
           .string()
           .regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/)
@@ -541,6 +544,8 @@ export const tools = {
       .strict(),
   },
 };
+
+Object.assign(tools, studioTools);
 
 export function validateMesh(data) {
   if (

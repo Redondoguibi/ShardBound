@@ -1,6 +1,6 @@
 ﻿# ShardBound Blockbench bridge
 
-Integração privada para **ChatGPT normal -> Secure MCP Tunnel OpenAI -> MCP stdio no Windows -> daemon local -> Blockbench**, com modelagem Generic Model, texturas, exportação e ações adaptadas do MTools.
+Integração privada para **ChatGPT normal -> Secure MCP Tunnel OpenAI -> MCP stdio no Windows -> daemon local -> Blockbench**, com autoria Generic Model e ShardBound Studio, texturas, exportação e ações adaptadas do MTools.
 
 Comece pelo [guia de instalação e uso no ChatGPT Desktop](CHATGPT-DESKTOP.md):
 
@@ -8,11 +8,13 @@ Comece pelo [guia de instalação e uso no ChatGPT Desktop](CHATGPT-DESKTOP.md):
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-ChatGPT-Desktop-Plugin.ps1 -OpenPlugin
 ```
 
-Depois de reiniciar o PC: `.\Connect-ChatGPT.ps1`. O Blockbench deve estar aberto com `.local/shardbound_bridge.js` e um Generic Model. O plugin de conta é [ShardBound Blockbench](https://chatgpt.com/plugins/plugins_6abfe848600c8191876653a097dd8d53).
+Depois de reiniciar o PC: `.\Connect-ChatGPT.ps1`. O Blockbench deve estar aberto com `.local/shardbound_bridge.js` e um Generic Model ou projeto Studio. O plugin de conta é [ShardBound Blockbench](https://chatgpt.com/plugins/plugins_6abfe848600c8191876653a097dd8d53).
+
+Para o Studio, siga [Compatibilidade e uso completo](STUDIO-COMPATIBILITY.md). Carregue também `../studio/dist/shardbound_studio.js`.
 
 ## Implementação
 
-`mcp/server.mjs` oferece stdio e inicia o daemon se necessário. `mcp/daemon.mjs` escuta somente em loopback, autentica pelo token local e encaminha chamadas serializadas por WebSocket à bridge do Blockbench. `plugin-src/controller.mjs` valida projeto/revisão antes de alterações. Somente Generic Model (`free`) pode ser editado. `shared/tools.mjs` define 18 ferramentas e o conjunto explícito de adaptações MTools; `mtools_list` informa quais estão automatizadas. Não há execução arbitrária de scripts de plugins.
+`mcp/server.mjs` oferece stdio e inicia o daemon se necessário. `mcp/daemon.mjs` escuta somente em loopback, autentica pelo token local e encaminha chamadas serializadas por WebSocket à bridge do Blockbench. `plugin-src/controller.mjs` valida projeto/revisão antes de alterações. Generic Model (`free`) e Studio (`shardbound_studio`, Studio 1.1+) podem ser editados. `shared/tools.mjs` e `shared/studio-tools.mjs` definem 34 ferramentas e o conjunto explícito de adaptações MTools; `mtools_list` informa quais estão automatizadas. Não há execução arbitrária de scripts de plugins.
 
 O pareamento e a chave DPAPI do túnel ficam em `.local/` ignorado pelo Git. O pacote privado inclui `.app.json` com o app registrado e as referências nos manifests portatil e compatível. Não inclui segredos ou node_modules. O pacote da conta não tenta iniciar um comando local através do upload de arquivos.
 

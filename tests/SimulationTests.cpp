@@ -6,6 +6,8 @@
 #include <stdexcept>
 int main() {
     try {
+        // Editors/streaming may replace many bodies before the next simulation step.
+        { game::PhysicsWorld streamed;for(int i=0;i<2048;++i) { std::vector<game::BodyId> transient;for(int j=0;j<16;++j) transient.push_back(streamed.box({float(i*16+j),0,0},{.5f,.5f,.5f},false));for(auto id:transient) streamed.destroy(id); } }
         game::PhysicsWorld physics;
         physics.box({0,-0.5f,0},{10,0.5f,10},false);
         auto body=physics.box({0,3,0},{0.5f,0.5f,0.5f},true);

@@ -13,13 +13,20 @@ public:
     void setEnabled(bool enabled) { enabled_=enabled; }
     void updateCamera(float delta);
     Camera camera() const;
+    Camera viewCamera() const { return cameraOverride ? cameraOverride() : camera(); }
+    std::function<Camera()> cameraOverride;
     float speed() const { return speed_; }
-    void release() noexcept { player_={}; speed_=0; enabled_=true; cameraReady_=false; }
+    void movementHeading(std::optional<float> yaw) { movementHeading_=yaw; }
+    void stepHeight(float value);
+    float stepHeight() const {return stepHeight_;}
+    void release() noexcept { player_={}; speed_=0; enabled_=true; cameraReady_=false;movementHeading_.reset();stepHeight_=0; }
 private:
     World& world_; PhysicsSystem& physics_; EntityId player_{}; float speed_=0;
     bool enabled_=true;
     Vec3 cameraTarget_{};
     bool cameraReady_=false;
     Vec3 viewOffset_{0,8,-10};
+    std::optional<float> movementHeading_;
+    float stepHeight_=0;
 };
 }

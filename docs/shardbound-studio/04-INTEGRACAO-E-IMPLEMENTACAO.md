@@ -59,7 +59,7 @@ De acordo com `docs/14-ASSET-PIPELINE.md`, `docs/modding/03-ASSETS-AND-MODELS.md
 ## 3.1 Novas regras funcionais definidas em 2026-10-11
 
 - Armas melee/ranged: player padrão sem skin, posição na mão e **animações de corrida, pulo, ataque e disparo com a arma equipada** no mesmo editor.
-- Armaduras: sobreposição ao corpo do player, peças organizadas por grupos (inclusive lados esquerdo e direito), seguindo animação corporal; animações adicionais opcionais; sem exigir poses do player durante a autoria.
+- Armaduras: sobreposição ao corpo do player e peças organizadas por grupos (inclusive lados esquerdo e direito). Cada peça segue a animação do grupo corporal, sem clipe próprio.
 - Monstros: grupos e hierarquias arbitrários, sem obrigar uma estrutura de seis membros.
 - Modelos: projetos com objeto único ou modelos independentes relacionados, conforme o caso.
 - Blocos: componentes da construção visual do cenário; **não** incluir colocação, mineração ou quebra pelo jogador.
@@ -98,7 +98,7 @@ Construir, testar e aperfeiçoar dentro do Blockbench:
 - Modelagem por cubos, pastas, pivôs, textura/UV e timeline familiar ao fluxo GeckoLib;
 - Criação de **player com animações gerais no próprio projeto do player** (sem categoria separada para animar o jogador), skin no padrão Minecraft (PNG 64×64), item, arma melee/ranged, bloco de cenário, armadura e monstro;
 - **Editor contextual de armas melee e ranged com player padrão sem skin**, empunhadura ajustável e animações do jogador de correr, pular, atacar/disparar com a arma na mão, no mesmo ambiente. **As animações gerais sem arma permanecem no projeto de criação do player**;
-- **Preview/edição de armadura** sobre o corpo, vinculada a pastas por regiões corporais, sem exigir poses do player; animações próprias opcionais;
+- **Prévia e edição de armadura** sobre o corpo, com as peças vinculadas às pastas corporais e acompanhando as animações do player;
 - **Hierarquias inteiramente livres** para monstros;
 - Projetos de um modelo ou vários modelos independentes relacionados;
 - **Editor completo para criar partículas do zero**, **rastros de armas, flashes e brilhos**, além de **sons e eventos em keyframes da timeline**, tudo integrado à animação;
@@ -115,7 +115,7 @@ Somente após o editor estar construído, desenvolver/testar:
 - Importação dos modelos, texturas e metadados exportados;
 - Reprodução de hierarquias de grupos e clips;
 - Composição de clips de armas com animações do player;
-- Equipamentos que seguem grupos do player, com animações opcionais;
+- Anexação de peças de armadura aos grupos do player para que acompanhem seus movimentos;
 - Partículas, rastros/flashes/brilhos, **sons e eventos** vinculados a frames e partes móveis;
 - Carregamento de modelos relacionados e blocos usados na montagem de cenários;
 - Validação de compatibilidade, integração aos mods/registries e performance.

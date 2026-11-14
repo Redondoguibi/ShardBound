@@ -1,0 +1,64 @@
+{
+  "status": "passed",
+  "completedAt": "2026-10-12T22:40:08.544Z",
+  "blockbench": "5.2.2",
+  "bridge": "0.5.0",
+  "studio": "1.3.0",
+  "discovered_tools": 34,
+  "tested_tools": [
+    "capture_view",
+    "create_elements",
+    "create_project",
+    "delete_elements",
+    "edit_mesh",
+    "list_model_files",
+    "mtools_list",
+    "mtools_run",
+    "open_project_file",
+    "paint_texture",
+    "put_texture",
+    "read_project",
+    "save_project",
+    "select_elements",
+    "status",
+    "studio_clip",
+    "studio_create_project",
+    "studio_effect",
+    "studio_event",
+    "studio_export",
+    "studio_keyframes",
+    "studio_locator",
+    "studio_material",
+    "studio_model",
+    "studio_project_settings",
+    "studio_read",
+    "studio_skin",
+    "studio_sound",
+    "studio_timeline",
+    "studio_validate",
+    "undo_redo",
+    "update_elements"
+  ],
+  "studio_sha256": "894a4e1e16c9f960376e4c81995c4775fd56459024299bb654875d8007cc89d3",
+  "bridge_source_sha256": "1e1d28e07f49c9a09ef45d3e3cabb6a6451639de5e7a957d21d91f4457f3f540",
+  "glb": [
+    {
+      "file": "models/test/sword.glb",
+      "errors": 0,
+      "warnings": 0
+    }
+  ],
+  "errors": [],
+  "native_startup_errors": [
+    {
+      "phase": "startup",
+      "message": "Cannot read properties of undefined (reading 'update')",
+      "stack": "TypeError: Cannot read properties of undefined (reading 'update')\n    at file:///C:/Users/Sistemas/AppData/Local/Programs/Blockbench/resources/app.asar/dist/bundle.js:3717:56"
+    },
+    {
+      "phase": "startup",
+      "message": "Cannot read properties of undefined (reading 'update')",
+      "stack": "TypeError: Cannot read properties of undefined (reading 'update')\n    at file:///C:/Users/Sistemas/AppData/Local/Programs/Blockbench/resources/app.asar/dist/bundle.js:3717:697"
+    }
+  ]
+}

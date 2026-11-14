@@ -65,7 +65,7 @@ if (process.argv.includes('--http')) {
         Authorization: `Bearer ${config.token}`,
       },
       body: JSON.stringify({ name, args }),
-      signal: AbortSignal.timeout(50000),
+      signal: AbortSignal.timeout(name === 'studio_export' ? 185000 : 50000),
     });
     const result = await response.json();
     if (!response.ok || result.error)

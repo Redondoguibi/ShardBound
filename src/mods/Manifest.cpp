@@ -1,6 +1,7 @@
 #include "mods/Manifest.h"
 #include "assets/AssetId.h"
 #include "assets/VirtualFileSystem.h"
+#include "core/PathText.h"
 #include <nlohmann/json.hpp>
 #include <charconv>
 #include <fstream>
@@ -28,6 +29,12 @@ bool Dependency::accepts(Version candidate) const {
     if (operation=="<") return candidate<version;
     return candidate==version;
 }
+bool ModManifest::acceptsSave(const std::string& saved,unsigned schema) const {
+    const auto old=Version::parse(saved);
+    if(schema>saveSchema) return false;
+    if(compatibleFrom.empty()) return old==version && schema==saveSchema;
+    return old>=Version::parse(compatibleFrom) && old<=version;
+}
 ModManifest readManifest(const std::filesystem::path& root) {
     const auto file=root/"mod.json";
     try {
@@ -39,6 +46,14 @@ ModManifest readManifest(const std::filesystem::path& root) {
         mod.version=Version::parse(json.at("version").get<std::string>());
         if (!validNamespace(mod.id) || mod.id=="core" || mod.name.empty()) throw std::runtime_error("Invalid/reserved mod ID or empty name");
         if (json.at("api").get<std::string>()!="0.1") throw std::runtime_error("Unsupported runtime API (expected 0.1)");
+        if(json.contains("save_compatibility")) {
+            const auto& policy=json.at("save_compatibility");if(!policy.is_object()) throw std::runtime_error("save_compatibility must be an object");
+            for(const auto& [key,value]:policy.items()) {(void)value;if(key!="minimum_version" && key!="schema") throw std::runtime_error("Unknown save compatibility field: "+key);}
+            mod.compatibleFrom=policy.at("minimum_version").get<std::string>();
+            if(Version::parse(mod.compatibleFrom)>mod.version) throw std::runtime_error("Save minimum version is newer than mod");
+            if(!policy.at("schema").is_number_unsigned()) throw std::runtime_error("Save schema must be positive integer");
+            mod.saveSchema=policy.at("schema").get<unsigned>();if(mod.saveSchema<1 || mod.saveSchema>1000000) throw std::runtime_error("Save schema out of range");
+        }
         mod.entry=json.value("entry",std::string{});
         mod.native=json.value("native",std::string{});
         if(!mod.native.empty()) {
@@ -63,7 +78,7 @@ ModManifest readManifest(const std::filesystem::path& root) {
             }
         }
         return mod;
-    } catch (const std::exception& e) { throw DiagnosticError({"MOD102",e.what(),file.string()}); }
+    } catch (const std::exception& e) { throw DiagnosticError({"MOD102",e.what(),pathText(file)}); }
 }
 Discovery discoverMods(const std::filesystem::path& directory) {
     Discovery result;
@@ -83,7 +98,7 @@ std::vector<ModManifest> resolveMods(std::vector<ModManifest> mods,std::vector<D
     for (const auto& mod:mods) ++counts[mod.id];
     std::erase_if(mods,[&](const auto& mod) {
         if (counts[mod.id]<2) return false;
-        diagnostics.push_back({"MOD103","Duplicate mod ID; all colliding packages excluded",(mod.root/"mod.json").string(),mod.id}); return true;
+        diagnostics.push_back({"MOD103","Duplicate mod ID; all colliding packages excluded",pathText(mod.root/"mod.json"),mod.id}); return true;
     });
     std::map<std::string,size_t> indices;
     for (size_t i=0;i<mods.size();++i) indices[mods[i].id]=i;

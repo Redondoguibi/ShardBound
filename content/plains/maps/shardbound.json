@@ -1,0 +1,48 @@
+{
+  "format": "shardbound-map",
+  "version": 1,
+  "bounds": [-24, -24, 80, 64],
+  "spawn": [8, 8],
+  "biomes": [
+    [-24, -24, 48, 64, "plains:meadow"],
+    [24, -24, 32, 64, "plains:grove"]
+  ],
+  "placements": [
+    ["plains:oak", 26, 4, -5, 0],
+    ["plains:oak", 40, 4, 13, 90],
+    ["plains:oak", 32, 4, 23, 180]
+  ],
+  "interiors": [
+    {
+      "entrance": [45, 8],
+      "return": [43, 8],
+      "map": {
+        "format": "shardbound-map",
+        "version": 1,
+        "bounds": [0, 0, 16, 16],
+        "spawn": [8, 3],
+        "exit": [8, 1],
+        "fills": [
+          [0, 0, 0, 16, 3, 16, "plains:stone"],
+          [0, 3, 0, 16, 4, 1, "plains:brick"],
+          [0, 3, 15, 16, 4, 1, "plains:brick"],
+          [0, 3, 1, 1, 4, 14, "plains:brick"],
+          [15, 3, 1, 1, 4, 14, "plains:brick"],
+          [4, 3, 10, 1, 2, 1, "plains:wood"],
+          [11, 3, 10, 1, 2, 1, "plains:wood"]
+        ]
+      }
+    }
+  ],
+  "fills": [
+    [-24, 0, -24, 80, 2, 64, "plains:stone"],
+    [-24, 2, -24, 80, 1, 64, "plains:dirt"],
+    [-24, 3, -24, 80, 1, 64, "plains:grass"],
+    [4, 3, 7, 45, 1, 3, "plains:dirt"],
+    [46, 4, 5, 4, 2, 1, "plains:brick"],
+    [49, 4, 6, 1, 3, 3, "plains:brick"],
+    [13, 4, 12, 1, 1, 1, "plains:flower"],
+    [16, 4, 5, 1, 1, 1, "plains:flower"],
+    [21, 4, 13, 1, 1, 1, "plains:flower"]
+  ]
+}

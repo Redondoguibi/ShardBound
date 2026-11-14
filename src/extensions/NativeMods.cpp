@@ -12,6 +12,7 @@
 namespace game {
 struct NativeMods::Impl {
     script::Runtime& runtime; World& world; Components& components; SaveGame& saves;
+    NativeMods* owner=nullptr;
     struct Module {
         Impl& host; std::string mod; HMODULE library=nullptr; SbHost api{}; SbPlugin plugin{};
         std::set<std::uint64_t> tokens; std::thread::id thread=std::this_thread::get_id();
@@ -54,7 +55,7 @@ struct NativeMods::Impl {
         try {
             auto& m=*static_cast<Module*>(context); m.check(); if(!operation || !input) return SB_ERROR;
             (void)decodeData(input); const auto args=Json::parse(input); Json result=nullptr; auto& h=m.host; const std::string op(operation);
-            const bool readOnly=op=="component.get" || op=="state.get" || op=="entity.find";
+            const bool readOnly=op=="component.get" || op=="state.get" || op=="entity.find" || op=="engine.info" || op=="engine.configuration";
             if(!readOnly && (!output || capacity<32)) { if(required) *required=32; return SB_BUFFER_TOO_SMALL; }
             if(op=="log") LOG_INFO("NATIVE",m.mod+": "+args.at("message").get<std::string>());
             else if(op=="component.define") { AssetId id(args.at("type").get<std::string>()); m.own(id); const auto v=args.at("version").get<double>(); if(v<1 || v>1000000 || v!=std::floor(v)) throw std::runtime_error("Invalid version"); h.components.define(id,static_cast<unsigned>(v),decodeData(args.at("defaults").dump())); }
@@ -73,6 +74,7 @@ struct NativeMods::Impl {
             else if(op=="component.remove") result=h.world.removeCustom(entity(args,h.world),AssetId(args.at("type").get<std::string>()));
             else if(op=="state.get") result=Json::parse(encodeData(h.saves.state(m.mod)));
             else if(op=="state.set") h.saves.setState(m.mod,decodeData(args.dump()));
+            else if(op.starts_with("engine.") && !m.stopping && h.owner->engineOperation) result=Json::parse(encodeData(h.owner->engineOperation(m.mod,op,decodeData(input))));
             else throw std::runtime_error("Unknown native operation");
             const auto text=result.dump(); if(required) *required=static_cast<uint32_t>(text.size()+1);
             if(!output || capacity<text.size()+1) return SB_BUFFER_TOO_SMALL;
@@ -99,7 +101,7 @@ struct NativeMods::Impl {
         catch(...) { return SB_ERROR; }
     }
 };
-NativeMods::NativeMods(script::Runtime& r,World& w,Components& c,SaveGame& s):impl_(std::make_unique<Impl>(r,w,c,s)) {}
+NativeMods::NativeMods(script::Runtime& r,World& w,Components& c,SaveGame& s):impl_(std::make_unique<Impl>(r,w,c,s)) {impl_->owner=this;}
 NativeMods::~NativeMods()=default;
 void NativeMods::load(const std::string& mod,const std::filesystem::path& root,const std::filesystem::path& relative) {
     auto path=VirtualFileSystem::contained(root,relative);

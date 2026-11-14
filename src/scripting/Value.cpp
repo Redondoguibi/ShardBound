@@ -42,6 +42,7 @@ Value clone(const Value& value) {
 }
 bool equal(const Value& a,const Value& b) {
     if(a.data.index()!=b.data.index()) return false;
+    if(auto p=std::get_if<std::shared_ptr<HostObject>>(&a.data)) return (*p)->equals(*std::get<std::shared_ptr<HostObject>>(b.data));
     if(auto p=std::get_if<std::shared_ptr<Object>>(&a.data)) {
         const auto& rhs=std::get<std::shared_ptr<Object>>(b.data)->fields;
         if((*p)->fields.size()!=rhs.size()) return false;

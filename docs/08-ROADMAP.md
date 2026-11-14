@@ -1,5 +1,11 @@
 # Roadmap inicial
 
+Atualização de 2026-10-17: a etapa 13 agora tem mundos procedurais por seed,
+menu de mundos, configurações e conteúdo oficial nos mods `foundation` e
+`plains`. A aventura fixa foi substituída na execução padrão. Contrato atual:
+[27-PROCEDURAL-WORLDS.md](27-PROCEDURAL-WORLDS.md). As etapas abaixo registram
+a sequência de construção da plataforma, sem declarar o jogo completo.
+
 O objetivo é validar a arquitetura antes de criar um jogo completo.
 
 ## Etapa 1 — Skeleton C++

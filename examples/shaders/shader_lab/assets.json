@@ -1,0 +1,6 @@
+{
+  "shaders": {
+    "shader_lab:glow": {"source":"glow.hlsl","kind":"surface","version":1},
+    "shader_lab:grade": {"source":"grade.hlsl","kind":"postprocess","version":1}
+  }
+}

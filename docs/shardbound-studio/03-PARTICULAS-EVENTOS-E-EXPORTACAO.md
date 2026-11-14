@@ -29,7 +29,7 @@ Os tempos e IDs acima são **exemplos**, não convenções definitivas.
 
 **Definido:** o criador deve poder animar também **corrida, pulo e ataque com a espada na mão**, além de outras ações pertinentes. **A especificar tecnicamente:** o modo exato de exportar timelines que alteram partes do player e da arma (clips separados, canais vinculados, composição ou outra representação). Uma futura implementação deve manter o vínculo temporal dos efeitos sem copiar a geometria visual do player para todo GLB de arma.
 
-**Definido para armaduras:** o preview serve principalmente para encaixar peças sobre o player e acompanhar os grupos corporais; não requer poses manuais do player nesse fluxo. Animações opcionais das próprias peças podem ter eventos de VFX, sujeitos ao contrato do runtime.
+**Definido para armaduras:** a prévia reproduz as animações do player para conferir o encaixe das peças nos grupos corporais. A armadura não possui clipes próprios.
 
 ## 2. Como o vínculo funcionaria
 

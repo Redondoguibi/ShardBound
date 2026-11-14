@@ -93,9 +93,9 @@ Armadura
 └── perna_direita/
 ```
 
-**Definido:** oferecer ferramenta de encaixe/preview semelhante à de armas usando o modelo do player de referência. **Ao contrário do editor de armas, não é necessário criar poses do player para armaduras.** O autor pode optar por animações da armadura.
+**Definido:** oferecer uma ferramenta de encaixe usando o modelo do player de referência. A prévia reproduz as animações do player para conferir o encaixe em movimento. A armadura não possui clipes próprios.
 
-**Em aberto:** como essas animações opcionais se somam ao movimento corporal, visuais de peças individuais/conjuntos, espessura/offset de sobreposição, compatibilidade com skins e variantes corporais.
+**Em aberto:** visuais de peças individuais e conjuntos, espessura e deslocamento de sobreposição, compatibilidade com skins e variantes corporais.
 
 **Proposta de implementação:** atrelar grupos da armadura aos grupos correspondentes do personagem por nomes/mapeamento estável, com offsets locais. O autor continua manipulando pastas e cubos, sem skinning por pesos.
 

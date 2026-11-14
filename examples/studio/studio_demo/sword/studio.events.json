@@ -1,0 +1,187 @@
+{
+  "clips": [
+    {
+      "events": [],
+      "fps": 24,
+      "length": 1,
+      "loop": "loop",
+      "name": "idle"
+    },
+    {
+      "events": [],
+      "fps": 24,
+      "length": 1,
+      "loop": "loop",
+      "name": "run"
+    },
+    {
+      "events": [],
+      "fps": 24,
+      "length": 1,
+      "loop": "once",
+      "name": "jump"
+    },
+    {
+      "events": [
+        {
+          "action": "start",
+          "follow": false,
+          "fps": 24,
+          "frame": 6,
+          "id": "cd6a777c-7214-baf2-a944-7db77711b534:23767c42-7140-bbdf-bbed-ba1054983f23",
+          "instance": "blade_trail",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 0,
+          "pitch": 1,
+          "resource": "studio_demo:crystal_trail",
+          "target": "3db8f12f-c9e4-9e43-651d-a69b69a60808",
+          "time": 0.25,
+          "type": "trail",
+          "volume": 1
+        },
+        {
+          "action": "burst",
+          "follow": false,
+          "fps": 24,
+          "frame": 12,
+          "id": "c2233a2c-fd70-e3cb-72ca-7438b32d0899:d3eee07e-0d65-014c-233b-fc781b06a1ae",
+          "instance": "",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 2,
+          "pitch": 1,
+          "resource": "studio_demo:crystal_sparks",
+          "target": "03c47776-3bb9-ad9c-ce8e-c48eb4ccab8c",
+          "time": 0.5,
+          "type": "particle",
+          "volume": 1
+        },
+        {
+          "action": "burst",
+          "follow": true,
+          "fps": 24,
+          "frame": 12,
+          "id": "c2233a2c-fd70-e3cb-72ca-7438b32d0899:67c05317-6b6a-d36f-df68-c99e44124286",
+          "instance": "",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 3,
+          "pitch": 1,
+          "resource": "studio_demo:crystal_flash",
+          "target": "14241345-921b-2673-9527-480510003b70",
+          "time": 0.5,
+          "type": "flash",
+          "volume": 1
+        },
+        {
+          "action": "burst",
+          "follow": true,
+          "fps": 24,
+          "frame": 12,
+          "id": "c2233a2c-fd70-e3cb-72ca-7438b32d0899:d4400646-5e3a-dcba-2179-1a0c77e3b659",
+          "instance": "",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 4,
+          "pitch": 1,
+          "resource": "studio_demo:crystal_glow",
+          "target": "03c47776-3bb9-ad9c-ce8e-c48eb4ccab8c",
+          "time": 0.5,
+          "type": "glow",
+          "volume": 1
+        },
+        {
+          "action": "burst",
+          "follow": false,
+          "fps": 24,
+          "frame": 12,
+          "id": "c2233a2c-fd70-e3cb-72ca-7438b32d0899:90e6ac9c-b559-d87c-a784-bf84fe19226a",
+          "instance": "",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 5,
+          "pitch": 1,
+          "resource": "studio_demo:crystal_chime",
+          "target": "03c47776-3bb9-ad9c-ce8e-c48eb4ccab8c",
+          "time": 0.5,
+          "type": "sound",
+          "volume": 1
+        },
+        {
+          "action": "stop",
+          "follow": false,
+          "fps": 24,
+          "frame": 18,
+          "id": "de11591a-39d0-072f-6454-07be4b8f9d6d:bc952b05-9639-792d-4297-f7e20017b30d",
+          "instance": "blade_trail",
+          "loop": false,
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "order": 1,
+          "pitch": 1,
+          "resource": "studio_demo:crystal_trail",
+          "target": "3db8f12f-c9e4-9e43-651d-a69b69a60808",
+          "time": 0.75,
+          "type": "trail",
+          "volume": 1
+        }
+      ],
+      "fps": 24,
+      "length": 1,
+      "loop": "once",
+      "name": "attack"
+    }
+  ],
+  "generator": "ShardBound Studio 1.3.0",
+  "locators": [
+    {
+      "name": "Ponta da lâmina",
+      "parent": "3db8f12f-c9e4-9e43-651d-a69b69a60808",
+      "position": [
+        -5,
+        30,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "uuid": "03c47776-3bb9-ad9c-ce8e-c48eb4ccab8c"
+    }
+  ],
+  "project": "studio_demo:crystal_sword",
+  "schema": "shardbound.studio.events",
+  "sounds": [
+    {
+      "duration": 0.3,
+      "file": "audio/studio_demo/crystal_chime.wav",
+      "id": "studio_demo:crystal_chime"
+    }
+  ],
+  "version": 1
+}

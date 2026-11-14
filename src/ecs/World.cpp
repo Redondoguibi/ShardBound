@@ -3,6 +3,7 @@
 #include <entt/entity/registry.hpp>
 #include <atomic>
 #include <map>
+#include <set>
 #include <objbase.h>
 namespace game {
 struct World::Impl {
@@ -10,6 +11,7 @@ struct World::Impl {
     entt::registry registry;
     std::map<EntityId,entt::entity> entities;
     std::map<EntityId,EntityId> parents;
+    std::map<std::string,std::set<EntityId>,std::less<>> customIndex;
     entt::entity require(EntityId id) const {
         const auto it=entities.find(id);
         if (it==entities.end()) throw DiagnosticError({"ECS101","Invalid or destroyed entity #"+std::to_string(id.value)});
@@ -18,6 +20,26 @@ struct World::Impl {
 };
 World::World() : impl_(std::make_unique<Impl>()) {}
 World::~World()=default;
+void World::replaceEntityData(std::vector<EntityDataUpdate> updates) {
+    auto index=impl_->customIndex;std::set<EntityId> seen;
+    for(const auto& update:updates) {
+        impl_->require(update.entity);if(!seen.insert(update.entity).second) throw std::runtime_error("Duplicate entity data transaction");
+        for(const auto& [type,value]:custom(update.entity)) { (void)value;auto it=index.find(type);if(it!=index.end()) { it->second.erase(update.entity);if(it->second.empty()) index.erase(it); } }
+        for(const auto& [type,value]:update.custom) { (void)AssetId(type);(void)value;index[type].insert(update.entity); }
+    }
+    std::vector<entt::entity> inventories,customs;inventories.reserve(updates.size());customs.reserve(updates.size());
+    try {
+        for(const auto& update:updates) {
+            const auto raw=impl_->require(update.entity);
+            if(!impl_->registry.all_of<InventoryComponent>(raw)) { impl_->registry.emplace<InventoryComponent>(raw);inventories.push_back(raw); }
+            if(!impl_->registry.all_of<Impl::Custom>(raw)) { impl_->registry.emplace<Impl::Custom>(raw);customs.push_back(raw); }
+        }
+    }catch(...) { for(auto raw:inventories) impl_->registry.remove<InventoryComponent>(raw);for(auto raw:customs) impl_->registry.remove<Impl::Custom>(raw);throw; }
+    for(auto& update:updates) {
+        const auto raw=impl_->require(update.entity);impl_->registry.get<InventoryComponent>(raw).items.swap(update.inventory.items);impl_->registry.get<Impl::Custom>(raw).values.swap(update.custom);
+    }
+    impl_->customIndex.swap(index);
+}
 EntityId World::create(std::string name) {
     static std::atomic_uint64_t sequence{1};
     EntityId id{sequence.fetch_add(1)};
@@ -33,6 +55,10 @@ EntityId World::create(std::string name) {
 bool World::alive(EntityId id) const { return impl_->entities.contains(id); }
 void World::destroy(EntityId id) {
     const auto raw=impl_->require(id);
+    if(const auto* custom=impl_->registry.try_get<Impl::Custom>(raw)) for(const auto& [type,value]:custom->values) {
+        (void)value;auto found=impl_->customIndex.find(type);
+        if(found!=impl_->customIndex.end()) { found->second.erase(id);if(found->second.empty()) impl_->customIndex.erase(found); }
+    }
     impl_->parents.erase(id);
     std::erase_if(impl_->parents,[&](const auto& pair) { return pair.second==id; });
     impl_->registry.destroy(raw); impl_->entities.erase(id);
@@ -45,6 +71,11 @@ EntityId World::find(std::string_view name) const {
     return {};
 }
 std::vector<EntityId> World::entities() const { std::vector<EntityId> ids; for (const auto& [id,raw]:impl_->entities) { (void)raw; ids.push_back(id); } return ids; }
+size_t World::entityCount() const {return impl_->entities.size();}
+std::vector<EntityId> World::entitiesWithCustom(std::string_view type) const {
+    const auto found=impl_->customIndex.find(type);if(found==impl_->customIndex.end()) return {};
+    return {found->second.begin(),found->second.end()};
+}
 EntityId World::findPersistent(std::string_view key) const {
     for(const auto& [id,raw]:impl_->entities) {
         const auto* identity=impl_->registry.try_get<IdentityComponent>(raw);
@@ -98,14 +129,36 @@ Matrix World::worldMatrix(EntityId id) {
     Matrix result;
     for (auto current=id;current;current=parent(current)) {
         if (has<TransformComponent>(current)) result=multiply(result,transformMatrix(get<TransformComponent>(current).local));
+        if(const auto owner=parent(current);owner) {
+            const auto found=custom(current).find("core:socket");
+            if(found!=custom(current).end() && found->second.version==1) {
+                const auto* node=std::get_if<std::string>(&found->second.data.value);
+                if(node) if(const auto matrix=socketMatrix(owner,*node)) result=multiply(result,*matrix);
+            }
+        }
     }
+    return result;
+}
+std::optional<Matrix> World::socketMatrix(EntityId id,const std::string& node) {
+    if(!has<ModelComponent>(id)) return {};
+    const auto& visual=get<ModelComponent>(id);if(!visual.model) return {};
+    const auto& nodes=visual.model->hierarchy.nodes;size_t selected=nodes.size();
+    for(size_t i=0;i<nodes.size();++i) if(nodes[i].uuid==node || nodes[i].name==node) {
+        if(selected!=nodes.size()) return {};selected=i;
+    }
+    if(selected==nodes.size()) return {};
+    if(selected<visual.nodeWorld.size()) return visual.nodeWorld[selected];
+    Matrix result;for(int current=int(selected);current>=0;current=nodes[size_t(current)].parent) result=multiply(result,nodes[size_t(current)].local);
+    for(const auto& [prefix,pose]:visual.poses) if(nodes[selected].name.starts_with(prefix)) { result=multiply(result,pose);break; }
     return result;
 }
 void World::setCustom(EntityId entity,const AssetId& type,CustomComponent value) {
     const auto raw=impl_->require(entity);
     if(!value.version) throw DiagnosticError({"ECS104","Component version must be positive"});
     (void)encodeData(value.data);
-    impl_->registry.get_or_emplace<Impl::Custom>(raw).values.insert_or_assign(type.str(),std::move(value));
+    auto& index=impl_->customIndex[type.str()];const bool inserted=index.insert(entity).second;
+    try { impl_->registry.get_or_emplace<Impl::Custom>(raw).values.insert_or_assign(type.str(),std::move(value)); }
+    catch(...) { if(inserted) index.erase(entity);if(index.empty()) impl_->customIndex.erase(type.str());throw; }
 }
 const std::map<std::string,CustomComponent>& World::custom(EntityId entity) const {
     const auto raw=impl_->require(entity); const auto* value=impl_->registry.try_get<Impl::Custom>(raw);
@@ -114,7 +167,10 @@ const std::map<std::string,CustomComponent>& World::custom(EntityId entity) cons
 }
 bool World::removeCustom(EntityId entity,const AssetId& type) {
     const auto raw=impl_->require(entity); auto* value=impl_->registry.try_get<Impl::Custom>(raw);
-    return value && value->values.erase(type.str())!=0;
+    if(!value || !value->values.erase(type.str())) return false;
+    auto found=impl_->customIndex.find(type.str());
+    if(found!=impl_->customIndex.end()) { found->second.erase(entity);if(found->second.empty()) impl_->customIndex.erase(found); }
+    return true;
 }
 void World::swapState(World& other) noexcept { impl_.swap(other.impl_); }
 }

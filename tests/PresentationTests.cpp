@@ -19,7 +19,7 @@ int main(int argc,char**) {
         World world; PhysicsSystem physics(world); PlayerController player(world,physics); InputSystem input; AudioSystem audio(true);
         script::Runtime runtime; bindRuntimeApi(runtime,world,assets); bindGameplayApi(runtime,world,physics,player,input,audio,assets);
         Components components; SaveGame saves("user/presentation-saves",world,physics,player,assets); ExtensionBridge extension(runtime,world,components,saves); GameUi ui(runtime,renderer);
-        saves.setMods({{"adventure","0.1.0"}}); runtime.load("adventure","content/adventure","main.sl");
+        saves.setMods({{"adventure","0.1.0"}}); runtime.load("adventure","examples/legacy/adventure","main.sl");
         auto emit=[&](const char* name,std::vector<script::Value> args=std::vector<script::Value>{}) { const auto errors=runtime.emit(name,args); if(!errors.empty()) throw DiagnosticError(errors.front()); };
         auto run=[&](std::string_view code) { runtime.execute("adventure","@Globals\n"+std::string(code)); };
         auto value=[&](const char* name) { return runtime.global("adventure",name); };
@@ -36,7 +36,7 @@ int main(int argc,char**) {
         // Reproduce a real v1 world, then load it through the current content migration.
         const auto legacyRoot=std::filesystem::path("user/presentation-v1");
         std::filesystem::create_directories(legacyRoot);
-        std::filesystem::copy("content/adventure",legacyRoot,std::filesystem::copy_options::recursive|std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy("examples/legacy/adventure",legacyRoot,std::filesystem::copy_options::recursive|std::filesystem::copy_options::overwrite_existing);
         { std::ofstream file(legacyRoot/"world.sl"); file<<source("tests/fixtures/world-v1.sl"); }
         { std::ofstream file(legacyRoot/"scenery.sl"); file<<source("tests/fixtures/scenery-v1.sl"); }
         {

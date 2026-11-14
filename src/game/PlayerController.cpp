@@ -14,12 +14,14 @@ void PlayerController::move(float right,float forward) {
     if(!enabled_ || !world_.get<ActiveComponent>(id).value || (world_.has<HealthComponent>(id) && world_.get<HealthComponent>(id).current<=0)) right=forward=0;
     const auto divisor=std::max(1.0f,std::hypot(right,forward));
     const auto length=std::hypot(viewOffset_.x,viewOffset_.z);
-    const auto fx=-viewOffset_.x/length,fz=-viewOffset_.z/length;
+    const auto fx=movementHeading_ ? std::sin(*movementHeading_) : -viewOffset_.x/length;
+    const auto fz=movementHeading_ ? std::cos(*movementHeading_) : -viewOffset_.z/length;
     auto velocity=physics_.velocity(id);
     velocity.x=(right*fz+forward*fx)/divisor*speed_;
     velocity.z=(-right*fx+forward*fz)/divisor*speed_;
-    physics_.setVelocity(id,velocity);
+    physics_.setMovementVelocity(id,velocity,stepHeight_);
 }
+void PlayerController::stepHeight(float value) {if(!std::isfinite(value)||value<0||value>2) throw DiagnosticError({"GAME105","Step height must be in [0,2]"});stepHeight_=value;}
 void PlayerController::updateCamera(float delta) {
     const auto id=entity(); if(!id || !std::isfinite(delta) || delta<0) return;
     const auto p=world_.get<TransformComponent>(id).local.position;

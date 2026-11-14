@@ -1,5 +1,11 @@
 # Native SDK v1
 
+Engine extension API 1 uses additional JSON operations through this same ABI:
+`engine.info`, `engine.configuration`, `engine.configure`, `engine.register`,
+`engine.default`, `engine.enabled`, and `engine.remove`. Binary struct layouts
+remain unchanged. See the [engine extension contract](../../docs/modding/12-ENGINE-EXTENSIONS.md)
+for phase contexts, limits, replacement ownership, and the native hook workflow.
+
 Include `shardbound.h`, build a Windows x64 DLL, and export
 `int SB_CALL sb_mod_init(const SbHost*, SbPlugin*)` with C linkage. Fill the plugin
 descriptor and return `SB_OK` only after initialization succeeds. Keep no borrowed

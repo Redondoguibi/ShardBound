@@ -17,6 +17,9 @@ try {
         & $nodePath scripts/setup.mjs --local-only
         if ($LASTEXITCODE -ne 0) { throw 'Pairing do Blockbench falhou.' }
     }
+    # Refresh the paired file after updates without rotating pairing/tunnel credentials.
+    & $nodePath scripts/build.mjs --paired
+    if ($LASTEXITCODE -ne 0) { throw 'Falha ao atualizar a bridge pareada.' }
     if (-not (Test-Path -LiteralPath $script:TunnelClientPath)) {
         & (Join-Path $PSScriptRoot 'scripts\Install-TunnelClient.ps1')
     }
@@ -45,7 +48,7 @@ try {
         $connectArgs = @('runtimes', 'connect', '--alias', $script:TunnelAlias,
             '--tunnel-id', $settings.tunnel_id, '--runtime-api-key', 'env:CONTROL_PLANE_API_KEY',
             '--profile-dir', $script:TunnelProfileDir, '--mcp-command', (Get-McpCommand),
-            '--name', 'ShardBound Blockbench', '--description', 'Blockbench Generic Model and MTools', '--json')
+            '--name', 'ShardBound Blockbench', '--description', 'Blockbench Generic Model, ShardBound Studio and MTools', '--json')
         $output = (& $client @connectArgs 2>&1 | Out-String).Trim()
         if ($LASTEXITCODE -ne 0) {
             $safeError = $output.Replace($runtimeKey, '[REDACTED]') -replace 'sk-[A-Za-z0-9_-]+', '[REDACTED]'

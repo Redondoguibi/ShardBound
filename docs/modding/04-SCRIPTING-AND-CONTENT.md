@@ -2,6 +2,8 @@
 
 ## Estado da linguagem
 
+`async func`/`await`, tarefas, esperas e cancelamento já fazem parte do runtime. Consulte [13-ASYNC-AWAIT.md](13-ASYNC-AWAIT.md) para a sintaxe executável, exemplos e limites.
+
 A linguagem própria ainda está sendo implementada. Este documento registra a sintaxe definida até agora para que autores possam estruturar conteúdo.
 
 A especificação normativa está em [../18-LANGUAGE-V0-SPEC.md](../18-LANGUAGE-V0-SPEC.md).

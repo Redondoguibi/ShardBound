@@ -1,3 +1,4 @@
+import { tools } from '../shared/tools.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
@@ -32,7 +33,7 @@ test('HTTP MCP authenticates, lists schemas and serializes calls to paired plugi
       }),
     );
     const list = await client.listTools();
-    assert.equal(list.tools.length, 18);
+    assert.equal(list.tools.length, Object.keys(tools).length);
     assert.equal(
       list.tools.find((t) => t.name === 'export_project').annotations
         .readOnlyHint,

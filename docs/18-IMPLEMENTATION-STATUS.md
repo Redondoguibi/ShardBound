@@ -1,5 +1,56 @@
 # Estado da implementação
 
+## API da engine — 2026-10-19
+
+Extensões versionadas por scripts/DLLs para fases fixas, movimento, física, atualização, streaming e render, com substituição explícita, delegação única, isolamento de erros e diagnóstico. Configurações de gravidade, inclinação, luzes, ambiente e ordem fixa têm validação e conflitos por proveniência. Contratos em [modding/12-ENGINE-EXTENSIONS.md](modding/12-ENGINE-EXTENSIONS.md); testes e limites em [38-ENGINE-EXTENSIONS.md](38-ENGINE-EXTENSIONS.md).
+
+## Revisão de integração — 2026-10-19
+
+Cinco regressões reproduzidas e corrigidas: remapeamento que removia gamepad, modo de movimento e ambiente que vazavam entre sessões, seleção de perfil dependente indevidamente de nova geração e apoio físico de corpos girados. Escopo, evidências e validação estão em [37-READINESS-REVIEW.md](37-READINESS-REVIEW.md).
+
+## Atualização — 2026-10-19
+
+O runtime ganhou locomoção com degraus/apoio/inclinações/colisão contínua, perfis de mods por mundo com backup, remapeamento persistente, sensibilidade, escala de UI, grupos de áudio, diagnóstico de CPU/GPU ativável nas configurações e instalação/empacotamento com testes automatizados do jogo. Contratos e validação atual estão em [36-PLAYER-READINESS.md](36-PLAYER-READINESS.md); instruções de uso em [PLAYING.md](PLAYING.md). As seções seguintes preservam o histórico das etapas anteriores.
+
+## APIs modding ampliadas — 2026-10-17
+
+Camada adicional executável: sistemas nomeados ativáveis/substituíveis pelo próprio mod,
+medição de callbacks por mod, edição persistente de blocos procedurais (malha,
+colisão e save), consultas de entidades próximas, equipamentos por slot e
+seleção interativa de regiões de canvas. O conteúdo `foundation` sincroniza
+seu slot de arma com a API genérica. Contratos, limites e testes adicionais:
+[28-MOD-PLATFORM-FOUNDATIONS.md](28-MOD-PLATFORM-FOUNDATIONS.md).
+
+Validação final da ampliação: builds MSVC Release e Debug concluídos, com
+**37/37 testes CTest aprovados em cada configuração**. `modcheck content --json`
+retornou dois mods, seis scripts, `valid:true` e nenhum diagnóstico.
+Os testes adicionais cobrem sistemas nomeados, propriedades de itens equipados,
+consultas de entidades, hit-tests de UI, edições persistentes de blocos,
+faces de chunks adjacentes e rejeição de saves inválidos.
+Não houve uma sessão manual prolongada nem benchmark de FPS/GPU.
+
+
+## Atualização — 2026-10-17
+
+A execução padrão foi substituída por menu inicial, configurações persistentes
+e criação/abertura de mundos com nome e seed. O mundo é procedural, com chunks
+carregados ao redor do jogador, origem flutuante e relevo suave sem cavernas.
+Conteúdo padrão fica nos mods `foundation` e `plains`, incluindo assets,
+equipamentos, inimigos, blocos, estruturas e regras. O modo procedural não
+registra o catálogo C++ de modelos `core:*`.
+
+A aventura fixa e seus testes permanecem em `examples/legacy/adventure`,
+aberta explicitamente com `--mods examples/legacy`; seus saves anteriores não
+são convertidos. As seções abaixo registram a evolução anterior do projeto.
+Contrato, execução, APIs e limites atuais: [27-PROCEDURAL-WORLDS.md](27-PROCEDURAL-WORLDS.md).
+
+Validação em 2026-10-17: builds MSVC Debug/Release concluídos, com 36/36 testes
+CTest aprovados em ambas as configurações. Incluem geração por seed, menus,
+configurações, streaming, origem flutuante, combate/loot dos mods, persistência
+e rejeição de checkpoint inválido. O executável Release também criou e reabriu
+um mundo por CLI. Capturas reais de D3D11 foram conferidas; não se trata de uma
+sessão manual prolongada. A imagem atual está em [procedural-preview.png](procedural-preview.png).
+
 Este arquivo distingue código executável de intenções do roadmap. Os documentos
 específicos 10–17 refinam os documentos conceituais anteriores; decisões abertas
 continuam abertas. Namespace C++ temporário: `game`.
@@ -33,7 +84,7 @@ triângulos e tempo CPU. Um cubo técnico valida a renderização inicial.
 
 O teste de GPU verifica pixels desenhados e resize com scale de 50%. Os critérios
 v0 do documento 13 são atendidos; sombras, instancing, culling, partículas,
-transparência, cache de shaders e perfis de área permanecem trabalho posterior
+transparência, cache persistente de shaders e perfis de área permanecem trabalho posterior
 da direção completa do renderer, sem alegação de implementação.
 
 ## Etapa 4 — assets v0
@@ -244,3 +295,11 @@ A especificação normativa da linguagem v0 foi publicada em
 a implementação. Ela substitui as dúvidas anteriores de gramática/tipagem.
 Saves e ABI nativa têm agora contratos v1 em 21-EXTENSIBILITY-V1. Cenas, formato
 de mapas e gameplay final continuam pendentes; a etapa 12 não os substitui.
+
+## Shaders de mods — ABI 1
+
+Shaders de superfície e pós-processamento, parâmetros por script, vínculos persistentes e diagnóstico HLSL estão implementados. A validação final desta extensão passou 42/42 testes em Debug e Release. Veja o [relatório](31-MOD-SHADERS.md) e o [guia de autoria](modding/09-SHADERS.md). O cache atual de programas é em memória.
+
+## Robustez de mundos e mods
+
+Autosave em worker, índice externo, preparação transacional, contratos de compatibilidade e migrações isoladas, backup/restore/GC pelo jogo foram implementados. [Validação e limites](32-RUNTIME-ROBUSTNESS.md): 43/43 testes em Debug e Release, ensaio de 4.096 iterações e índice de 500 mil páginas em Release. Outras GPUs e falhas físicas de energia permanecem sem validação.

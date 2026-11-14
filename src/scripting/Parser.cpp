@@ -1,9 +1,10 @@
 #include "scripting/Syntax.h"
 #include <map>
+#include <cmath>
 namespace game::script {
 namespace {
 class Parser {
-    std::vector<Token> tokens_; size_t cursor_=0; unsigned depth_=0;
+    std::vector<Token> tokens_; size_t cursor_=0; unsigned depth_=0; bool inAsync_=false;
     const Token& peek(size_t offset=0) const { return tokens_.at(std::min(cursor_+offset,tokens_.size()-1)); }
     bool is(std::string_view text) const { return peek().kind!=TokenKind::String && peek().kind!=TokenKind::Number && peek().text==text; }
     bool accept(std::string_view text) { if(!is(text)) return false; ++cursor_; return true; }
@@ -13,25 +14,27 @@ class Parser {
     NodePtr node(Kind kind,Token token) { auto result=std::make_shared<Node>(); result->kind=kind; result->at=token.at; result->text=token.text; return result; }
     void newline() { if(!accept("<newline>") && !is("<end>") && !is("}")) fail(peek().at,"SCRIPT201","Expected end of line"); }
     Block suite(bool declarative=false) {
+        const bool outerAsync=inAsync_;if(declarative) inAsync_=false;
         if(++depth_>128) fail(peek().at,"SCRIPT201","Block nesting limit exceeded");
         expect(":"); expect("<newline>"); expect("<indent>");
         Block result;
         while(!is("<dedent>") && !is("<end>")) { if(accept("<newline>")) continue; result.push_back(statement(declarative)); }
-        expect("<dedent>"); --depth_; return result;
+        expect("<dedent>"); --depth_;inAsync_=outerAsync;return result;
     }
     Block structured() {
+        const bool outerAsync=inAsync_;inAsync_=false;
         if(++depth_>128) fail(peek().at,"SCRIPT201","Block nesting limit exceeded");
         expect("{"); expect("<newline>");
         const bool indented=accept("<indent>"); Block result;
         while(!is("}") && !is("<end>") && !(indented && is("<dedent>"))) {
             if(accept("<newline>")) continue; result.push_back(statement(true));
         }
-        if(indented) expect("<dedent>"); expect("}"); newline(); --depth_; return result;
+        if(indented) expect("<dedent>"); expect("}"); newline(); --depth_;inAsync_=outerAsync;return result;
     }
-    NodePtr function(bool event=false) {
+    NodePtr function(bool event=false,bool asynchronous=false) {
         const auto token=event ? peek() : expect("func");
         auto result=node(Kind::Function,token); result->text=name().text; result->extra=event ? "event" : "";
-        expect("("); bool defaults=false;
+        expect("("); bool defaults=false;const bool outerAsync=inAsync_;inAsync_=false;
         if(!is(")")) do {
             Parameter param{name().text,{}};
             for(const auto& prior:result->parameters) if(prior.name==param.name) fail(token.at,"SCRIPT202","Duplicate parameter");
@@ -39,7 +42,7 @@ class Parser {
             else if(defaults) fail(token.at,"SCRIPT202","Required parameter follows default parameter");
             result->parameters.push_back(std::move(param));
         } while(accept(","));
-        expect(")"); result->body=suite(); return result;
+        expect(")");inAsync_=asynchronous;result->asynchronous=asynchronous;result->body=suite();inAsync_=outerAsync;return result;
     }
     bool eventFunction() const {
         if(peek().kind!=TokenKind::Name || peek(1).text!="(") return false;
@@ -63,6 +66,7 @@ class Parser {
             if(peek().kind!=TokenKind::String) fail(peek().at,"SCRIPT201","Import requires a string path");
             result->text=take().text; newline(); return result;
         }
+        if(is("async") && peek(1).text=="func") { take();return function(false,true); }
         if(is("func")) return function();
         if(eventFunction()) return function(true);
         if(accept("if")) {
@@ -83,9 +87,10 @@ class Parser {
         if(declarative && peek().kind==TokenKind::Name && peek(1).text==":") {
             auto result=node(Kind::Section,take()); result->body=suite(true); return result;
         }
-        if(peek().kind==TokenKind::Name && peek(1).kind==TokenKind::Name && peek(1).text!="and" && peek(1).text!="or") {
+        if(is("await") && !inAsync_ && peek(1).kind==TokenKind::Name && peek(2).text=="(") fail(peek().at,"SCRIPT340","await requires an async function body");
+        if(!(is("await") && inAsync_) && peek().kind==TokenKind::Name && peek(1).kind==TokenKind::Name && peek(1).text!="and" && peek(1).text!="or") {
             auto type=take(); auto result=node(Kind::Declaration,name()); result->extra=type.text;
-            if(accept("from")) result->children.push_back(expression());
+            if(accept("from")) {const bool outerAsync=inAsync_;inAsync_=false;result->children.push_back(expression());inAsync_=outerAsync;}
             result->body=is("{") ? structured() : suite(true); return result;
         }
         if(accept(".")) {
@@ -111,7 +116,9 @@ class Parser {
     NodePtr expression(int minimum=1) {
         if(++depth_>128) fail(peek().at,"SCRIPT201","Expression nesting limit exceeded");
         NodePtr lhs;
-        if(is("not") || is("-") || is("+")) { auto op=take(); lhs=node(Kind::Unary,op); lhs->children={expression(op.text=="not" ? 3 : 7)}; }
+        if(is("await") && inAsync_) { auto op=take();lhs=node(Kind::Await,op);lhs->children={expression(7)}; }
+        else if(is("await") && (peek(1).kind==TokenKind::Name || peek(1).kind==TokenKind::Number || peek(1).kind==TokenKind::String) && precedence(peek(1).text)==0) fail(peek().at,"SCRIPT340","await requires an async function body");
+        else if(is("not") || is("-") || is("+")) { auto op=take(); lhs=node(Kind::Unary,op); lhs->children={expression(op.text=="not" ? 3 : 7)}; }
         else lhs=primary();
         while(precedence(peek().text)>=minimum) {
             auto op=take(); auto result=node(Kind::Binary,op); result->children={lhs,expression(precedence(op.text)+1)}; lhs=result;
@@ -120,7 +127,11 @@ class Parser {
     }
     NodePtr primary() {
         const auto token=take(); NodePtr result;
-        if(token.kind==TokenKind::Number) result=node(Kind::Number,token);
+        if(token.kind==TokenKind::Number) {
+            result=node(Kind::Number,token);
+            try {result->numericValue=std::stod(token.text);}catch(const std::exception&) {fail(token.at,"SCRIPT301","Invalid numeric literal");}
+            if(!std::isfinite(result->numericValue)) fail(token.at,"SCRIPT301","Number is not finite");
+        }
         else if(token.kind==TokenKind::String) result=node(Kind::String,token);
         else if(token.text=="true" || token.text=="false") result=node(Kind::Boolean,token);
         else if(token.text=="null") result=node(Kind::Null,token);

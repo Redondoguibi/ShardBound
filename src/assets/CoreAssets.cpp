@@ -2,6 +2,7 @@
 #include "assets/AssetManager.h"
 namespace game {
 void registerCoreModels(AssetManager& assets) {
+    assets.registerModel({AssetId("core:arrow"),"models/arrow.glb"});
     assets.registerModel({AssetId("core:cube"),"models/cube.glb"});
     assets.registerModel({AssetId("core:sword"),"models/sword.glb"});
     assets.registerModel({AssetId("core:grass"),"models/grass_block.glb"});

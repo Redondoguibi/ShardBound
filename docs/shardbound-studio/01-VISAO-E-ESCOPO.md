@@ -23,7 +23,7 @@ A meta é que criadores possam **modelar, texturizar, animar, incluir efeitos e 
 | Arma corpo a corpo | Criar e animar armas melee **com o player de referência visível** | Player padrão sem skin, ajuste na mão e animações completas do player **correndo, pulando e atacando com a arma equipada**, no mesmo editor |
 | Arma de longa distância | Criar e animar armas ranged **com o mesmo editor contextual de player** | Animações de uso, corrida, pulo, disparo e outras ações pertinentes; pontos visuais de saída de projéteis e efeitos |
 | Bloco | Criar blocos que compõem grande parte do cenário do ShardBound | Cubos e módulos de cenário, orientação, variantes e referências de colisão; **não** incluir mecânica de colocação/quebra pelo jogador |
-| Armadura | Criar peças **sobrepostas** ao player, organizadas em pastas por parte do corpo | Editor com player de referência, encaixe por braço esquerdo/direito etc.; animações opcionais, sem exigir poses do player |
+| Armadura | Criar peças **sobrepostas** ao player, organizadas em pastas por parte do corpo | Editor com player de referência e prévia das peças acompanhando as animações do corpo pelo encaixe |
 | Monstro | Criar mobs/criaturas animados com **hierarquia de grupos totalmente livre** | Clips e efeitos por grupo, sem exigir forma humanoide ou estrutura fixa |
 | Partículas/VFX | **Criar efeitos do zero** e efeitos avançados | Editor de partículas, **rastros de armas, flashes, brilhos** e outros efeitos visuais, com keyframes e **preview de aparência idêntica ao jogo** |
 | Sons sincronizados | **Associar sons a frames da timeline** | Escolher/referenciar áudio, marcar instantes de disparo e exportar eventos vinculados ao clip |
@@ -54,7 +54,7 @@ A meta é que criadores possam **modelar, texturizar, animar, incluir efeitos e 
 
 **Armas (melee e ranged):** ao modelar uma espada, arco ou outra arma, oferecer um local de edição/pré-visualização com **modelo padrão do player sem skin**. Nele o autor posiciona a arma na mão, ajusta como ela é segurada e pode animar **corrida, pulo, ataque, disparo e ações pertinentes com a arma equipada**, movendo pastas do jogador inclusive as não diretamente ligadas à arma. Tudo ocorre no **mesmo editor/timeline**. O player é referência de autoria; não significa embutir sua geometria em cada arma exportada.
 
-**Armaduras:** fornecer um contexto semelhante para verificar como as peças se encaixam sobre o player. As peças acompanham os grupos correspondentes do corpo, organizados por pastas (inclusive braços esquerdo e direito). **Não exigir edição de poses do player no fluxo de armadura**; permitir animações da armadura quando o criador desejar.
+**Armaduras:** fornecer uma prévia para verificar como as peças se encaixam sobre o player. As peças acompanham os grupos correspondentes do corpo, organizados por pastas (inclusive braços esquerdo e direito), sem clipes próprios.
 
 **Projeto do jogador:** as **animações gerais do player** (idle, caminhada, corrida, pulo e outras) são editadas **dentro do próprio projeto de criação do player**, sem criar uma categoria exclusiva para animações. Este fluxo complementa o editor contextual de armas, que permite animar as ações do jogador com a arma equipada; não o substitui.
 

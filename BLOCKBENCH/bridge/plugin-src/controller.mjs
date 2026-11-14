@@ -1,5 +1,6 @@
 import { tools, mtools, validateMesh } from '../shared/tools.mjs';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { createStudioAdapter } from './studio.mjs';
 
 export function createController(g) {
   let revision = 0;
@@ -13,7 +14,12 @@ export function createController(g) {
     'select_project',
     'update_selection',
   ];
-  events.forEach((e) => g.Blockbench.on(e, changed));
+  const eventListeners = events.map(event => [event, () => {
+    // Export sampling temporarily selects native groups; it is not a user edit.
+    if (event === 'update_selection' && g.ShardBoundStudio?.exporting) return;
+    changed();
+  }]);
+  eventListeners.forEach(([event, listener]) => g.Blockbench.on(event, listener));
   const snapshot = () => ({ project_id: g.Project?.uuid ?? null, revision });
   const find = (id) => {
     const node = [...g.Outliner.elements, ...g.Group.all].find(
@@ -23,8 +29,11 @@ export function createController(g) {
     return node;
   };
   const requireProject = (args, edit = true) => {
-    if (!g.Project || g.Format?.id !== 'free')
-      throw new Error('Open a Generic Model project first.');
+    if (!g.Project || !['free', 'shardbound_studio'].includes(g.Format?.id))
+      throw new Error('Open a Generic Model or ShardBound Studio project first.');
+    if (edit && g.Format.id === 'shardbound_studio' && g.ShardBoundStudio?.apiVersion !== 1)
+      throw new Error('Load ShardBound Studio 1.1+ before editing its projects.');
+    if (edit && g.ShardBoundStudio?.exporting) throw new Error('Wait for the Studio export to finish.');
     if (args.project_id && g.Project.uuid !== args.project_id)
       throw new Error('Active project changed. Read the project again.');
     if (
@@ -34,7 +43,7 @@ export function createController(g) {
       throw new Error('Project revision changed. Read the project again.');
     if (edit && (g.Dialog.open || g.Undo.current_save))
       throw new Error('Finish the active dialog/edit in Blockbench first.');
-    if (edit && g.Modes.selected?.id !== 'edit')
+    if (edit && g.Modes.selected?.id !== 'edit' && g.Format.id !== 'shardbound_studio')
       throw new Error('Switch Blockbench to Edit mode first.');
   };
   const refresh = () => {
@@ -63,6 +72,10 @@ export function createController(g) {
   };
   const summary = () => ({
     ...snapshot(),
+    connected: true,
+    bridge_version: '0.5.0',
+    supported_formats: ['free', 'shardbound_studio'],
+    studio: { installed: !!g.ShardBoundStudio, version: g.ShardBoundStudio?.version ?? null, api_version: g.ShardBoundStudio?.apiVersion ?? null, active: g.Format?.id === 'shardbound_studio' },
     name: g.Project?.name,
     format: g.Format?.id,
     blockbench: g.Blockbench.version,
@@ -133,6 +146,7 @@ export function createController(g) {
         );
     }
     if (e instanceof g.Group) data.children = e.children.map((c) => c.uuid);
+    if (g.Locator && e instanceof g.Locator) data.position = e.position;
     return data;
   };
   const validateTextures = (faces) => {
@@ -251,6 +265,15 @@ export function createController(g) {
       const nodes = a.updates.map((u) => find(u.id));
       a.updates.forEach((u, i) => {
         const n = nodes[i];
+        if (u.parent !== undefined) {
+          const parent = u.parent === 'root' ? 'root' : find(u.parent);
+          if (parent !== 'root' && !(parent instanceof g.Group)) throw new Error('Parent must be a group or root.');
+          const parents = new Map(a.updates.filter(u => u.parent !== undefined).map(u => [u.id, u.parent]));
+          const visited = new Set([n.uuid]); let next = u.parent;
+          while (next && next !== 'root') { if (visited.has(next)) throw new Error('Reparenting would create a hierarchy cycle.'); visited.add(next); next = parents.get(next) ?? find(next).parent?.uuid; }
+          if (g.Format.id === 'shardbound_studio') { const state = g.ShardBoundStudio.state();
+            if (state.models.some(m => m.roots.includes(n.uuid)) || state.context?.root === n.uuid || Object.values(state.context?.groups || {}).includes(n.uuid)) throw new Error('Use studio_model bind for equipment roots; preserve reference player hierarchy.'); }
+        }
         const cubeOnly =
           u.from ||
           u.to ||
@@ -276,9 +299,10 @@ export function createController(g) {
         nodes.filter((n) => !(n instanceof g.Group)),
         nodes.filter((n) => n instanceof g.Group),
         () => {
-          a.updates.forEach(({ id, faces, ...data }, i) => {
+          a.updates.forEach(({ id, faces, parent, ...data }, i) => {
             const node = nodes[i];
             node.extend(data);
+            if (parent !== undefined) node.addTo(parent === 'root' ? 'root' : find(parent));
             if (faces && node instanceof g.Cube)
               for (const [direction, face] of Object.entries(
                 normalizeCubeFaces(faces),
@@ -333,6 +357,13 @@ export function createController(g) {
       const nodes = a.ids.map(find);
       if (nodes.some((n) => n instanceof g.Group && n.children.length))
         throw new Error('Delete children before deleting a nonempty group.');
+      if (g.Format.id === 'shardbound_studio') {
+        const state = g.ShardBoundStudio?.state();
+        if (!state) throw new Error('Load ShardBound Studio before editing its project.');
+        if (nodes.some(n => state.models.some(m => m.roots.includes(n.uuid)) || state.context?.root === n.uuid || Object.values(state.context?.groups || {}).includes(n.uuid)))
+          throw new Error('Use studio_model to manage declared roots; reference player folders are protected.');
+        studioAdapter.ensureUnreferenced(nodes.map(n => n.uuid));
+      }
       return transaction(
         'Bridge: Delete elements',
         nodes.filter((n) => !(n instanceof g.Group)),
@@ -448,6 +479,8 @@ export function createController(g) {
     },
     async mtools_run(a) {
       requireProject(a);
+      // MTools creates/selects mesh components in Edit mode; Animate selects animators instead.
+      if (g.Format.id === 'shardbound_studio' && g.Modes.selected?.id !== 'edit') g.Modes.options.edit.select();
       const spec = mtools[a.action],
         params = spec.schema.parse(a.parameters);
       const actionParams = { ...params };
@@ -672,6 +705,8 @@ export function createController(g) {
             texture.fromDataURL(url);
           }
           texture.saved = false;
+          texture.canvas.width = image.width; texture.canvas.height = image.height;
+          texture.ctx.clearRect(0, 0, image.width, image.height); texture.ctx.drawImage(image, 0, 0); texture.updateChangesAfterEdit();
           return { texture_id: texture.uuid };
         },
         { textures, bitmap: true },
@@ -685,17 +720,22 @@ export function createController(g) {
     },
     save_project(a) {
       requireProject(a, false);
+      if (g.Dialog.open || g.Undo.current_save) throw new Error('Finish the active dialog/edit before saving.');
       const content = g.Codecs.project.compile({
         bitmaps: true,
         absolute_paths: false,
       });
-      return { format: 'bbmodel', content };
+      return { format: g.Format.id === 'shardbound_studio' ? 'sbstudio' : 'bbmodel', content };
     },
     async export_project(a) {
       requireProject(a, false);
+      if (g.Dialog.open || g.Undo.current_save) throw new Error('Finish the active dialog/edit before exporting.');
+      if (g.Format.id === 'shardbound_studio' && !['bbmodel', 'sbstudio'].includes(a.format))
+        throw new Error('Use studio_export for Studio GLBs, animations and companions. Native generic export would lose Studio metadata/reference filtering.');
+      if (a.format === 'sbstudio' && g.Format.id !== 'shardbound_studio') throw new Error('sbstudio requires a Studio project.');
       const codec =
         g.Codecs[
-          a.format === 'bbmodel'
+          ['bbmodel', 'sbstudio'].includes(a.format)
             ? 'project'
             : a.format === 'glb'
               ? 'gltf'
@@ -711,7 +751,7 @@ export function createController(g) {
           armature: false,
           merge_armature: false,
         });
-      else if (a.format === 'bbmodel')
+      else if (['bbmodel', 'sbstudio'].includes(a.format))
         content = await codec.compile({
           compressed: false,
           raw: false,
@@ -735,6 +775,7 @@ export function createController(g) {
       };
     },
   };
+  const studioAdapter = createStudioAdapter(g, { requireProject, changed, toBase64 });
   const internalHandlers = {
     __open_project_data(a) {
       if (g.Dialog.open || (g.Project && g.Undo.current_save))
@@ -746,23 +787,26 @@ export function createController(g) {
         throw new Error('Invalid .bbmodel JSON.');
       }
       if (!model?.meta) throw new Error('Invalid .bbmodel: missing meta.');
-      if (model.meta.model_format && model.meta.model_format !== 'free')
+      if (model.meta.model_format && !['free', 'shardbound_studio'].includes(model.meta.model_format))
         throw new Error(
           `Expected Generic Model (.meta.model_format=free), got ${model.meta.model_format}.`,
         );
-      g.Codecs.project.load(model, { path: a.path, no_file: false });
-      if (g.Format?.id !== 'free')
-        throw new Error('Loaded project is not a Generic Model.');
+      if (model.meta.model_format === 'shardbound_studio') {
+        if (g.ShardBoundStudio?.apiVersion !== 1) throw new Error('Load ShardBound Studio 1.1+ before opening this project.');
+        g.ShardBoundStudio.codec.load(model, { path: a.path, no_file: false });
+      } else g.Codecs.project.load(model, { path: a.path, no_file: false });
       changed();
       return summary();
     },
   };
   return {
     async call(name, args) {
+      if (Object.hasOwn(studioAdapter.internal, name)) return { ...(await studioAdapter.call(name, args, true)), ...snapshot() };
       if (Object.hasOwn(internalHandlers, name))
         return { ...(await internalHandlers[name](args)), ...snapshot() };
       if (!Object.hasOwn(tools, name)) throw new Error('Unknown tool');
       const parsed = tools[name].schema.parse(args);
+      if (Object.hasOwn(studioAdapter.handlers, name)) return { ...(await studioAdapter.call(name, parsed)), ...snapshot() };
       if (!Object.hasOwn(handlers, name))
         throw new Error(
           `Tool ${name} is handled by the MCP server and should not reach Blockbench directly.`,
@@ -771,7 +815,8 @@ export function createController(g) {
       return { ...result, ...snapshot() };
     },
     dispose() {
-      events.forEach((e) => g.Blockbench.removeListener(e, changed));
+      studioAdapter.dispose();
+      eventListeners.forEach(([event, listener]) => g.Blockbench.removeListener(event, listener));
     },
   };
 }

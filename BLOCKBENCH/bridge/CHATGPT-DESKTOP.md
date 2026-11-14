@@ -2,6 +2,10 @@
 
 A integração privada usa o plugin da conta e o Secure MCP Tunnel da OpenAI. O runtime Node e o Blockbench continuam neste PC. A conta do ChatGPT recebe as ferramentas pela conexão registrada, referenciada por `.app.json`. O marketplace local não é o mecanismo de instalação desse plugin de conta.
 
+## Usar com ShardBound Studio
+
+A versão 0.5 adiciona 16 ferramentas Studio e preserva a conexão existente. Siga [o guia Studio](STUDIO-COMPATIBILITY.md): compile/recarregue Studio 1.1 e Bridge 0.5, reinicie runtime + daemon e abra nova conversa.
+
 ## Instalar e iniciar
 
 Na pasta `BLOCKBENCH/bridge`, execute:
@@ -12,7 +16,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-ChatGPT-Desktop-Pl
 
 O instalador preserva o pareamento existente, instala dependências se faltarem, configura o tunnel-client oficial, inicia um único runtime, migra somente as configurações antigas do ShardBound e executa o diagnóstico. Runtime API keys são guardadas com DPAPI para o usuário Windows em `.local/`; nenhum segredo entra no pacote ou no Git. Na primeira configuração, informe o ID de um túnel associado à mesma conta/workspace e uma Runtime API key com Tunnels Read + Use. Esses dados são pedidos localmente, nunca no chat.
 
-No Blockbench, carregue `.local/shardbound_bridge.js` em **File -> Plugins -> Load Plugin from File** e abra um **Generic Model**. Instale MTools separadamente. A bridge oferece adaptações explícitas das ações listadas por `mtools_list`; não executa qualquer plugin arbitrário.
+No Blockbench, carregue `.local/shardbound_bridge.js` em **File -> Plugins -> Load Plugin from File** e abra um **Generic Model**, ou carregue também `../studio/dist/shardbound_studio.js` e abra/crie um **ShardBound Studio**. Instale MTools separadamente. A bridge oferece adaptações explícitas das ações listadas por `mtools_list`; não executa qualquer plugin arbitrário.
 
 ## Conexão na conta
 
@@ -34,7 +38,7 @@ Deixe o Blockbench aberto e a bridge carregada. No ChatGPT Desktop, abra um **no
 
 > Execute status no meu Blockbench usando a ferramenta real do ShardBound. Não edite nada.
 
-A resposta deve incluir a versão do Blockbench, o formato atual e MTools. Um texto dizendo que a skill existe não comprova uma chamada MCP. Para editar, o formato precisa ser `free` (Generic Model). O fluxo da skill é status -> read_project -> capture_view -> mostrar a imagem -> editar.
+A resposta deve incluir a versão do Blockbench, o formato atual e MTools. Um texto dizendo que a skill existe não comprova uma chamada MCP. Para editar, o formato precisa ser `free` (Generic Model) ou `shardbound_studio` (com Studio 1.1+). No Studio, use também `studio_read` e as ferramentas `studio_*`. O fluxo da skill é status -> read_project -> capture_view -> mostrar a imagem -> editar.
 
 ## Diagnóstico e limites da prova
 
@@ -44,7 +48,7 @@ A resposta deve incluir a versão do Blockbench, o formato atual e MTools. Um te
 .\Status-ChatGPT-Desktop-Plugin.ps1 -RequireChatHost
 ```
 
-O relatório fica em `.local/chatgpt-diagnostic.json`. Ele verifica manifests, cache, instalação/processos/logs Desktop, configuração de pareamento, Node absoluto, handshake stdio, as 18 ferramentas, status, daemon, controlador e estado do túnel. `.local/mcp-audit.jsonl` registra somente metadados do protocolo, nomes de ferramentas e sucesso; não contém argumentos, modelos, imagens ou credenciais.
+O relatório fica em `.local/chatgpt-diagnostic.json`. Ele verifica manifests, cache, instalação/processos/logs Desktop, configuração de pareamento, Node absoluto, handshake stdio, as 34 ferramentas, status, daemon, controlador e estado do túnel. `.local/mcp-audit.jsonl` registra somente metadados do protocolo, nomes de ferramentas e sucesso; não contém argumentos, modelos, imagens ou credenciais.
 
 O cliente de diagnóstico é independente do ChatGPT. Eventos `openai-mcp` pelo processo filho do túnel provam tráfego da OpenAI; initialize/tools/list sozinhos não provam execução no Chat normal. Cache baixado não prova que uma conversa carregou aquela versão. `normal_chat_host` permanece pendente até haver uma observação real da conversa; não edite o arquivo de evidência para forjar sucesso.
 

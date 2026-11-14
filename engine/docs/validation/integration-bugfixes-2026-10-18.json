@@ -1,0 +1,49 @@
+{
+  "recorded_utc": "2026-10-19T00:21:27.5647929+00:00",
+  "platform": "Windows x64 / MSVC / SDL3 / D3D11",
+  "validation": {
+    "debug": {
+      "build": "passed",
+      "tests_passed": 45,
+      "tests_failed": 0,
+      "test_seconds": 97.73,
+      "compiler_warnings": 0,
+      "log": "build/four-fixes-debug-final.log",
+      "log_sha256": "3f9bc67c2dde965e8ebb4dbb1d8ea3f071874630a6894d41ba1df5e3691d1d57"
+    },
+    "release": {
+      "build": "passed",
+      "tests_passed": 45,
+      "tests_failed": 0,
+      "test_seconds": 59.59,
+      "compiler_warnings": 0,
+      "log": "build/four-fixes-release-final.log",
+      "log_sha256": "3bb56678a3ce6cb2d44ede069a365491776d76f37035bd22cc3e516e2e55bf3f"
+    }
+  },
+  "regression_test": "integration_regression",
+  "fixes": [
+    "save completion outcome retained per request",
+    "combined stack and instance equipment limit",
+    "attribute defaults resolve current mod definitions",
+    "Escape ownership follows modal/focus/drag state"
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "2758d831109e34e74886a391295c7fe0c081af6824c9f01c08b9935760c4140a",
+    "src/core/Application.cpp": "7d1c4ef43ad3b48acfd39eaf0654302bdb0764cc224b861dea70485862d81bce",
+    "src/core/Application.h": "de3c03e46accf4dca7aa6905dd8bc992bdd1e4c56e1dc95ad998019fd4286c91",
+    "src/persistence/SaveGame.cpp": "fecab2053b60adf538de3f94683ec1618bd68ffba4bdcfee180221930a26a92e",
+    "src/persistence/SaveGame.h": "0cea4308691a0b5816e7d4c3e1eecd4a7894aa809e8cf8480a02ed50c2a47753",
+    "src/scripting/GameplayBridge.cpp": "0b92fa0276823cf9ab63ae770d00c9ab4885d17204fb470bb6e29d1c657cfd1b",
+    "src/scripting/AttributeBridge.cpp": "e31c9391770eac4baa14cdffc00fce02df15d4f5fa92d7bd481777b5cbdb0530",
+    "src/game/GameUi.h": "9edccbecf5911e0c48f456ee767bc1e2d3838720084d4d7373d8b024addc0b4b",
+    "src/game/WidgetUi.cpp": "4ebe63badce9658f26907001b8c50da3804f67cee35ad0150ac308af56e0dbb6",
+    "src/game/WidgetUi.h": "cdedf1e9350869f3d461f44d4377a420cf4c03b6b3f5b2affbc5380d96e64b70",
+    "content/foundation/player_attributes.sl": "fda538c3f0392bb82c4ea9858c37385d80bba19d88f1afadf08c7310f1fca464",
+    "tests/IntegrationRegressionTests.cpp": "b93056d52d138ab38d39a9728b022db2f90bbb7bf1824197da42cff8eac2e798",
+    "docs/34-INTEGRATION-BUGFIXES.md": "f8f33ba4b690b201074fddb58a97eb869ae35399729c36b2818a8bc366d6e6c1",
+    "docs/README.md": "c0fe8e15d021dc93fec0306e98793954b3072b90020e90282510b818e0b4f71b",
+    "docs/modding/10-SAVES-COMPATIBILITY-AND-RECOVERY.md": "8f194805e4c013cd5c70ac83a4445d9c6ead5839aa79c3bd9535e1e173542ab2",
+    "docs/modding/11-DEVELOPER-CONSOLE-AND-ATTRIBUTES.md": "abc25c6a3ff62965d5ced1dc4e1a47cb0b361c656795c6beb0367de9bc0fbde5"
+  }
+}

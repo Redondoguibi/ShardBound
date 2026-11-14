@@ -1,6 +1,12 @@
 #include "scripting/Registry.h"
 #include "assets/AssetId.h"
 namespace game::script {
+Value Registry::inspect() const {
+    std::vector<Value> definitions,writes;
+    for(const auto& [key,d]:definitions_) { auto row=object();row.setMember("id",Value(d.id),{});row.setMember("category",Value(d.category),{});row.setMember("type",Value(d.type),{});const auto found=sources_.find(key);if(found!=sources_.end()) { row.setMember("file",Value(found->second.file),{});row.setMember("line",Value(double(found->second.line)),{});row.setMember("column",Value(double(found->second.column)),{}); }definitions.push_back(row); }
+    for(const auto& [path,writers]:writes_) for(const auto& writer:writers) { auto row=object();row.setMember("path",Value(path),{});row.setMember("mod",Value(writer.mod),{});row.setMember("file",Value(writer.at.file),{});row.setMember("line",Value(double(writer.at.line)),{});row.setMember("column",Value(double(writer.at.column)),{});writes.push_back(row); }
+    auto result=object();result.setMember("revision",Value(double(revision_)),{});result.setMember("definitions",list(std::move(definitions)),{});result.setMember("writes",list(std::move(writes)),{});return result;
+}
 std::vector<Definition> Registry::entries(const std::string& category) const {
     std::vector<Definition> result;
     for(const auto& [key,definition]:definitions_) if(definition.category==category)
@@ -8,11 +14,15 @@ std::vector<Definition> Registry::entries(const std::string& category) const {
     return result;
 }
 bool Registry::contains(const std::string& category,const std::string& id) const { return definitions_.contains(category+"/"+id); }
+std::vector<std::string> Registry::ids(const std::string& category) const {
+    std::vector<std::string> result;const auto prefix=category+"/";
+    for(auto it=definitions_.lower_bound(prefix);it!=definitions_.end() && it->first.starts_with(prefix);++it) result.push_back(it->second.id);return result;
+}
 void Registry::add(Definition definition,const Location& at) {
     (void)AssetId(definition.id);
     const auto key=definition.category+"/"+definition.id;
     if(!definitions_.emplace(key,std::move(definition)).second) fail(at,"SCRIPT401","Duplicate definition: "+key);
-    ++revision_;
+    sources_[key]=at;++revision_;
 }
 const Definition& Registry::get(const std::string& category,const std::string& id,const Location& at) const {
     auto it=definitions_.find(category+"/"+id); if(it==definitions_.end()) fail(at,"SCRIPT402","Unknown definition: "+category+"/"+id); return it->second;
@@ -54,7 +64,7 @@ void Registry::patch(const std::string& category,const std::string& id,const Val
     auto updated=merge(definition.data,changes);
     for(const auto& [path,value]:fields) {
         auto& writers=writes_[path]; std::erase_if(writers,[&](const auto& write) { return write.mod==mod; });
-        writers.push_back(Write{mod,clone(value)});
+        writers.push_back(Write{mod,clone(value),at});
     }
     definitions_.at(prefix).data=std::move(updated);
     ++revision_;
@@ -65,7 +75,7 @@ void Registry::replace(const std::string& category,const std::string& id,Value v
     for(const auto& [path,writers]:writes_) if(path==prefix || path.starts_with(prefix+"/"))
         for(const auto& write:writers) if(write.mod!=mod && !depends(mod,write.mod)) fail(at,"SCRIPT403","Conflicting replacement by "+mod+" and "+write.mod);
     auto copied=clone(value);
-    writes_[prefix].push_back({mod,clone(copied)});
+    auto& writers=writes_[prefix];std::erase_if(writers,[&](const auto& writer){return writer.mod==mod;});writers.push_back({mod,clone(copied),at});
     definitions_.at(prefix).data=std::move(copied);
     ++revision_;
 }

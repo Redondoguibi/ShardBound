@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 namespace game {
+std::string clipboardText();
+void setClipboardText(const std::string& text);
 struct WindowConfig { std::string title = "Game Runtime"; int width = 1280, height = 720; bool hidden = false; };
 class WindowSystem {
 public:
@@ -16,6 +18,9 @@ public:
     bool minimized() const;
     int width() const;
     int height() const;
+    void textInput(bool enabled);
+    void fullscreen(bool enabled);
+    void relativeMouse(bool enabled);
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

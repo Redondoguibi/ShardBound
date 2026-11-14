@@ -1,0 +1,30 @@
+{
+  "editorVersion": "5.2.2",
+  "effects": "studio.effects.json",
+  "events": "studio.events.json",
+  "generator": "ShardBound Studio 1.3.0",
+  "models": [
+    {
+      "bindings": [
+        {
+          "group": "14241345-921b-2673-9527-480510003b70",
+          "referenceGroup": "be1bce33-d502-d572-7e1a-02843c042a81",
+          "target": "RightArm"
+        }
+      ],
+      "file": "models/studio_demo/crystal_sword.glb",
+      "id": "studio_demo:crystal_sword",
+      "roots": [
+        "14241345-921b-2673-9527-480510003b70"
+      ],
+      "type": "melee"
+    }
+  ],
+  "playerAnimations": "studio.player-animations.json",
+  "project": "studio_demo:crystal_sword",
+  "projectileVisual": null,
+  "runtimeIntegration": "not-yet-implemented",
+  "schema": "shardbound.studio.package",
+  "unitsPerMeter": 16,
+  "version": 1
+}

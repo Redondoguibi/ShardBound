@@ -1,0 +1,170 @@
+{
+  "recorded_utc": "2026-10-19T21:27:56.316348+00:00",
+  "scope": [
+    "Settings and device remapping",
+    "World session lifecycle and renderer state",
+    "Frozen world generation and profile application",
+    "Grounded queries and movement integration"
+  ],
+  "severity_count": {
+    "critical": 0,
+    "high": 0,
+    "medium": 5,
+    "low": 0
+  },
+  "issues": [
+    {
+      "case": "gamepad remapping",
+      "reproduced_failure": "Keyboard remapping removed the controller button",
+      "file": "src/game/FrontEnd.cpp",
+      "line": 65,
+      "fix": "Preserve existing controller buttons when remapping keyboard/mouse",
+      "severity": "medium",
+      "confidence": "high",
+      "status": "fixed and tested"
+    },
+    {
+      "case": "keyboard session isolation",
+      "reproduced_failure": "Closed world left keyboard-only movement active",
+      "file": "src/core/Application.cpp",
+      "line": 115,
+      "fix": "Reset session movement restriction on unload",
+      "severity": "medium",
+      "confidence": "high",
+      "status": "fixed and tested"
+    },
+    {
+      "case": "environment session isolation",
+      "reproduced_failure": "Closed world leaked its environment into the next session",
+      "file": "src/core/Application.cpp",
+      "line": 112,
+      "fix": "Reset environment and point lights on unload",
+      "severity": "medium",
+      "confidence": "high",
+      "status": "fixed and tested"
+    },
+    {
+      "case": "frozen world profile",
+      "reproduced_failure": "O terreno salvo requer o mod: plains",
+      "file": "src/game/FrontEnd.cpp",
+      "line": 149,
+      "fix": "Resolve selected manifests independently of preparing new generation",
+      "severity": "medium",
+      "confidence": "high",
+      "status": "fixed and tested"
+    },
+    {
+      "case": "rotated collider support",
+      "reproduced_failure": "Rotated collider found support outside its physical footprint",
+      "file": "src/physics/PhysicsWorld.cpp",
+      "line": 174,
+      "fix": "Cast the oriented body down; filter walls before selecting nearest support",
+      "severity": "medium",
+      "confidence": "high",
+      "status": "fixed and tested"
+    }
+  ],
+  "before_fix": [
+    {
+      "log": "build/readiness-review-before.log",
+      "sha256": "710832a1565409f526070bed89a5b18d2654e0e92153657d4492146960ed902a",
+      "expected_failure": true
+    },
+    {
+      "log": "build/readiness-review-rotation-before.log",
+      "sha256": "b900b854a0b2b389d4dedaf087ebc1eb1716f81ba245ef5fdd1a1cd9f03597cb",
+      "expected_failure": true
+    }
+  ],
+  "validation": {
+    "release": {
+      "passed": 47,
+      "failed": 0,
+      "seconds": 42.48,
+      "log": "build/readiness-review-release-final.log",
+      "sha256": "e7131dd7cf85acb964e437c5b5d0b4aba88219bda2b07f4571772a76bb8a3af9",
+      "compiler_warnings": 0,
+      "compiler_errors": 0
+    },
+    "debug": {
+      "passed": 47,
+      "failed": 0,
+      "seconds": 107.61,
+      "log": "build/readiness-review-debug-final.log",
+      "sha256": "119bada438d8b99cf4c064f9ab3a4dde160742216a009655160675b3a348c069",
+      "compiler_warnings": 0,
+      "compiler_errors": 0
+    },
+    "focused": {
+      "passed": 4,
+      "failed": 0,
+      "seconds": 5.73,
+      "log": "build/readiness-review-support-final.log",
+      "sha256": "3e6a5f3b2174fe0e9b0e224b8d22e9646be6dcd6831cd5b177a08108f343781d",
+      "compiler_warnings": 0,
+      "compiler_errors": 0
+    },
+    "warp": {
+      "passed": 2,
+      "failed": 0,
+      "seconds": 3.11,
+      "log": "build/readiness-review-warp.log",
+      "sha256": "6fe3709e671515e77f20718aedda37438553d19a2a618b4b6866c494559461cc",
+      "compiler_warnings": 0,
+      "compiler_errors": 0
+    }
+  },
+  "distribution": {
+    "archive": "dist/ShardBound-win64-2026-10-19-review1.zip",
+    "bytes": 6539817,
+    "sha256": "faec729dd9db019849104e526f931648fd48670f7b721860903badaadf54bb4e",
+    "verification": "dist/ShardBound-win64-2026-10-19-review1-verification.json",
+    "verification_sha256": "e2bf32bd61890932392a0b551a61a5f645cd833232487a722d610c8b7530d282",
+    "restricted_path": true,
+    "modcheck_exit": 0,
+    "create_exit": 0,
+    "resume_exit": 0,
+    "extracted_hashes": "passed",
+    "log": "build/readiness-review-package.log",
+    "profiles": [
+      {
+        "path": "dist/portable-check-058280b828e24d2cb7432872b97e0687/user/performance/session-17924451718750112.json",
+        "sha256": "d09062f6b28a38e46031c95ece15b1cbaf4f0a24ede53ebebd21cb9ef9eda055",
+        "gpu": "Intel(R) UHD Graphics 630",
+        "frames": 119.0,
+        "gameplay_frames": 119,
+        "gpu_samples": 116.0
+      },
+      {
+        "path": "dist/portable-check-058280b828e24d2cb7432872b97e0687/user/performance/session-17924451733672205.json",
+        "sha256": "55c3fcf3347d9d87b2d561fedb448bd3030ab10307c1d171ad8e09460e66c91b",
+        "gpu": "Intel(R) UHD Graphics 630",
+        "frames": 119.0,
+        "gameplay_frames": 119,
+        "gpu_samples": 116.0
+      }
+    ],
+    "previous_archive_preserved": true
+  },
+  "limitations": {
+    "complete_repository_audit": false,
+    "physical_gamepad_test": false,
+    "fresh_windows_vm": false,
+    "other_physical_gpus": false,
+    "remote_ci": false,
+    "extended_manual_playtest": false
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "a4945d816a49f3ec267a2fa1eb4cfc26471f8ac5efca57117e18ee9424b7999b",
+    "src/core/Application.cpp": "0e8c2466bc7f7954a2ffca6e2c919176d97fd4b8fe4d081690a3cdbe08a79849",
+    "src/core/Application.h": "e38a35edf38e4abf40b9eb992ac58394c7919f77734f0715dcb7058dec6db393",
+    "src/game/FrontEnd.cpp": "5616c250bb9dfc4297b2c6de0d635c211da66f7781086194c200e07170031746",
+    "src/game/FrontEnd.h": "3b74c06713084b707267d0874d7e6390c2b7c70301e4c1f2eeb76e9e16a4ab08",
+    "src/physics/PhysicsWorld.cpp": "d9fa9dd213f886abccde4c9fe71e7cd9a93f67544f22bc33c0d03eee88345d81",
+    "tests/ReadinessReviewTests.cpp": "4187eba85bfbdd57c3ed384ca8ad2a9f49bc76f1a19eb8baee24cfae80dd6ed2",
+    "docs/37-READINESS-REVIEW.md": "4a9dac47b84cb64352f1de9677d33421719593f7d4c91f8f1e0bd7d88050821a",
+    "docs/PLAYING.md": "b1a6dfb8050386d7f747d27462e3ea56b9d7c7871946a1ac28988d97d1b6b109",
+    "docs/README.md": "e266f7906baa7b38db9a706d28e8e278080e31429dbdf8badc2c8da0ad08b044",
+    "docs/18-IMPLEMENTATION-STATUS.md": "cae539a9a89e600555d3a8c2b35cebf145506599a1f9d22d281fb96442ddfaee"
+  }
+}

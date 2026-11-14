@@ -1,0 +1,81 @@
+{
+  "recorded_utc": "2026-10-19T00:01:20.143275+00:00",
+  "platform": "Windows x64 / MSVC / SDL3 / D3D11",
+  "validation": {
+    "debug": {
+      "build": "passed",
+      "tests_passed": 44,
+      "tests_failed": 0,
+      "test_seconds": 120.47,
+      "compiler_warnings": 0,
+      "log": "build/developer-debug-final.log"
+    },
+    "release": {
+      "build": "passed",
+      "tests_passed": 44,
+      "tests_failed": 0,
+      "test_seconds": 35.54,
+      "compiler_warnings": 0,
+      "log": "build/developer-release-final.log"
+    }
+  },
+  "runtime_smoke": {
+    "create": {
+      "exit_code": 0,
+      "log": "build\\developer-runtime-create.log"
+    },
+    "resume": {
+      "exit_code": 0,
+      "log": "build\\developer-runtime-resume.log"
+    },
+    "world_id": "7485058217302470608",
+    "speed_after_resume": 9.0,
+    "maximum_health_after_resume": 150.0,
+    "missing_attribute_retained": true,
+    "user_directory": "build\\release\\user\\developer-smoke-1792367929077274000"
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "7b2384163c0e9c19fbc7680ef349103e06af4715a44b87658fd9b3604752a422",
+    "src/core/Application.cpp": "13a97b44607ea1bca66094cd21fab2989e200843c26d4fa1eb2761f060f5a944",
+    "src/core/Application.h": "dd07904fde29f8c9dc4603f309ec866cc4f752c510b6ca45b863fbfeba803b06",
+    "src/game/Attributes.cpp": "01bb2de8d4d5176b6783f3fd2d03e72568834f5b60b27e19a4dacd04a61292ee",
+    "src/game/Attributes.h": "456351c4bf3bd3feece67922236dfeb12f7dfed482d35b667aa3787517bd1dd0",
+    "src/game/DeveloperCommands.cpp": "50adb083cca533b46cdf72ce34c40002fe1fcf8424965d7429d8c00f13994827",
+    "src/game/DeveloperCommands.h": "5ca0e44ce8c2adc73b47c56601a494dec98ef382a56bc81aefe19778103a5ef4",
+    "src/game/DeveloperMode.cpp": "b50ade2779bbd039131e05ce41dab5c1c39a639cce289fd090192672572a6440",
+    "src/game/DeveloperMode.h": "cb9afa1a76a1a3db64df235095db8e8670694b5c276918d6c461f6f18328ea35",
+    "src/game/Equipment.cpp": "3a34354abdc72a978c642dc61f20bd18a3961883274c4fcfba9d60f89acbf09a",
+    "src/game/Equipment.h": "6e22d172e61fa1d1b9138a948d45e0434ddc84b8d1236279bbf115098c140848",
+    "src/game/PlayerController.cpp": "3f4e2f95f4ce279281d39ec4cce9bf75b3cc6256b3a638d29d1cdaac3211c0e0",
+    "src/game/PlayerController.h": "22cbe7e8eb10d01e9d1f7e36808fd550723c78b192d3153009731913f686a0a5",
+    "src/game/GameUi.h": "0552511c9c9fe7276cadd71f000a216884523ab5a77caac22d1dd27307755bc3",
+    "src/game/WidgetUi.h": "d45b49ad53f96ce9e178d26859969ba58efb47f32d9a147c13270fa7ccef2c89",
+    "src/scripting/AttributeBridge.cpp": "6c31e52a0f05e47be15559288c74d2d234fe80351bca1c6b575ae93a16c4f0c7",
+    "src/scripting/AttributeBridge.h": "d8303407c982af6c726f1921856c90bab435f444c62dd6437320adef729895b4",
+    "src/scripting/GameplayBridge.cpp": "5470671093ed7bb45cb72026d21969478d8ba0dc2c973fd23fcee20d1eef293f",
+    "src/scripting/Registry.cpp": "f75cac3a7c1ca5556c65c6e5b77f9ed3c5e3f775f949e4e9e14ecf54f4b143ac",
+    "src/scripting/Registry.h": "e7d365aa420c239f27390160b8abc761ab1a2e640a3ea7232f9f9ff9d44c84e6",
+    "src/scripting/Runtime.cpp": "fe36903729758a52c470d9a15e9c34ebd6fe8987e351f5422b06bc84ba7aa12c",
+    "src/scripting/Runtime.h": "8cea225b5a83623c4528aea47e1515e39832e8fcca01ca47f9a78748d68f50c3",
+    "src/platform/Events.h": "ce4ad6e4dd58d672fa3581caf5f0693098868d4f2aef725840b903559413a40c",
+    "src/platform/WindowSystem.h": "b62b8c98160dc3945877848f25447e45f8eb766d98066c039bbc2fe55f941cf7",
+    "src/platform/windows/WindowSystem.cpp": "3dba3c915813dd827f2149cb80fe746953fddd8ecc817f1f5dc06407d8e7c9fc",
+    "src/renderer/Renderer.h": "9b59c00a45b1911cbaab6353431008c3521c4c9b539134a30c13758f6e46a679",
+    "src/renderer/d3d11/Renderer.cpp": "114f1a4128b36785998d47befe933644e412c9e74823ced0945572ba9978aea6",
+    "src/world/ChunkWorld.cpp": "095c324fd27a392f77e74e4b51c27e0e0de38adbc1488ee2079104792f2183d9",
+    "src/world/ChunkWorld.h": "05fd4746e64570d8a0a1519b3bdb53061cc445b1f4968eaaeeb201e653623f33",
+    "src/persistence/SaveGame.cpp": "4faa480e75c18346cbbfc59be92184a4f6397fc4b6318583bc2f6807fd755270",
+    "content/foundation/main.sl": "48cedcbf965daa0e1726de2e11e43e43f998fabe9eb3e6f44d898be62f45a784",
+    "content/foundation/player_attributes.sl": "29240cccb6056d44f9831d830f02c994b5b71b364617b22ee582c4b377aba4f5",
+    "content/foundation/combat_attributes.sl": "20bd8491cef9e81933d5b6fa9dac06567c31fc87f0e9a165542d782cf57be7a0",
+    "content/foundation/equipment_stats.sl": "0ede76b2f32687c2a068c72519db3039989bb1f6af444972793e31145e1a5570",
+    "content/foundation/encounters.sl": "b9b90d444f4edff595262b60cac454b9c09715f100825c2bf72dc1efdfd451b7",
+    "tests/DeveloperTests.cpp": "6047c89604c008f4a954140bd300b671b459b5ad076d61c9d22e6fa7540c4a7c",
+    "tests/ProceduralTests.cpp": "293d5659d1b4599161bf84b9b9575d8c007d017b26a7321d8954016d8e891670"
+  },
+  "limitations": [
+    "Automated hidden-window events and pixel readback; no physical keyboard/mouse walkthrough.",
+    "Single existing Windows D3D11 environment.",
+    "Camera collision is a ray with margin, not a volumetric sweep."
+  ]
+}

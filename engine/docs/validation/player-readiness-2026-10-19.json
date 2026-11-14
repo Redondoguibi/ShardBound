@@ -1,0 +1,202 @@
+{
+  "recorded_utc": "2026-10-19T20:38:29.438519+00:00",
+  "platform": "Windows x64 / MSVC / SDL3 / D3D11 / Jolt",
+  "working_tree_already_modified": true,
+  "validation": {
+    "debug": {
+      "build": "passed",
+      "tests_passed": 46,
+      "tests_failed": 0,
+      "test_seconds": 104.78,
+      "compiler_warnings": 0,
+      "compiler_errors": 0,
+      "log": "build/readiness-debug-validated.log",
+      "log_sha256": "37e51188164ebc236f79c10b6a51fcd4288d25155e8aee8fc7a06bb585b05ddc"
+    },
+    "release": {
+      "build": "passed",
+      "tests_passed": 46,
+      "tests_failed": 0,
+      "test_seconds": 43.89,
+      "compiler_warnings": 0,
+      "compiler_errors": 0,
+      "log": "build/readiness-release-validated.log",
+      "log_sha256": "8d88db9c34a7ca23d817906926d4150ac9b63bf4b2d45575bdc54cb343365fc2"
+    }
+  },
+  "focused": {
+    "build": "passed",
+    "tests_passed": 4,
+    "tests_failed": 0,
+    "test_seconds": 5.27,
+    "compiler_warnings": 0,
+    "compiler_errors": 0,
+    "log": "build/readiness-release-regressions-fixed.log",
+    "log_sha256": "0ec784264804e8d4f438fa9da5da91fd0f7fb53331b9c9fc70c9c2e19d9bd952"
+  },
+  "software_renderer": {
+    "build": "reused validated Release build",
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "test_seconds": 5.48,
+    "compiler_warnings": 0,
+    "compiler_errors": 0,
+    "log": "build/readiness-warp.log",
+    "log_sha256": "4fca8b41eb7b20ae25ca981daadc54a6c9ab0e207af36c28246c98dedda64979"
+  },
+  "issues_found_and_corrected": [
+    {
+      "issue": "Automatic stepping changed legacy gameplay by default",
+      "fix": "Engine and old saves default to zero; foundation explicitly opts in for new worlds",
+      "regressions": [
+        "gameplay",
+        "readiness"
+      ]
+    },
+    {
+      "issue": "Directory rename denied transiently during complete world restore",
+      "fix": "Bounded retry without replacing existing targets; real locked-handle and preservation regressions",
+      "regressions": [
+        "robustness"
+      ]
+    },
+    {
+      "issue": "Movement shape sweep omitted physical collider orientation",
+      "fix": "Use the moving body rotation and translation; rotated collider traverses a narrow passage and step",
+      "regressions": [
+        "readiness"
+      ]
+    },
+    {
+      "issue": "Mouse remapping could re-open its capture button",
+      "fix": "Consume the binding event before normal UI button handling",
+      "regressions": [
+        "readiness"
+      ]
+    },
+    {
+      "issue": "Performance canvas could hide a legacy HUD",
+      "fix": "Preserve legacy HUD as composited underlay; compare actual pixels",
+      "regressions": [
+        "readiness"
+      ]
+    },
+    {
+      "issue": "Explicitly disabled world mod was treated as a required missing checkpoint mod",
+      "fix": "Filter compatibility checks by explicit world selection while retaining orphan state and strict checks for selected mods",
+      "regressions": [
+        "readiness"
+      ]
+    }
+  ],
+  "distribution": {
+    "archive": "dist/ShardBound-win64-2026-10-19.zip",
+    "bytes": 6528068,
+    "sha256": "89a8713b6cf760d42873172cf73aca4ea4a07ec1d37b5ccb46850247c92408a5",
+    "manifest_sha256": "914d0c6b28a21514cf217cab0496fc0fa17a9c071760610cae391ae4c42f0763",
+    "restricted_path": true,
+    "modcheck_exit": 0,
+    "create_exit": 0,
+    "resume_exit": 0,
+    "archive_extraction_hashes": "passed",
+    "verification_file": "dist/ShardBound-win64-2026-10-19-verification.json",
+    "verification_sha256": "f0a165efd01ac753aa3bed8cb74bbb6c7d2cffe0d23a5f1614555cbcd85a5ecf",
+    "log": "build/readiness-package.log",
+    "log_sha256": "a4488c7689cc9af6b950c0d45dc877e1261508e958ab5725a7f027414df20737",
+    "profiles": [
+      {
+        "path": "dist/portable-check-b284fb7c38d4481890e34bdd9ed48c81/user/performance/session-17924421646764829.json",
+        "sha256": "bad066548b96e8a642e596ce67edbc0c40208b974a2a7a305b2170c2475d4f07",
+        "gpu": "Intel(R) UHD Graphics 630",
+        "window_frames": 119.0,
+        "gpu_samples": 116.0,
+        "gameplay_frames": 119
+      },
+      {
+        "path": "dist/portable-check-b284fb7c38d4481890e34bdd9ed48c81/user/performance/session-17924421660870146.json",
+        "sha256": "83fcc955d5dfb32abdcb3252de0a99930cb3866666b4dd0e544217e0270568ab",
+        "gpu": "Intel(R) UHD Graphics 630",
+        "window_frames": 119.0,
+        "gpu_samples": 116.0,
+        "gameplay_frames": 119
+      }
+    ]
+  },
+  "visual_review": [
+    "settings",
+    "controls",
+    "mods and profiles",
+    "performance with legacy HUD"
+  ],
+  "manual_extended_playtest": false,
+  "fresh_windows_vm": false,
+  "remote_ci_executed": false,
+  "other_physical_gpus_tested": false,
+  "remaining_limits": [
+    "Asset preparation still occurs at startup; no hot reload or package downloading",
+    "Dynamic registration conflicts and migrations are validated when opening the world",
+    "Existing entity and terrain resource limits remain",
+    "No general rollback for arbitrary script/native DLL side effects",
+    "No complete screen reader or IME accessibility; UI scale range is 0.75 to 1.0",
+    "Simulation metric measures fixed update; draws counts geometry, not all render passes",
+    "Asynchronous GPU samples are not paired with matching CPU frame rows",
+    "Restricted PATH on the current machine does not prove a clean Windows installation"
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "cfe22af0687d53737dc6e9d16c635a394107939043dcbf70ffacdecba207a221",
+    ".github/workflows/game.yml": "fe45e7768e4243a8ddc1c1e8a4cf5dcbfd244e6fbad475ff9f862aef23342b75",
+    "tools/build.ps1": "30aab699c5cba14be607c658ffce5f844c25fde274ae144a3d90d0363e6eb127",
+    "tools/package.ps1": "7132500efecb80d2101cb3cacffa64e6e004d0ff09f760d35f1227f7ae33ffb7",
+    "tools/verify-package.ps1": "dcf996e0b87e8b61a390d96378266ce8be54f6ac96a74a0c1df407c3af0a921a",
+    "src/physics/PhysicsWorld.cpp": "0f93d275f72a09c9d67e3862a1a52a65ec08c7aafc466f959b2e291c8be096a4",
+    "src/physics/PhysicsWorld.h": "0a59e3da1c9ba4fc6a063531199e032912e4ea11d323c673ec554326be7b57c5",
+    "src/game/PhysicsSystem.cpp": "44a297da8d79e8b80398cf66b381b67fc5e65dadfa7bb072509827daea65c70e",
+    "src/game/PhysicsSystem.h": "c055c70f40db4e06d34b931c415d2c5345f5d9454d2fadd82d5d3d597c0bedec",
+    "src/game/PlayerController.cpp": "497497fce4cd5be980d18792f6ff7f178ebd888890c028ad2e09bf3ab461d750",
+    "src/game/PlayerController.h": "d656dbb69a4997954a6668eb7f73d741e07030b18d39c84ac20f58aa98bf5b85",
+    "src/mods/ModProfiles.cpp": "fd97aa8e9ea850cb2a25191cfb6945e640b48edc2b40b749dfc840e137a552b7",
+    "src/mods/ModProfiles.h": "1ad765b6be9127ec625b60d67b5180ee401ee2df056714030ce4a107aa3052fb",
+    "src/game/FrontEnd.cpp": "d83cd532b47c371dcd1254025fc99172713d79993070ee90c5b59f09081bc2bf",
+    "src/game/FrontEnd.h": "8e8774f07b1ef2eecaac87de7ee84b0ab1db3dee379ff306eb3ffc437b1aab46",
+    "src/world/WorldStorage.cpp": "52e96be4a599c8e2423ecb762a8218177148b4fc1ce4b51123e1a959e23fecc1",
+    "src/world/WorldStorage.h": "30e61637f20c5bde2c02641851d3f20282460a8491dbb01851659f2049476419",
+    "src/world/WorldMaintenance.cpp": "4fff607aa953036ab18850b9aa4c3c2fbb5fb0c73b0eb518190069ff9c8afa2b",
+    "src/core/AtomicFile.cpp": "4dea49015403ed8fa06c25cd79a8d772950b0b9c37cbbd3f6b257be5f46d56b9",
+    "src/core/AtomicFile.h": "07f2d4ceff6a53a6c44641ece42a8c0620d4d01ba45a0ebf075b562caef9c5ac",
+    "src/platform/InputSystem.cpp": "761abae4343a0443bc2b87089a4b3e098957ce035fc0d09936dbba26cc4a2a0d",
+    "src/platform/InputSystem.h": "58299641a4d726ab24d77f50a48ce89c8049f99a3af36365521e94c6aa811ef9",
+    "src/platform/Events.h": "9cc4619ec0881c5eaff78887a05868db67b7d083b0956787fef62a306fdf87b4",
+    "src/platform/windows/WindowSystem.cpp": "023f624e7202a1ad49bd06baae62c2f95bdc1e8b177c7b70130bc0a0f2e4cfc7",
+    "src/platform/UserPaths.h": "fa037387719ab1267dc01d95933874f46b29373ad0909683bada22d63113f11d",
+    "src/platform/windows/UserPaths.cpp": "1fdd2f55127309ba514cb5a1f687bef9c18a82eded6d77491181464a0f4e602a",
+    "src/game/DeveloperMode.cpp": "466d6b6cc7cfbd43bee6a51074409f5786928b13663c3e32206bb56510d72d2d",
+    "src/game/DeveloperMode.h": "0c5b146fc7eee34e955769a78f4ac08332dba030422da713ea23e4dce0b1ed85",
+    "src/audio/AudioSystem.cpp": "2164b6337abb5009cdd789d9608b80ab4a90d68dd9ffe839579aef729aa21f48",
+    "src/audio/AudioSystem.h": "f4cfa990a552d3a1231684fc1424acd66e6ad081748ebd18df890db205bceb01",
+    "src/scripting/GameplayBridge.cpp": "340efd3e3b7945a64c23f14cd90927b10767a81fa1e826131085997cd515bb67",
+    "src/game/WidgetUi.cpp": "7c128643469862b92df23a1aa71af237c42bcf0a3171515c81471e37149331ee",
+    "src/game/GameUi.cpp": "0242666e15510caa41d2984858886e4b34c4c0f460374c87c12f2c957d7a5cb5",
+    "src/game/GameUi.h": "79e8abbc45b84dd6b0c568eecb8ffe40dfaf69418818046ef40f937adfe9b0a6",
+    "src/renderer/Renderer.h": "afa6b7aec6096615190fe7c78a5b932d8f8230fad9435562f7e2dbc770e02714",
+    "src/renderer/d3d11/Renderer.cpp": "143722653ceaba0d71898e7312daf608245446375fb7bb5cad4388fcd7b8f769",
+    "src/core/FrameProfiler.cpp": "92d7a8a7ac60bf266608f3b383b4378ba768dae6b4da695d997b478b01757078",
+    "src/core/FrameProfiler.h": "37e0e91994cba737aca7faa0223a45ffe9a5619eece453f7b8b30d4989447e51",
+    "src/core/Application.cpp": "9f6c6877f5d3edb0e38288524a1425b1b2fcd44eef9e397fef0389d64d7d669a",
+    "src/core/Application.h": "f17c7c1e1ce31fcdc215136589db01508ba33c7e5dd75b655bf973f28c064b2a",
+    "src/ecs/World.cpp": "6cace6d2b09b0786f3ecf89f0607f7915417b9ccdced35f442475a1eb57951f5",
+    "src/ecs/World.h": "ac7ebb9edd118f9e907321799906f1379608ed43ada9a3d4f311e2dfc9bf7d8c",
+    "src/persistence/SaveGame.cpp": "87f39a561b860d230657453696244ba9f63f9f7c3c6fee9a58b71f227ef7b894",
+    "content/foundation/main.sl": "d1927fd292a56676b329e9ff287f7856534412c068d8a68fa0b534da0a55ebb2",
+    "tests/ReadinessTests.cpp": "c01b0ea49361d88d47ab04e338b8e6b8013f7f1cbc9d5dcab0227b0ca030c254",
+    "tests/RobustnessTests.cpp": "5eb4ba261bbee6b554bf7fb6ba3eaa3777b1145b7d2d6aa59ac3afce8aef1ca1",
+    "tests/MovementTests.cpp": "213e510208ab3c3be1f7f135928fe984fc3284987db216331f34ba8b6879142f",
+    "docs/PLAYING.md": "0a2397c54d334bbe42a49eb84b0e4e62b6d6c14afa34cd5b7f6f0ba2b2ddd606",
+    "docs/36-PLAYER-READINESS.md": "583c9c2bd90c243a3149d1e74fe6c449cf5a7bb308c0612b779a4975558ebc42",
+    "docs/modding/07-MOD-PLATFORM.md": "fb92bbd8bd2562954b62c368915d97812c61d28749c071e769f0dadafb196664"
+  },
+  "whitespace_check": {
+    "passed": true,
+    "git_cr_at_eol": true,
+    "log": "build/readiness-whitespace.log"
+  }
+}

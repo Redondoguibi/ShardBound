@@ -62,7 +62,7 @@ await writeFile(
 );
 await buildPlugin();
 await buildPlugin(true);
-const codexSnippet = `[mcp_servers.shardbound_blockbench]\ncommand = ${JSON.stringify(process.execPath.replaceAll('\\', '/'))}\nargs = [${JSON.stringify(path.join(root, 'mcp/server.mjs').replaceAll('\\', '/'))}]\nstartup_timeout_sec = 30\ntool_timeout_sec = 60\n`;
+const codexSnippet = `[mcp_servers.shardbound_blockbench]\ncommand = ${JSON.stringify(process.execPath.replaceAll('\\', '/'))}\nargs = [${JSON.stringify(path.join(root, 'mcp/server.mjs').replaceAll('\\', '/'))}]\nstartup_timeout_sec = 30\ntool_timeout_sec = 300\n`;
 for (const name of ['codex-config.toml', 'codex-mcp.toml'])
   await writeFile(path.join(dir, name), codexSnippet);
 console.log(
