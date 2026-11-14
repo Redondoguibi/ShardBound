@@ -16,6 +16,8 @@ struct AuthoredEquipment {
     double movementBonus=0,healthBonus=0;
     bool grantOnStart=false;
     std::vector<AuthoredAttack> ground,air;
+    std::string editorProject;
 };
 void publishEquipment(const std::filesystem::path& mods,const AuthoredEquipment& equipment);
+AuthoredEquipment readEditorEquipment(const std::filesystem::path& root);
 }

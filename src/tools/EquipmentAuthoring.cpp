@@ -14,6 +14,36 @@
 #include <windows.h>
 
 namespace game {
+using Json=nlohmann::json;
+void to_json(Json& value,const AuthoredAttack& attack) {
+    value={{"id",attack.id},{"clip",attack.clip},{"shape",attack.shape},{"damage",attack.damage},
+        {"reach",attack.reach},{"width",attack.width},{"height",attack.height},{"windup",attack.windup},{"recovery",attack.recovery}};
+}
+void from_json(const Json& value,AuthoredAttack& attack) {
+    value.at("id").get_to(attack.id);value.at("clip").get_to(attack.clip);value.at("shape").get_to(attack.shape);
+    value.at("damage").get_to(attack.damage);value.at("reach").get_to(attack.reach);value.at("width").get_to(attack.width);
+    value.at("height").get_to(attack.height);value.at("windup").get_to(attack.windup);value.at("recovery").get_to(attack.recovery);
+}
+namespace {
+Json readEditorFile(const std::filesystem::path& path) {
+    if(std::filesystem::file_size(path)>16*1024*1024) throw std::runtime_error("Projeto de equipamento muito grande.");
+    std::ifstream file(path,std::ios::binary);
+    return Json::parse(file);
+}
+}
+
+AuthoredEquipment readEditorEquipment(const std::filesystem::path& root) {
+    const auto values=readEditorFile(VirtualFileSystem::contained(root,"editor-equipment.json"));
+    if(values.at("version")!=1) throw std::runtime_error("Versão de equipamento não suportada.");
+    AuthoredEquipment equipment;
+    values.at("mod").get_to(equipment.mod);values.at("name").get_to(equipment.name);
+    values.at("slot").get_to(equipment.armorSlot);values.at("protection").get_to(equipment.protection);
+    values.at("movement").get_to(equipment.movementBonus);values.at("health").get_to(equipment.healthBonus);
+    values.at("grant").get_to(equipment.grantOnStart);values.at("ground").get_to(equipment.ground);values.at("air").get_to(equipment.air);
+    equipment.editorProject=readEditorFile(VirtualFileSystem::contained(root,"equipment.sbstudio")).dump();
+    return equipment;
+}
+
 void publishEquipment(const std::filesystem::path& mods,const AuthoredEquipment& equipment) {
     using Json=nlohmann::json;
     if(!validNamespace(equipment.mod) || equipment.mod=="core" || equipment.mod.size()>48 || equipment.name.empty() || equipment.name.size()>120)
@@ -152,6 +182,12 @@ void publishEquipment(const std::filesystem::path& mods,const AuthoredEquipment&
         if(!checked.diagnostics.empty()) throw DiagnosticError(checked.diagnostics.front());
         atomicWrite(stage/"mod.json",Json{{"id",equipment.mod},{"name",equipment.name},{"version","1.0.0"},
             {"api","0.1"},{"entry","main.sl"},{"dependencies",dependencies}}.dump(2));
+        if(!equipment.editorProject.empty()) {
+            atomicWrite(stage/"equipment.sbstudio",equipment.editorProject);
+            atomicWrite(stage/"editor-equipment.json",Json{{"version",1},{"mod",equipment.mod},{"name",equipment.name},
+                {"slot",equipment.armorSlot},{"protection",equipment.protection},{"movement",equipment.movementBonus},
+                {"health",equipment.healthBonus},{"grant",equipment.grantOnStart},{"ground",equipment.ground},{"air",equipment.air}}.dump(2));
+        }
         renameDirectory(stage,destination);
     } catch(...) {
         const auto resolved=std::filesystem::weakly_canonical(stage);

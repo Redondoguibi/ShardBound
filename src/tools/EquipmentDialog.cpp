@@ -30,16 +30,23 @@ std::wstring wide(const std::string& input) {
 class EquipmentDialog {
 public:
     EquipmentDialog(std::filesystem::path program,std::filesystem::path bridge):program_(std::move(program)),bridge_(std::move(bridge)) {}
+    explicit EquipmentDialog(AuthoredEquipment equipment):equipment_(std::move(equipment)),integrated_(true) {
+        stepsData_.clear();
+        for(const auto& step:equipment_.ground) stepsData_.push_back({false,step});
+        for(const auto& step:equipment_.air) stepsData_.push_back({true,step});
+        selected_=stepsData_.empty()?std::nullopt:std::optional<size_t>{0};
+    }
+    std::string takeClip() {return std::move(openClip_);}
     std::optional<AuthoredEquipment> run(HWND parent) {
         WNDCLASSW type{};type.lpfnWndProc=dispatch;type.hInstance=GetModuleHandleW(nullptr);
         type.hCursor=LoadCursorW(nullptr,IDC_ARROW);type.hbrBackground=reinterpret_cast<HBRUSH>(COLOR_WINDOW+1);
         type.lpszClassName=L"ShardBoundEquipmentDialog";
         if(!RegisterClassW(&type) && GetLastError()!=ERROR_CLASS_ALREADY_EXISTS) throw std::runtime_error("Cannot register equipment editor");
-        const auto window=CreateWindowExW(WS_EX_DLGMODALFRAME,type.lpszClassName,L"Novo equipamento",WS_CAPTION|WS_SYSMENU|WS_POPUP,
+        const auto window=CreateWindowExW(WS_EX_DLGMODALFRAME,type.lpszClassName,integrated_?L"Atributos e golpes":L"Novo equipamento",WS_CAPTION|WS_SYSMENU|WS_POPUP,
             CW_USEDEFAULT,CW_USEDEFAULT,744,667,parent,nullptr,type.hInstance,this);
         if(!window) throw std::runtime_error("Cannot open equipment editor");
         editor::darkCaption(window);editor::centerDialog(window,parent);
-        EnableWindow(parent,FALSE);ShowWindow(window,SW_SHOW);SetFocus(mod_);
+        EnableWindow(parent,FALSE);ShowWindow(window,SW_SHOW);SetFocus(integrated_?name_:mod_);
         MSG message{};BOOL result=TRUE;
         while(!done_ && (result=GetMessageW(&message,nullptr,0,0))>0) {
             if(!IsDialogMessageW(window,&message)) {TranslateMessage(&message);DispatchMessageW(&message);}
@@ -60,6 +67,8 @@ private:
     std::filesystem::path program_,bridge_;
     bool done_=false,accepted_=false;
     bool combat_=false;
+    bool integrated_=false;
+    std::string openClip_;
     std::vector<HWND> generalControls_,combatControls_;
     std::vector<HWND>* currentSection_=nullptr;
 
@@ -88,26 +97,30 @@ private:
         return value;
     }
     void createControls() {
-        auto title=child(L"STATIC",L"Criar equipamento",0,24,12,660,40);
+        auto title=child(L"STATIC",integrated_?L"Atributos do equipamento":L"Criar equipamento",0,24,12,660,40);
         SendMessageW(title,WM_SETFONT,reinterpret_cast<WPARAM>(editor::font(25,FW_SEMIBOLD)),FALSE);
-        child(L"BUTTON",L"Dados e modelo",WS_TABSTOP,24,61,150,33,GeneralTab);
+        child(L"BUTTON",integrated_?L"Atributos":L"Dados e modelo",WS_TABSTOP,24,61,150,33,GeneralTab);
         child(L"BUTTON",L"Golpes e animação",WS_TABSTOP,182,61,162,33,CombatTab);
         currentSection_=&generalControls_;
-        mod_=edit(L"ID do mod",L"",24,127,255);
-        name_=edit(L"Nome no inventário",L"",24,171,255);
-        child(L"STATIC",L"Tipo / slot",0,24,222,130,24);
-        kind_=combo(155,216,255,Kind);
-        model_=edit(L"ID do modelo",L"foundation:sword",24,265,255);
-        child(L"BUTTON",L"Importar Studio…",WS_TABSTOP,432,265,136,31,ChooseStudio);
-        child(L"BUTTON",L"Exportar do Blockbench",WS_TABSTOP,432,308,224,31,ExportStudio);
+        if(!integrated_) mod_=edit(L"ID do mod",L"",24,127,255);
+        name_=edit(L"Nome no inventário",integrated_?wide(equipment_.name).c_str():L"",24,integrated_?127:171,255);
+        child(L"STATIC",L"Tipo / slot",0,24,integrated_?178:222,130,24);
+        kind_=combo(155,integrated_?172:216,255,Kind);
+        if(!integrated_) {
+            model_=edit(L"ID do modelo",L"foundation:sword",24,265,255);
+            child(L"BUTTON",L"Importar Studio…",WS_TABSTOP,432,265,136,31,ChooseStudio);
+            child(L"BUTTON",L"Exportar do Blockbench",WS_TABSTOP,432,308,224,31,ExportStudio);
+        }
         for(const auto name:{L"Arma",L"Armadura — Cabeça",L"Armadura — Torso",L"Armadura — Pernas",L"Armadura — Pés"}) add(kind_,name);
-        SendMessageW(kind_,CB_SETCURSEL,0,0);
-        scale_=edit(L"Escala do modelo",L"0.05",24,308,125);
-        protection_=edit(L"Proteção",L"4",24,412,125);
-        movementBonus_=edit(L"Bônus de velocidade",L"0",24,453,125);
-        healthBonus_=edit(L"Bônus de vida",L"0",24,494,125);
+        const std::array slots{"","head","chest","legs","feet"};
+        SendMessageW(kind_,CB_SETCURSEL,std::find(slots.begin(),slots.end(),equipment_.armorSlot)-slots.begin(),0);
+        EnableWindow(kind_,!integrated_);
+        if(!integrated_) scale_=edit(L"Escala do modelo",L"0.05",24,308,125);
+        protection_=edit(L"Proteção",integrated_?std::to_wstring(equipment_.protection).c_str():L"4",24,integrated_?221:412,125);
+        movementBonus_=edit(L"Bônus de velocidade",integrated_?std::to_wstring(equipment_.movementBonus).c_str():L"0",24,integrated_?262:453,125);
+        healthBonus_=edit(L"Bônus de vida",integrated_?std::to_wstring(equipment_.healthBonus).c_str():L"0",24,integrated_?303:494,125);
         grant_=child(L"BUTTON",L"Disponível no inventário ao começar",WS_TABSTOP|BS_AUTOCHECKBOX,24,355,325,26);
-        SendMessageW(grant_,BM_SETCHECK,BST_CHECKED,0);
+        SendMessageW(grant_,BM_SETCHECK,(!integrated_ || equipment_.grantOnStart)?BST_CHECKED:BST_UNCHECKED,0);
         currentSection_=&combatControls_;
         child(L"STATIC",L"Sequência de golpes",0,24,116,237,25);
         child(L"STATIC",L"Atributos do golpe selecionado",0,288,116,412,25);
@@ -123,12 +136,12 @@ private:
         child(L"STATIC",L"Área de acerto",0,288,402,130,24);
         shape_=combo(419,396,234,PreviewShape);
         for(const auto name:{L"Arco frontal",L"Círculo",L"Retângulo frontal"}) add(shape_,name);
-        child(L"BUTTON",L"Criar clipes no Blockbench",WS_TABSTOP,405,451,207,27,SyncClips);
+        if(!integrated_) child(L"BUTTON",L"Criar clipes no Blockbench",WS_TABSTOP,405,451,207,27,SyncClips);
         child(L"BUTTON",L"Ver área de acerto",WS_TABSTOP,274,451,125,27,PreviewAttack);
         child(L"BUTTON",L"Abrir golpe",WS_TABSTOP,274,487,125,26,OpenClip);
         child(L"BUTTON",L"Abrir idle",WS_TABSTOP,405,487,99,26,OpenIdle);
         currentSection_=nullptr;
-        child(L"BUTTON",L"Publicar equipamento",WS_TABSTOP,515,572,182,35,Publish);
+        child(L"BUTTON",integrated_?L"Aplicar atributos":L"Publicar equipamento",WS_TABSTOP,515,572,182,35,Publish);
         child(L"BUTTON",L"Cancelar",WS_TABSTOP,399,572,105,35,Cancel);
         updateSteps();updateKind();
     }
@@ -212,16 +225,24 @@ private:
         if(result.exitCode) throw std::runtime_error(result.output.substr(0,1800));
         return nlohmann::json::parse(result.output);
     }
-    void publish() {
-        remember();equipment_.mod=utf8(get(mod_));equipment_.name=utf8(get(name_));equipment_.model=utf8(get(model_));
-        if(get(model_)!=equipment_.studioManifest.wstring()) equipment_.studioManifest.clear();
-        equipment_.scale=number(scale_);equipment_.grantOnStart=SendMessageW(grant_,BM_GETCHECK,0,0)==BST_CHECKED;
+    void publish(std::string clip={}) {
+        remember();equipment_.name=utf8(get(name_));
+        if(!integrated_) {
+            equipment_.mod=utf8(get(mod_));equipment_.model=utf8(get(model_));
+            if(get(model_)!=equipment_.studioManifest.wstring()) equipment_.studioManifest.clear();
+            equipment_.scale=number(scale_);
+        }
+        equipment_.grantOnStart=SendMessageW(grant_,BM_GETCHECK,0,0)==BST_CHECKED;
+        equipment_.ground.clear();equipment_.air.clear();
         if(armor()) {
             constexpr std::array slots{"","head","chest","legs","feet"};
             equipment_.armorSlot=slots.at(size_t(SendMessageW(kind_,CB_GETCURSEL,0,0)));equipment_.protection=number(protection_);
             equipment_.movementBonus=number(movementBonus_);equipment_.healthBonus=number(healthBonus_);
-        } else for(const auto& step:stepsData_) (step.air?equipment_.air:equipment_.ground).push_back(step.attack);
-        accepted_=done_=true;
+        } else {
+            for(const auto& step:stepsData_) (step.air?equipment_.air:equipment_.ground).push_back(step.attack);
+            if(equipment_.ground.empty()) throw std::runtime_error("Adicione pelo menos um golpe no chão.");
+        }
+        openClip_=std::move(clip);accepted_=done_=true;
     }
     void previewAttack() {
         remember();
@@ -286,6 +307,11 @@ private:
         if(id==Cancel) {done_=true;return;}
         if(id==ChooseStudio) {selectStudio();return;}
         if(id==SyncClips || id==OpenClip || id==OpenIdle) {
+            if(integrated_) {
+                const auto clip=id==OpenIdle?"idle":utf8(get(clip_));
+                if(clip.empty()) throw std::runtime_error("Informe o nome do clipe.");
+                publish(clip);return;
+            }
             remember();
             auto clips=nlohmann::json::array({{{"name","idle"},{"length",1},{"loop","loop"}}});
             for(const auto& step:stepsData_) {
@@ -317,7 +343,10 @@ private:
             remember();const bool air=id==AddAir;
             if(std::count_if(stepsData_.begin(),stepsData_.end(),[&](const Step& step){return step.air==air;})>=12)
                 throw std::runtime_error("A sequência comporta até 12 golpes");
-            const auto key=std::string(air?"air_":"ground_")+std::to_string(air?++airId_:++groundId_);
+            auto& serial=air?airId_:groundId_;
+            std::string key;
+            do {key=std::string(air?"air_":"ground_")+std::to_string(++serial);}
+            while(std::any_of(stepsData_.begin(),stepsData_.end(),[&](const Step& step) {return step.attack.id==key;}));
             const auto first=std::find_if(stepsData_.begin(),stepsData_.end(),[](const Step& step){return !step.air;});
             auto attack=first==stepsData_.end()?AuthoredAttack{}:first->attack;
             attack.id=key;attack.clip=key;
@@ -363,5 +392,10 @@ private:
 }
 std::optional<AuthoredEquipment> editEquipment(HWND parent,const std::filesystem::path& programDirectory,const std::filesystem::path& bridge) {
     return EquipmentDialog{programDirectory,bridge}.run(parent);
+}
+std::optional<EquipmentEdit> editIntegratedEquipment(HWND parent,AuthoredEquipment equipment) {
+    EquipmentDialog dialog(std::move(equipment));
+    if(auto result=dialog.run(parent)) return EquipmentEdit{std::move(*result),dialog.takeClip()};
+    return std::nullopt;
 }
 }

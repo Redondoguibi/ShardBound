@@ -13,6 +13,7 @@
 #include "tools/MapPackage.h"
 #include "assets/AssetManager.h"
 #include "assets/StudioPackage.h"
+#include "assets/ModelCompiler.h"
 #include "assets/VirtualFileSystem.h"
 #include "core/AtomicFile.h"
 #include "core/PathText.h"
@@ -49,7 +50,8 @@ enum LayoutControl { View2D=201, ProjectMenu, ApplyRegion, CancelRegion, SearchL
     LibraryPanel, PlacementPanel, HistoryPanel, HomeNew, HomeOpen, HomeMap, HomeBlocks, HomeGear, HomeAi,
     BlocksCreate, GearCreate, AiStart, Start3D, GridToggle, CameraSpeed, ChooseBlockbench, LaunchBlockbench, ChooseBridge,
     OpenBlockbenchFile, BlockbenchTab, ReloadBlockbench, NewTab, PreviousTabs, NextTabs, CloseTab, CycleTabs, ReverseTabs,
-    BlockName, BlockSolid, BlockSave, BlockReturn, BlockEdit, BlockImport };
+    BlockName, BlockSolid, BlockSave, BlockReturn, BlockEdit, BlockImport,
+    GearHead,GearChest,GearLegs,GearFeet,GearLibrary,GearEdit,GearAttributes,GearClip };
 enum class TerrainTool { Brush, Erase, Pick, Fill };
 enum class Page {Home,Map,Blocks,Gear,Ai,Settings,Blockbench,BlockModel};
 enum class MapPanel {Library,Placement,History};
@@ -96,9 +98,9 @@ public:
         return (blockbenchPane_ && blockbenchPane_->owns(target)) ||
             (currentTab_ && currentTab_->block && currentTab_->block->pane->owns(target));
     }
-    Editor(WorldDefinition catalog,std::filesystem::path programDirectory,std::filesystem::path mods,bool smoke,bool blockbenchTest)
+    Editor(WorldDefinition catalog,std::filesystem::path programDirectory,std::filesystem::path mods,bool smoke,bool blockbenchTest,bool gearTest)
         : catalog_(std::move(catalog)),programDirectory_(std::move(programDirectory)),mods_(std::move(mods)),smoke_(smoke),
-          blockbenchTest_(blockbenchTest) {
+          blockbenchTest_(blockbenchTest),gearTest_(gearTest) {
         if(!catalog_.maps.empty()) map_=*catalog_.maps.begin()->second;
         for(const auto& [id,block]:catalog_.blocks) {
             (void)block;
@@ -143,6 +145,11 @@ public:
             cameraGesture_.reset();
             return 0;
         case WM_COMMAND:
+            if(LOWORD(wParam)==GearLibrary) {
+                if(HIWORD(wParam)==LBN_DBLCLK) editSelectedEquipment();
+                if(HIWORD(wParam)==LBN_SELCHANGE) EnableWindow(GetDlgItem(window_,GearEdit),TRUE);
+                return 0;
+            }
             if(LOWORD(wParam)==BlockName) {
                 if(HIWORD(wParam)==EN_CHANGE && currentTab_ && currentTab_->block && !settingBlockFields_) {
                     currentTab_->block->name=controlText(GetDlgItem(window_,BlockName));
@@ -179,9 +186,11 @@ public:
         case WM_CLOSE: if(confirmAllTabs()) DestroyWindow(window);return 0;
         case WM_APP+2: moveTab(int(wParam),{GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam)});return 0;
         case WM_APP+3:
-            SetTimer(window_,blockbenchTestTimer,45000,nullptr);
-            command(NewBlock);return 0;
-        case WM_APP+4: verifyBlockbenchResult();return 0;
+            SetTimer(window_,blockbenchTestTimer,gearTest_?90000:45000,nullptr);
+            command(gearTest_?GearChest:NewBlock);return 0;
+        case WM_APP+4:
+            if(gearTest_) verifyEquipmentResult();else verifyBlockbenchResult();
+            return 0;
         case WM_TIMER:
             if(wParam==blockbenchTestTimer) {
                 KillTimer(window_,blockbenchTestTimer);
@@ -271,7 +280,7 @@ private:
     bool previewCatalogDirty_=true;
     std::vector<game::RenderItem> previewMeshes_;
     bool view3d_=false,previewDirty_=true;
-    bool smoke_=false,blockbenchTest_=false;
+    bool smoke_=false,blockbenchTest_=false,gearTest_=false;
     unsigned testBlockStage_=0;
     std::filesystem::path testMapPath_;
     float centerX_=0,centerZ_=0,orbit_=.72f,distance_=75;
@@ -318,6 +327,7 @@ private:
         std::wstring name;
         std::wstring status=L"Carregando o modelo de bloco…";
         std::string id,source;
+        std::optional<game::AuthoredEquipment> equipment;
         bool solid=true,ready=false,publishing=false,changed=false;
         unsigned changes=0,savingChanges=0;
         unsigned ticket=0;
@@ -337,6 +347,7 @@ private:
     unsigned nextMap_=1;
     unsigned nextBlock_=1,nextPublication_=0;
     bool settingBlockFields_=false;
+    std::vector<std::string> gearIds_;
     static constexpr int tabsLeft=164,tabsTop=20,tabHeight=39;
     static constexpr int tabGap=2,minTabWidth=118,tabActionsWidth=120;
     HWND hoveredTab_{};
@@ -575,7 +586,9 @@ private:
         button(HomeNew,L"Criar mapa");button(HomeOpen,L"Abrir projeto");button(HomeMap,L"Editar mapa de exemplo");
         button(HomeBlocks,L"Blocos");button(HomeGear,L"Equipamentos");button(HomeAi,L"Assistente IA");
         button(BlockbenchTab,L"Blockbench");button(Settings,L"Configurações");
-        button(BlocksCreate,L"Criar bloco");button(GearCreate,L"Criar equipamento");button(AiStart,L"Abrir assistente");
+        button(BlocksCreate,L"Criar bloco");button(GearCreate,L"Criar arma");button(AiStart,L"Abrir assistente");
+        button(GearHead,L"Cabeça");button(GearChest,L"Torso");button(GearLegs,L"Pernas");button(GearFeet,L"Pés");
+        button(GearEdit,L"Editar selecionado");button(GearAttributes,L"Atributos");button(GearClip,L"Animar clipe");
         button(Start3D,L"Vista inicial");button(GridToggle,L"Grade");button(CameraSpeed,L"Velocidade da câmera");
         button(ChooseBlockbench,L"Localizar Blockbench Desktop…");button(LaunchBlockbench,L"Modelar no Blockbench");
         button(ChooseBridge,L"Localizar ponte…");button(OpenBlockbenchFile,L"Abrir no Blockbench Desktop…");
@@ -585,6 +598,7 @@ private:
         SendMessageW(blockName,EM_SETLIMITTEXT,60,0);
         SendMessageW(blockName,EM_SETMARGINS,EC_LEFTMARGIN|EC_RIGHTMARGIN,MAKELPARAM(9,9));
         const auto listStyle=LBS_NOTIFY|LBS_OWNERDRAWFIXED|LBS_HASSTRINGS|LBS_NOINTEGRALHEIGHT|WS_VSCROLL|WS_TABSTOP;
+        child(L"LISTBOX",L"",listStyle,0,0,0,0,GearLibrary);
         palette_=child(L"LISTBOX",L"",listStyle,0,0,0,0,Palette);
         filter_=child(L"EDIT",L"",WS_TABSTOP|ES_AUTOHSCROLL,0,0,0,0,Filter);
         const auto searchLabel=child(L"STATIC",L"Buscar bloco",SS_CENTERIMAGE,0,0,0,0,SearchLabel);
@@ -768,11 +782,18 @@ private:
         for(int i=0;i<int(homeTools.size());++i) place(homeTools[i],x+i*(card+12)+12,494,card-24,34,home);
         place(BlocksCreate,x+24,255,150,36,page_==Page::Blocks);
         place(BlockImport,x+195,255,176,36,page_==Page::Blocks);
-        place(GearCreate,x+24,255,164,36,page_==Page::Gear);
+        const bool gear=page_==Page::Gear;
+        place(GearCreate,x+24,250,135,36,gear);
+        for(int id=GearHead;id<=GearFeet;++id) place(id,x+249+(id-GearHead)*107,250,99,36,gear);
+        place(GearLibrary,x+24,370,std::min(w-48,645),std::max(60,bottom-442),gear);
+        place(GearEdit,x+24,bottom-58,163,33,gear);
         place(AiStart,x+24,255,164,36,page_==Page::Ai);
-        place(LaunchBlockbench,x+195,255,176,36,page_==Page::Gear);
         const bool authoring=page_==Page::BlockModel;
-        place(BlockName,77,77,223,32,authoring);place(BlockSolid,310,77,118,32,authoring);
+        const auto* model=authoring?currentTab_->block.get():nullptr;
+        const bool equipment=model && model->equipment;
+        place(BlockName,77,77,223,32,authoring);place(BlockSolid,310,77,118,32,authoring && !equipment);
+        place(GearAttributes,310,77,118,32,equipment);
+        place(GearClip,714,77,116,32,equipment && model->equipment->armorSlot.empty());
         place(BlockSave,438,77,143,32,authoring);place(BlockReturn,591,77,113,32,authoring);
         place(ReloadBlockbench,right-118,76,100,29,page_==Page::Blockbench || authoring);
         place(OpenBlockbenchFile,x+340,506,235,34,settings);
@@ -801,6 +822,8 @@ private:
             EnableWindow(GetDlgItem(window_,BlockName),!block.publishing);
             EnableWindow(GetDlgItem(window_,BlockSolid),!block.publishing);
             EnableWindow(GetDlgItem(window_,ReloadBlockbench),!block.publishing);
+            EnableWindow(GetDlgItem(window_,GearAttributes),!block.publishing);
+            EnableWindow(GetDlgItem(window_,GearClip),block.ready && !block.publishing);
         }
         if(page_==Page::Map) EnableWindow(GetDlgItem(window_,BlockEdit),!editableBlock(selectedBlock()).empty());
         updateTabLabels();
@@ -977,13 +1000,21 @@ private:
             draft.solid=!draft.solid;markBlockChanged(*currentTab_);refresh(draft.status);return;
         }
         if(id==BlockReturn) {returnToBlock(*currentTab_->block);return;}
+        if(id==GearAttributes) {editGearAttributes(*currentTab_);return;}
+        if(id==GearClip) {chooseGearClip(*currentTab_);return;}
+        if(id==GearCreate) {openEquipment({});return;}
+        if(id>=GearHead && id<=GearFeet) {
+            const std::array slots{"head","chest","legs","feet"};
+            openEquipment(slots[id-GearHead]);return;
+        }
+        if(id==GearEdit) {editSelectedEquipment();return;}
         if(id==BlockEdit) {editSelectedBlock();return;}
         if(id==NewBlock) {openBlock();return;}
         if(id==Settings) {go(Page::Settings);return;}
         if(id==HomeNew || id==HomeOpen) {command(id==HomeNew?NewMap:OpenMap);return;}
         if(id==HomeMap) {go(Page::Map);return;}
         if(id>=HomeBlocks && id<=HomeAi) {go(Page(UINT(Page::Blocks)+id-HomeBlocks));return;}
-        if(id==BlocksCreate || id==GearCreate || id==AiStart) {command(id==BlocksCreate?NewBlock:id==GearCreate?Equipment:Ai);return;}
+        if(id==BlocksCreate || id==AiStart) {command(id==BlocksCreate?NewBlock:Ai);return;}
         if(id==OpenBlockbenchFile) {command(OpenBlockbench);return;}
         if(id>=LibraryPanel && id<=HistoryPanel) {panel_=MapPanel(id-LibraryPanel);layout();return;}
         if(id>=Start3D && id<=ChooseBridge) {changeSetting(id);return;}
@@ -1143,7 +1174,9 @@ private:
             settingBlockFields_=true;
             SetWindowTextW(GetDlgItem(window_,BlockName),tab.block->name.c_str());
             settingBlockFields_=false;
+            SetWindowTextW(GetDlgItem(window_,BlockReturn),tab.block->equipment?L"Ver equipamento":L"Ver no mapa");
         }
+        if(page_==Page::Gear) refreshEquipmentLibrary();
         if(page_==Page::Map && view3d_ && !previewRenderer_) {
             view3d_=false;
             togglePreview();
@@ -1379,12 +1412,77 @@ private:
     }
 
     void openBlock(std::string id={},std::string source={},std::wstring name={},bool solid=true) {
-        const auto script=wide(readBlockFile(programDirectory_/"editor-blockbench.js"));
-        attachDraftMap();
         if(name.empty()) name=L"Bloco "+std::to_wstring(nextBlock_++);
         auto draft=std::make_unique<BlockDraft>();
-        draft->map=loadedMap_;draft->name=std::move(name);draft->solid=solid;
+        draft->name=std::move(name);draft->solid=solid;
         draft->id=std::move(id);draft->source=std::move(source);
+        openModel(std::move(draft));
+    }
+
+    static std::wstring equipmentSlotName(std::string_view slot) {
+        if(slot=="head") return L"Elmo";
+        if(slot=="chest") return L"Peitoral";
+        if(slot=="legs") return L"Calças";
+        if(slot=="feet") return L"Botas";
+        return L"Espada";
+    }
+
+    void openEquipment(std::string slot,std::optional<game::AuthoredEquipment> saved={}) {
+        auto draft=std::make_unique<BlockDraft>();
+        if(saved) {
+            draft->id=saved->mod;
+            draft->source=std::move(saved->editorProject);
+            draft->name=wide(saved->name);
+            draft->equipment=std::move(saved);
+        } else {
+            auto& item=draft->equipment.emplace();
+            item.mod=nextBlockMod("equip");
+            item.armorSlot=std::move(slot);
+            item.grantOnStart=true;
+            draft->name=equipmentSlotName(item.armorSlot);
+            item.name=utf8(draft->name);
+            if(item.armorSlot.empty()) item.ground.push_back({"ground_1","ground_1"});
+            else item.protection=4;
+        }
+        draft->status=L"Carregando o equipamento no Blockbench…";
+        openModel(std::move(draft));
+    }
+
+    void refreshEquipmentLibrary(const std::string& select={}) {
+        const auto list=GetDlgItem(window_,GearLibrary);
+        SendMessageW(list,LB_RESETCONTENT,0,0);
+        gearIds_.clear();
+        for(const auto& mod:game::discoverMods(mods_).mods) {
+            if(!std::filesystem::is_regular_file(mod.root/"editor-equipment.json") ||
+                !std::filesystem::is_regular_file(mod.root/"equipment.sbstudio")) continue;
+            const auto label=wide(mod.name);
+            SendMessageW(list,LB_ADDSTRING,0,reinterpret_cast<LPARAM>(label.c_str()));
+            if(mod.id==select) SendMessageW(list,LB_SETCURSEL,gearIds_.size(),0);
+            gearIds_.push_back(mod.id);
+        }
+        if(SendMessageW(list,LB_GETCURSEL,0,0)==LB_ERR && !gearIds_.empty()) SendMessageW(list,LB_SETCURSEL,0,0);
+        EnableWindow(GetDlgItem(window_,GearEdit),!gearIds_.empty());
+    }
+
+    void editSelectedEquipment() {
+        const auto index=SendMessageW(GetDlgItem(window_,GearLibrary),LB_GETCURSEL,0,0);
+        if(index<0 || size_t(index)>=gearIds_.size()) return;
+        const auto id=gearIds_[size_t(index)];
+        for(const auto& tab:tabs_) if(tab->block && tab->block->equipment && tab->block->map==loadedMap_ && tab->block->id==id) {
+            activate(*tab);return;
+        }
+        for(const auto& mod:game::discoverMods(mods_).mods) if(mod.id==id) {
+            auto item=game::readEditorEquipment(mod.root);
+            if(item.mod!=id) throw std::runtime_error("O projeto do equipamento tem um ID incompatível.");
+            openEquipment(item.armorSlot,std::move(item));return;
+        }
+    }
+
+    void openModel(std::unique_ptr<BlockDraft> draft) {
+        auto script=wide(readBlockFile(programDirectory_/"editor-blockbench.js"));
+        if(draft->equipment) script=wide(readBlockFile(programDirectory_/"editor-studio-web.js"))+L"\n"+script;
+        attachDraftMap();
+        draft->map=loadedMap_;
         draft->changed=draft->id.empty();
         auto& tab=addTab(Page::BlockModel,blockTabName(*draft));
         try {
@@ -1412,6 +1510,57 @@ private:
         updateTabLabels();
     }
 
+    static nlohmann::json equipmentClips(const game::AuthoredEquipment& item) {
+        auto clips=nlohmann::json::array();
+        if(!item.armorSlot.empty()) return clips;
+        clips.push_back({{"name","idle"},{"length",1},{"loop","loop"},{"label","Idle equipado"}});
+        std::set<std::string> names{"idle"};
+        for(const auto* attacks:{&item.ground,&item.air}) for(size_t i=0;i<attacks->size();++i) {
+            const auto& attack=attacks->at(i);
+            if(attack.clip.empty() || !names.insert(attack.clip).second)
+                throw std::runtime_error("Cada golpe precisa de um nome de clipe exclusivo.");
+            const auto label=std::string(attacks==&item.ground?"Golpe no chão ":"Golpe aéreo ")+std::to_string(i+1);
+            clips.push_back({{"name",attack.clip},{"length",attack.windup+attack.recovery},{"loop","once"},{"label",label}});
+        }
+        return clips;
+    }
+
+    void openGearClip(BlockDraft& draft,const nlohmann::json& clip) {
+        if(!draft.ready) return;
+        const auto arguments=nlohmann::json::array({clip.at("name"),clip.at("length"),clip.at("loop")}).dump(-1,' ',true);
+        draft.pane->execute(L"window.ShardBoundBlock.openClip(..."+wide(arguments)+L");");
+    }
+
+    void chooseGearClip(Tab& tab) {
+        auto& draft=*tab.block;
+        const auto clips=equipmentClips(*draft.equipment);
+        const auto popup=CreatePopupMenu();
+        if(!popup) return;
+        for(size_t i=0;i<clips.size();++i) {
+            const auto& clip=clips.at(i);
+            const auto label=wide(clip.at("label").get<std::string>());
+            AppendMenuW(popup,MF_STRING,i+1,label.c_str());
+        }
+        RECT rect{};GetWindowRect(GetDlgItem(window_,GearClip),&rect);
+        const auto selected=TrackPopupMenu(popup,TPM_RETURNCMD|TPM_LEFTALIGN,rect.left,rect.bottom,0,window_,nullptr);
+        DestroyMenu(popup);
+        if(selected>0 && size_t(selected)<=clips.size()) openGearClip(draft,clips.at(selected-1));
+    }
+
+    void editGearAttributes(Tab& tab) {
+        auto& draft=*tab.block;
+        auto item=*draft.equipment;
+        item.name=utf8(draft.name);
+        auto result=game::editIntegratedEquipment(window_,std::move(item));
+        if(!result) return;
+        const auto clips=equipmentClips(result->equipment);
+        draft.equipment=std::move(result->equipment);
+        draft.name=wide(draft.equipment->name);tab.name=blockTabName(draft);
+        SetWindowTextW(GetDlgItem(window_,BlockName),draft.name.c_str());
+        markBlockChanged(tab);
+        if(!result->clip.empty()) for(const auto& clip:clips) if(clip.at("name")==result->clip) {openGearClip(draft,clip);break;}
+    }
+
     void requestBlockSave(Tab& tab) {
         auto& draft=*tab.block;
         if(!draft.ready || draft.publishing) return;
@@ -1425,10 +1574,11 @@ private:
         draft.publishing=true;
         blockStatus(tab,L"Salvando o modelo e registrando o bloco…");
         try {
-            const auto arguments=nlohmann::json::array({draft.ticket,utf8(draft.name)}).dump(-1,' ',true);
+            const auto arguments=nlohmann::json::array({draft.ticket,utf8(draft.name),
+                draft.equipment?equipmentClips(*draft.equipment):nlohmann::json::array()}).dump(-1,' ',true);
             draft.pane->execute(L"window.ShardBoundBlock.save(..."+wide(arguments)+L");");
-        } catch(...) {
-            draft.publishing=false;blockStatus(tab,L"Não foi possível iniciar o salvamento no Blockbench.");
+        } catch(const std::exception& error) {
+            draft.publishing=false;blockStatus(tab,wide(error.what()));
         }
     }
 
@@ -1438,16 +1588,20 @@ private:
             const auto kind=event.at("kind").get<std::string>();
             if(kind=="loaded") {
                 draft.ready=draft.publishing=false;
-                blockStatus(tab,L"Preparando o modelo de bloco…");
-                nlohmann::json start=nlohmann::json::array({utf8(draft.name),nullptr});
+                blockStatus(tab,L"Preparando o modelo no Blockbench…");
+                nlohmann::json start=nlohmann::json::array({utf8(draft.name),nullptr,nullptr});
                 if(!draft.source.empty()) start[1]=nlohmann::json::parse(draft.source);
+                if(draft.equipment) {
+                    const auto& item=*draft.equipment;
+                    start[2]={{"type",item.armorSlot.empty()?"melee":"armor"},{"id",item.mod+":model"},{"slot",item.armorSlot}};
+                }
                 draft.pane->execute(L"window.ShardBoundBlock.open(..."+wide(start.dump(-1,' ',true))+L");");
             } else if(kind=="ready") {
                 draft.ready=true;
                 blockStatus(tab,L"Modele e pinte no Blockbench. Use Salvar na engine ou Ctrl+S.");
                 if(blockbenchTest_) runBlockbenchTest(tab);
-            } else if(kind=="setup_error") {
-                blockStatus(tab,L"Falha ao preparar o bloco. "+wide(event.at("message").get<std::string>()));
+            } else if(kind=="setup_error" || kind=="clip_error") {
+                blockStatus(tab,wide(event.at("message").get<std::string>()));
             } else if(kind=="save" && currentTab_==&tab) {
                 requestBlockSave(tab);
             } else if(kind=="changed") {
@@ -1455,43 +1609,43 @@ private:
             } else if(draft.publishing && event.at("ticket")==draft.ticket) {
                 draft.publishing=false;
                 if(kind=="publish") {
-                    publishBlockDraft(draft,event);
+                    if(draft.equipment) publishEquipmentDraft(draft,event);
+                    else publishBlockDraft(draft,event);
                     draft.changed=draft.changes!=draft.savingChanges;
                     tab.name=blockTabName(draft);
-                    blockStatus(tab,L"Bloco salvo. Ele já está na paleta do mapa.");
+                    blockStatus(tab,draft.equipment?L"Equipamento salvo na revisão do mapa.":L"Bloco salvo. Ele já está na paleta do mapa.");
                     if(blockbenchTest_) PostMessageW(window_,WM_APP+4,0,0);
                 } else if(kind=="export_error") {
-                    blockStatus(tab,L"Falha ao exportar o bloco. "+wide(event.at("message").get<std::string>()));
+                    blockStatus(tab,L"Falha ao exportar. "+wide(event.at("message").get<std::string>()));
                 }
             }
         } catch(const std::exception& error) {
             draft.publishing=false;
-            blockStatus(tab,L"Não foi possível salvar ou abrir o bloco. "+wide(error.what()));
+            blockStatus(tab,L"Não foi possível abrir ou salvar. "+wide(error.what()));
         }
     }
 
-    static std::string nextBlockMod() {
+    static std::string nextBlockMod(std::string mod="bloco") {
         GUID guid{};
         if(FAILED(CoCreateGuid(&guid))) throw std::runtime_error("Não foi possível gerar um ID para o bloco.");
         wchar_t key[40]{};
         StringFromGUID2(guid,key,int(std::size(key)));
-        std::string mod="bloco";
         for(const auto c:std::wstring_view(key)) if(c!=L'{' && c!=L'}') mod+=char(towlower(c));
         return mod;
     }
 
-    static std::string decodeBlockGlb(const std::string& encoded) {
-        constexpr size_t maxGlb=32*1024*1024;
-        if(encoded.empty() || encoded.size()>4*((maxGlb+2)/3)) throw std::runtime_error("Modelo GLB inválido.");
+    static std::string decodeAsset(const std::string& encoded) {
+        constexpr size_t maxAsset=32*1024*1024;
+        if(encoded.empty() || encoded.size()>4*((maxAsset+2)/3)) throw std::runtime_error("Arquivo exportado inválido.");
         DWORD length=0;
         constexpr DWORD flags=CRYPT_STRING_BASE64|CRYPT_STRING_STRICT;
         if(!CryptStringToBinaryA(encoded.data(),DWORD(encoded.size()),flags,nullptr,&length,nullptr,nullptr) ||
-            length<12 || length>maxGlb) throw std::runtime_error("Modelo GLB inválido.");
-        std::string glb(length,'\0');
+            !length || length>maxAsset) throw std::runtime_error("Arquivo exportado inválido.");
+        std::string bytes(length,'\0');
         if(!CryptStringToBinaryA(encoded.data(),DWORD(encoded.size()),flags,
-            reinterpret_cast<BYTE*>(glb.data()),&length,nullptr,nullptr) || !glb.starts_with("glTF"))
-            throw std::runtime_error("Modelo GLB inválido.");
-        return glb;
+            reinterpret_cast<BYTE*>(bytes.data()),&length,nullptr,nullptr))
+            throw std::runtime_error("Arquivo exportado inválido.");
+        return bytes;
     }
 
     void publishBlockDraft(BlockDraft& draft,const nlohmann::json& event) {
@@ -1500,7 +1654,8 @@ private:
         const auto project=nlohmann::json::parse(source);
         if(project.at("meta").at("model_format")!="free" || !project.at("elements").is_array() ||
             project.at("elements").empty()) throw std::runtime_error("Projeto de bloco inválido.");
-        auto glb=decodeBlockGlb(event.at("glb").get_ref<const std::string&>());
+        auto glb=decodeAsset(event.at("glb").get_ref<const std::string&>());
+        if(!glb.starts_with("glTF")) throw std::runtime_error("Modelo GLB inválido.");
         game::AuthoredBlock block;
         block.name=utf8(draft.name);block.solid=draft.solid;
         const auto& pixels=event.at("pixels");
@@ -1548,6 +1703,59 @@ private:
         if(previous && previous!=loadedMap_) loadMapTab(*previous);
     }
 
+    void publishEquipmentDraft(BlockDraft& draft,const nlohmann::json& event) {
+        auto item=*draft.equipment;
+        auto source=event.at("source").get<std::string>();
+        if(source.size()>16*1024*1024) throw std::runtime_error("O projeto ultrapassa 16 MiB.");
+        const auto project=nlohmann::json::parse(source);
+        const auto& data=project.at("shardbound_studio");
+        const auto model=item.mod+":model";
+        const auto type=item.armorSlot.empty()?"melee":"armor";
+        if(project.at("meta").at("model_format")!="shardbound_studio" || data.at("id")!=model || data.at("contentType")!=type)
+            throw std::runtime_error("O projeto do Studio não corresponde ao equipamento.");
+        const auto& files=event.at("files");
+        if(!files.is_object() || files.size()!=4) throw std::runtime_error("O equipamento precisa de um modelo e dos dados do Studio.");
+        const auto modelPath="models/"+item.mod+"/model.glb";
+        auto binary=decodeAsset(files.at(modelPath).at("base64").get_ref<const std::string&>());
+        if(!binary.starts_with("glTF")) throw std::runtime_error("Modelo GLB inválido.");
+        const auto& manifest=files.at("studio.manifest.json").at("text").get_ref<const std::string&>();
+        if(manifest.size()>1024*1024) throw std::runtime_error("Manifesto de equipamento muito grande.");
+        const auto metadata=nlohmann::json::parse(manifest);
+        if(metadata.at("project")!=model || metadata.at("models").size()!=1 ||
+            metadata.at("models").at(0).at("id")!=model || metadata.at("models").at(0).at("file")!=modelPath ||
+            metadata.at("effects")!="studio.effects.json" || metadata.at("events")!="studio.events.json" ||
+            metadata.at("playerAnimations")!="studio.player-animations.json") throw std::runtime_error("Manifesto de equipamento inválido.");
+        auto* previous=loadedMap_;
+        if(draft.map!=loadedMap_) loadMapTab(*draft.map);
+        try {
+            std::string replacing;
+            if(std::filesystem::exists(mods_/item.mod)) {
+                if(draft.id!=item.mod || !std::filesystem::is_regular_file(mods_/item.mod/"editor-equipment.json"))
+                    throw std::runtime_error("O ID do equipamento já está em uso.");
+                replacing=item.mod;
+            }
+            const auto revision=copyContent("equipamento",replacing);
+            const auto input=revision.parent_path()/"exported-equipment";
+            for(const auto* file:{"studio.manifest.json","studio.effects.json","studio.events.json","studio.player-animations.json"}) {
+                const auto& text=files.at(file).at("text").get_ref<const std::string&>();
+                if(text.size()>16*1024*1024) throw std::runtime_error("Dados do Studio excedem 16 MiB.");
+                game::atomicWrite(input/file,text);
+            }
+            game::atomicWrite(input/modelPath,binary);
+            item.name=utf8(draft.name);
+            item.studioManifest=input/"studio.manifest.json";
+            item.editorProject=source;
+            game::publishEquipment(revision,item);
+            recordContent(revision,L"Salvar equipamento · "+draft.name);
+            draft.id=item.mod;
+            draft.source=std::move(source);
+        } catch(...) {
+            if(previous && previous!=loadedMap_) loadMapTab(*previous);
+            throw;
+        }
+        if(previous && previous!=loadedMap_) loadMapTab(*previous);
+    }
+
     void selectPublishedBlock(const std::string& id) {
         panel_=MapPanel::Library;
         SetWindowTextW(filter_,L"");filterPalette();
@@ -1560,6 +1768,12 @@ private:
     void returnToBlock(const BlockDraft& draft) {
         if(!draft.map || draft.id.empty()) return;
         activate(*draft.map);
+        if(draft.equipment) {
+            go(Page::Gear);
+            refreshEquipmentLibrary(draft.id);
+            refresh(L"Equipamento disponível na revisão do mapa.");
+            return;
+        }
         if(!catalog_.blocks.contains(draft.id)) {
             refresh(L"Esse bloco não está na revisão atual. Use Refazer ou salve novamente no Blockbench.");
             return;
@@ -1569,6 +1783,37 @@ private:
     }
 
     void runBlockbenchTest(Tab& tab) {
+        if(gearTest_) {
+            auto& item=*tab.block->equipment;
+            if(testBlockStage_==0 || testBlockStage_==2) {
+                SetWindowTextW(GetDlgItem(window_,BlockName),testBlockStage_==0?L"Peitoral de Cobre":L"Espada de Cobre");
+                item.protection=7;item.healthBonus=9;item.movementBonus=.1;
+                if(testBlockStage_==2) {
+                    item.ground.push_back({"ground_2","ground_2"});
+                    item.ground.back().damage=22;
+                    item.air.push_back({"air_1","air_1","box"});
+                    item.air.back().reach=3.3;
+                    const auto clips=equipmentClips(item);
+                    openGearClip(*tab.block,clips.at(3));
+                }
+                tab.block->pane->execute(LR"JS(
+                    const texture = Texture.all[1];
+                    texture.edit(canvas => {
+                        const brush = canvas.getContext("2d");
+                        brush.fillStyle = "#c68048";
+                        brush.fillRect(0, 0, 8, 8);
+                    });
+                    BarItems.save_project.click();
+                )JS");
+            } else {
+                item.protection=11;
+                tab.block->pane->execute(LR"JS(
+                    if (Texture.all[1].ctx.getImageData(2, 2, 1, 1).data[0] === 198)
+                        BarItems.save_project.click();
+                )JS");
+            }
+            return;
+        }
         if(testBlockStage_==0) {
             SetWindowTextW(GetDlgItem(window_,BlockName),L"Farol de Cobre");
             tab.block->pane->execute(LR"JS(
@@ -1590,6 +1835,39 @@ private:
                     BarItems.save_project.click();
                 }
             )JS");
+        }
+    }
+
+    void verifyEquipmentResult() {
+        auto& tab=*currentTab_;
+        auto& draft=*tab.block;
+        const auto id=draft.id;
+        const auto root=mods_/id;
+        const auto item=game::readEditorEquipment(root);
+        const auto studio=game::loadStudioPackage(root/"studio/studio.manifest.json",mods_.parent_path()/"test-cache",id);
+        if(tabDirty(tab) || !history_.back().content) throw std::runtime_error("O equipamento não entrou no histórico do mapa.");
+        const auto model=game::compileModel(studio->file(studio->manifest.at("models").at(0).at("file")),
+            mods_.parent_path()/"test-cache");
+        if(model.parts.empty()) throw std::runtime_error("O equipamento ficou sem geometria.");
+        if(testBlockStage_<2) {
+            const auto& bindings=studio->manifest.at("models").at(0).at("bindings");
+            if(item.armorSlot!="chest" || item.protection!=(testBlockStage_==0?7:11) || item.healthBonus!=9 ||
+                !studio->events.at("clips").empty() || !studio->player.at("clips").empty() || !model.hierarchy.clips.empty() ||
+                bindings.size()!=3 || bindings.at(0).at("target")!="Body") throw std::runtime_error("Armadura ou encaixes inválidos.");
+            returnToBlock(draft);
+            eraseTab(tab);
+            ++testBlockStage_;
+            if(testBlockStage_==1) editSelectedEquipment();
+            else command(GearCreate);
+        } else {
+            if(item.ground.size()!=2 || item.ground.at(1).damage!=22 || item.air.size()!=1 || item.air.at(0).reach!=3.3 ||
+                !studio->clip("idle") || !studio->clip("ground_1") || !studio->clip("ground_2") || !studio->clip("air_1") ||
+                studio->player.at("clips").size()!=4) throw std::runtime_error("Golpes, atributos ou clipes da arma inválidos.");
+            const auto testMap=mods_.parent_path()/"equipamentos.json";
+            writeProject(testMap);openProject(testMap);
+            std::fprintf(stderr,"Equipment test passed. MAP=%s\n",game::pathText(testMap).c_str());
+            KillTimer(window_,blockbenchTestTimer);
+            DestroyWindow(window_);
         }
     }
 
@@ -2355,6 +2633,15 @@ private:
         const auto copy=[&](RECT box,std::wstring_view value) {
             theme::text(dc,box,value,theme::muted,theme::font(15),DT_LEFT|DT_WORDBREAK|DT_NOPREFIX);
         };
+        if(page_==Page::Gear) {
+            heading(93,L"Equipamentos");
+            theme::fill(dc,{x,165,x+w,315},theme::panel);
+            theme::text(dc,{x+24,186,x+207,228},L"Armas",theme::ink,theme::font(19,FW_SEMIBOLD));
+            theme::text(dc,{x+249,186,x+w-24,228},L"Armaduras",theme::ink,theme::font(19,FW_SEMIBOLD));
+            theme::fill(dc,{x+216,190,x+217,289},theme::line);
+            theme::text(dc,{x+24,328,x+w-24,365},L"Equipamentos da revisão do mapa",theme::ink,theme::font(18,FW_SEMIBOLD));
+            return;
+        }
         if(page_==Page::Home) {
             heading(93,L"O que você quer criar?");
             theme::fill(dc,{x,170,x+w,380},theme::panel);
@@ -2561,7 +2848,8 @@ int WINAPI wWinMain(HINSTANCE,HINSTANCE,PWSTR,int) {
         std::unique_ptr<wchar_t*,decltype(&LocalFree)> arguments(CommandLineToArgvW(GetCommandLineW(),&argc),LocalFree);
         if(!arguments) throw std::runtime_error("Não foi possível ler os argumentos do editor");
         const auto argv=arguments.get();
-        const bool blockbenchTest=argc==2 && std::wstring_view(argv[1])==L"--smoke-blockbench";
+        const bool gearTest=argc==2 && std::wstring_view(argv[1])==L"--smoke-equipment";
+        const bool blockbenchTest=gearTest || (argc==2 && std::wstring_view(argv[1])==L"--smoke-blockbench");
         const bool smoke=blockbenchTest || (argc==2 && std::wstring_view(argv[1])==L"--smoke");
         if(!smoke && argc!=1 && (argc!=3 || std::wstring_view(argv[1])!=L"--mods")) throw std::runtime_error("Uso: shardbound_editor [--mods DIRETORIO]");
         std::array<wchar_t,32768> executable{};
@@ -2571,7 +2859,7 @@ int WINAPI wWinMain(HINSTANCE,HINSTANCE,PWSTR,int) {
         const auto directory=argc==3?std::filesystem::absolute(argv[2]):programDirectory/"content";
         auto discovery=game::discoverMods(directory);
         for(const auto& diagnostic:discovery.diagnostics) if(diagnostic.code!="MOD106") throw game::DiagnosticError(diagnostic);
-        Editor editor(WorldDefinition::load(discovery.mods),programDirectory,directory,smoke,blockbenchTest);
+        Editor editor(WorldDefinition::load(discovery.mods),programDirectory,directory,smoke,blockbenchTest,gearTest);
 
         WNDCLASSW type{};type.lpfnWndProc=dispatch;type.hInstance=GetModuleHandleW(nullptr);
         type.hCursor=LoadCursorW(nullptr,IDC_ARROW);type.hbrBackground=reinterpret_cast<HBRUSH>(COLOR_WINDOW+1);
