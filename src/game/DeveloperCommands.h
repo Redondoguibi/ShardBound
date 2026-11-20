@@ -7,7 +7,7 @@ namespace game {
 class DeveloperCommands {
 public:
     DeveloperCommands(script::Runtime& runtime,World& world,PhysicsSystem& physics,PlayerController& player);
-    void terrain(ChunkWorld* value,std::string seed={}) { terrain_=value;seed_=std::move(seed); }
+    void terrain(ChunkWorld* value) { terrain_=value; }
     std::string execute(const std::string& line);
     std::vector<std::string> complete(const std::string& prefix) const;
     std::function<void(const std::string&)> changeCamera;
@@ -21,7 +21,7 @@ private:
     Vec3 localPosition(const std::vector<std::string>& args,size_t offset) const;
     std::vector<std::string> identifiers(const std::string& type) const;
     script::Runtime& runtime_;World& world_;PhysicsSystem& physics_;PlayerController& player_;
-    ChunkWorld* terrain_=nullptr;std::string seed_;
+    ChunkWorld* terrain_=nullptr;
     std::map<std::string,Command> commands_;
 };
 }

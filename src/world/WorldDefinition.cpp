@@ -292,6 +292,11 @@ WorldDefinition WorldDefinition::load(const std::vector<ModManifest>& mods) {
     }
     return definition;
 }
+TerrainGenerator::TerrainGenerator(WorldDefinition definition,std::string mapId)
+    :definition_(std::move(definition)),seed_(seedHash(mapId)),map_(definition_.maps.at(mapId)) {
+    settings_.id=std::move(mapId);
+    settings_.name="ShardBound";
+}
 TerrainGenerator::TerrainGenerator(WorldDefinition definition,std::string generator,std::string seed)
     :definition_(std::move(definition)),seed_(seedHash(seed)) {
     if(const auto found=definition_.maps.find(generator);found!=definition_.maps.end()) {

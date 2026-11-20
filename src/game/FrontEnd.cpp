@@ -25,11 +25,10 @@ void FrontEnd::configureMods(std::vector<ModManifest> catalog,std::set<std::stri
     try {profiles_=std::make_unique<ModProfiles>(file,catalog,available);}catch(const std::exception& error) {profiles_=std::make_unique<ModProfiles>(file,catalog,available,true);message_=std::string("Perfis invalidos; usando padrao: ")+error.what();}
     try {refreshProfile();}catch(const std::exception& error) {message_=error.what();}
 }
-WorldRecord FrontEnd::createRecord(std::string name,std::string seed) {
+WorldRecord FrontEnd::createRecord(std::string name) {
     if(profiles_) {const auto errors=profiles_->issues();if(!errors.empty()) throw std::runtime_error(errors.front());}
-    if(!definition_.maps.empty()) return storage_.create(std::move(name),"shardbound",definition_.maps.begin()->first,definition_,mods_);
-    if(definition_.generators.empty()) throw std::runtime_error("Instale um mod com mapa ou gerador e um mod que crie o jogador");
-    auto generator=definition_.generators.begin();std::advance(generator,generatorIndex_);return storage_.create(std::move(name),std::move(seed),generator->first,definition_,mods_);
+    if(definition_.maps.empty()) throw std::runtime_error("Instale um mod com mapa para criar um mundo");
+    return storage_.create(std::move(name),definition_.maps.begin()->first,definition_,mods_);
 }
 WorldRecord FrontEnd::createMapTestRecord(const std::filesystem::path& source) {
     if(profiles_) {const auto errors=profiles_->issues();if(!errors.empty()) throw std::runtime_error(errors.front());}
@@ -38,17 +37,17 @@ WorldRecord FrontEnd::createMapTestRecord(const std::filesystem::path& source) {
     auto map=std::make_shared<FiniteMap>(FiniteMap::read(source,definition));
     definition.maps.insert_or_assign(id,map);
     const auto spawn=map->spawn();
-    if(TerrainGenerator(definition,id,"shardbound").height(spawn.x,spawn.z)<1)
+    if(TerrainGenerator(definition,id).height(spawn.x,spawn.z)<1)
         throw std::runtime_error("O mapa precisa de chão no ponto inicial");
-    return storage_.create("Teste do editor","shardbound",id,definition,mods_);
+    return storage_.create("Teste do editor",id,definition,mods_);
 }
 void FrontEnd::refreshProfile() {
-    definition_={};mods_.clear();generatorIndex_=0;
+    definition_={};mods_.clear();
     const auto errors=profiles_->issues();if(!errors.empty()) {definition_={};mods_.clear();message_=errors.front();return;}
     const auto selected=profiles_->selected();for(const auto& mod:selected) mods_[mod.id]=versionText(mod.version);
     // Selection is independent of generation: existing worlds keep their frozen definition.
     definition_=WorldDefinition::load(selected);
-    if(definition_.maps.empty() && definition_.generators.empty()) message_="Instale um mod com mapa ou gerador para criar mundos.";
+    if(definition_.maps.empty()) message_="Instale um mod com mapa para criar mundos.";
 }
 std::vector<std::string> FrontEnd::profileIds() const {std::vector<std::string> ids;if(!profiles_) return ids;for(const auto& m:profiles_->catalog()) ids.push_back(m.id);for(const auto& id:profiles_->enabled()) if(std::find(ids.begin(),ids.end(),id)==ids.end()) ids.push_back(id);return ids;}
 void FrontEnd::changedSettings(const GameSettings& old) {
@@ -105,14 +104,12 @@ void FrontEnd::event(const Event& e,bool uiCaptured) {
         if(e.type==EventType::KeyDown && e.key==Key::Enter) {try {action(79);}catch(const std::exception& error) {message_=error.what();}}return;
     }
     if(screen_!=Screen::Create) return;
-    auto& value=focus_==0 ? name_ : seed_;
+    auto& value=name_;
     if(e.type==EventType::TextInput) {
-        const size_t limit=focus_==0 ? 96 : 128;
         for(unsigned char c:e.text) if(c<32 || c==127) return;
-        if(value.size()+e.text.size()<=limit) value+=e.text;
+        if(value.size()+e.text.size()<=96) value+=e.text;
     }
     if(e.type==EventType::KeyDown) {
-        if(e.key==Key::Tab && definition_.maps.empty()) focus_=1-focus_;
         if(e.key==Key::Backspace && !value.empty()) { size_t i=value.size()-1;while(i && (static_cast<unsigned char>(value[i])&0xc0)==0x80) --i;value.erase(i); }
         if(e.key==Key::Enter) { try { action(20); } catch(const std::exception& error) { message_=error.what(); } }
     }
@@ -161,7 +158,7 @@ void FrontEnd::action(int id) {
         if(profileWorld_.empty() || !profiles_ || active_) throw std::runtime_error("Selecione um mundo fechado");
         const auto selected=profiles_->selected();std::map<std::string,std::string> versions;for(const auto& mod:selected) versions[mod.id]=versionText(mod.version);auto record=storage_.read(profileWorld_);
         const auto require=[&](const std::string& resource) {if(!resource.empty() && AssetId(resource).nameSpace()!="core" && !versions.contains(AssetId(resource).nameSpace())) throw std::runtime_error("O terreno salvo requer o mod: "+AssetId(resource).nameSpace());};
-        require(record.generator);for(const auto& [blockId,block]:record.definition.blocks) {(void)blockId;require(block.texture);require(block.shader);require(block.shaderTexture);}
+        require(record.mapId);for(const auto& [blockId,block]:record.definition.blocks) {(void)blockId;require(block.texture);require(block.shader);require(block.shaderTexture);}
         const auto checkpoint=storage_.directory(record.id)/"checkpoint.json";
         if(std::filesystem::exists(checkpoint)) {const auto saved=nlohmann::json::parse(encodeData(SaveGame::inspect(checkpoint)));for(const auto& m:selected) if(saved["mods"].contains(m.id) && !m.acceptsSave(saved["mods"][m.id],saved.value("mod_schemas",nlohmann::json::object()).value(m.id,1u))) throw std::runtime_error(m.id+": versao incompativel com o save");}
         record.mods=std::move(versions);record.schemas.clear();for(const auto& m:selected) record.schemas[m.id]=m.saveSchema;
@@ -193,14 +190,13 @@ void FrontEnd::action(int id) {
     else if(id==1) navigate(Screen::Worlds);
     else if(id==2) { settingsReturn_=screen_;navigate(Screen::Settings); }
     else if(id==3) quit_=true;
-    else if(id==10) { name_.clear();seed_.clear();focus_=0;navigate(Screen::Create); }
+    else if(id==10) { name_.clear();navigate(Screen::Create); }
     else if(id==11) navigate(screen_==Screen::Backups || (screen_==Screen::Mods && !profileWorld_.empty())?Screen::Worlds:Screen::Title);
     else if(id==12 && page_>0) --page_;
     else if(id==13 && (page_+1)*4<(screen_==Screen::Backups?backups_.size():worlds_.size())) ++page_;
     else if(id>=100 && id<104) { auto record=worlds_.at(page_*4+size_t(id-100));open(record,std::filesystem::exists(storage_.directory(record.id)/"checkpoint.json")); }
-    else if(id==20) {auto record=createRecord(name_,seed_);open(record,false);}
+    else if(id==20) {auto record=createRecord(name_);open(record,false);}
     else if(id==21) navigate(Screen::Worlds);
-    else if(id==24 && definition_.maps.empty() && !definition_.generators.empty()) generatorIndex_=(generatorIndex_+1)%definition_.generators.size();
     else if(id==30) { saveError_.clear();navigate(Screen::Playing); }
     else if(id==31 || id==32) {
         try { if(saveWorld) saveWorld(); }
@@ -233,13 +229,12 @@ void FrontEnd::draw() {
     text(100,65,1080,16,"S H A R D B O U N D",{159,191,131,255});
     text(100,110,1080,42,screen_==Screen::Mods && !profileWorld_.empty()?"Mods deste mundo":screenTitle(screen_));
     if(screen_==Screen::Title) {
-        const bool playable=!definition_.maps.empty() || !definition_.generators.empty();
-        text(100,180,1080,20,playable?"Escolha um mundo para jogar.":"Instale um mod com terreno e um mod que crie o jogador para comecar.");
+        text(100,180,1080,20,definition_.maps.empty()?"Instale um mod com mapa e um mod que crie o jogador para comecar.":"Escolha um mundo para jogar.");
         button(1,100,280,440,66,"Jogar");button(2,100,364,440,66,"Configuracoes");
         button(3,100,448,440,66,"Sair");button(4,600,280,480,66,"Mods e perfis");
     }
     else if(screen_==Screen::Worlds) {
-        for(size_t i=0;i<4 && page_*4+i<worlds_.size();++i) { const auto& w=worlds_[page_*4+i];button(100+int(i),100,205+int(i)*80,420,66,w.name+"  |  seed: "+w.seed);button(400+int(i),540,205+int(i)*80,130,66,"Mods");
+        for(size_t i=0;i<4 && page_*4+i<worlds_.size();++i) { const auto& w=worlds_[page_*4+i];button(100+int(i),100,205+int(i)*80,420,66,w.name);button(400+int(i),540,205+int(i)*80,130,66,"Mods");
             button(200+int(i)*3,690,205+int(i)*80,150,66,"Backup");button(201+int(i)*3,860,205+int(i)*80,150,66,"Restaurar");button(202+int(i)*3,1030,205+int(i)*80,150,66,"Limpar"); }
         if(worlds_.empty()) text(100,245,1080,24,"Nenhum mundo criado. Crie o primeiro abaixo.");
         button(10,100,550,360,56,"Criar mundo");button(11,480,550,200,56,"Voltar");button(12,900,550,130,56,"Anterior");button(13,1044,550,136,56,"Proximo");
@@ -249,14 +244,16 @@ void FrontEnd::draw() {
         text(100,530,1080,16,"O mundo atual valido sera copiado antes da restauracao. Mais recentes primeiro.");
         button(11,100,570,240,50,"Voltar");button(12,900,570,130,50,"Anterior");button(13,1044,570,136,50,"Proximo");
     } else if(screen_==Screen::Create) {
-        text(100,188,1080,20,"Nome do mundo");rectangle(100,224,1080,60,focus_==0 ? std::array<unsigned char,4>{43,68,53,255} : std::array<unsigned char,4>{28,41,36,255});text(120,237,1040,24,name_+(focus_==0 ? "|" : ""));if(click_ && hit(100,224,1080,60)) { focus_=0;click_=false; }
+        text(100,188,1080,20,"Nome do mundo");
+        rectangle(100,224,1080,60,{43,68,53,255});
+        text(120,237,1040,24,name_+"|");
         if(definition_.maps.empty()) {
-            text(100,300,1080,20,"Seed (texto ou numero; vazia = aleatoria)");rectangle(100,336,1080,60,focus_==1 ? std::array<unsigned char,4>{43,68,53,255} : std::array<unsigned char,4>{28,41,36,255});text(120,349,1040,24,seed_+(focus_==1 ? "|" : ""));if(click_ && hit(100,336,1080,60)) { focus_=1;click_=false; }
-            std::string generator="Nenhum gerador instalado";if(!definition_.generators.empty()) { auto g=definition_.generators.begin();std::advance(g,generatorIndex_);generator=g->second.name; }
-            button(24,100,428,1080,56,"Gerador: "+generator);
-        } else text(100,315,1080,24,"Mapa: "+definition_.maps.begin()->first);
-        button(20,100,550,480,60,"Criar e jogar");button(21,600,550,220,60,"Voltar");
-        text(100,492,1080,16,"Mesma seed + mesmo gerador = mesmo terreno. TAB alterna os campos.");
+            text(100,315,1080,24,"Instale um mod com mapa para criar um mundo.");
+        } else {
+            text(100,315,1080,24,"Mapa: "+definition_.maps.begin()->first);
+            button(20,100,550,480,60,"Criar e jogar");
+        }
+        button(21,600,550,220,60,"Voltar");
     } else if(screen_==Screen::Settings) {
         button(40,100,205,520,56,std::string("VSync: ")+(settings_.vsync ? "ligado" : "desligado"));button(41,660,205,520,56,std::string("Tela cheia: ")+(settings_.fullscreen ? "sim" : "nao"));
         button(42,100,281,520,56,std::string("Sombras: ")+(settings_.shadows ? "ligadas" : "desligadas"));button(43,660,281,520,56,"Escala de renderizacao: "+std::to_string(int(settings_.scale*100))+"%");

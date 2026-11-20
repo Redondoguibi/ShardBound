@@ -1,10 +1,10 @@
 # Mundo e mods
 
-**Estado de 13 de novembro de 2026.** Requisitos do editor e da futura versão do jogo. O fluxo procedural executável está descrito em [Mundos procedurais](../27-PROCEDURAL-WORLDS.md).
+**Atualizado em 17 de novembro de 2026.** Veja também o [guia de partidas com mapas](../27-PROCEDURAL-WORLDS.md).
 
 ## Implementação disponível
 
-A instalação começa sem mods, blocos, mapas ou personagens. Uma partida precisa de um mapa ou gerador e de um mod que crie o jogador. O formato admite mapas de até 512 × 512 colunas e 48 camadas. Cada partida guarda uma cópia do mapa usado.
+A instalação começa sem mods, blocos, mapas ou personagens. Uma partida precisa de um mapa e de um mod que crie o jogador. O formato admite mapas de até 512 × 512 colunas e 48 camadas. Cada partida guarda uma cópia do mapa usado.
 
 O catálogo carrega blocos declarados em `world.json`, inclusive definições de mods que só registram blocos. Uma estrutura só vira terreno onde for colocada. Mods podem adicionar colocações pelo campo `map_placements` em `world.json`, com entradas `[id, x, y, z, rotação]` e rotação em passos de 90 graus.
 

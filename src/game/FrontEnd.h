@@ -24,7 +24,7 @@ public:
     void saved() { saveError_.clear(); }
     Screen screen() const { return screen_; }
     void configureMods(std::vector<ModManifest> catalog,std::set<std::string> available,std::vector<Diagnostic> diagnostics={});
-    WorldRecord createRecord(std::string name,std::string seed);
+    WorldRecord createRecord(std::string name);
     WorldRecord createMapTestRecord(const std::filesystem::path& source);
     std::function<void(const WorldRecord&,bool)> startWorld;
     std::function<void()> saveWorld;
@@ -49,8 +49,8 @@ private:
     WorldDefinition definition_;std::map<std::string,std::string> mods_;GameSettings settings_;
     Screen screen_=Screen::Title,settingsReturn_=Screen::Title;
     bool active_=false,quit_=false,click_=false;
-    int focus_=0;size_t page_=0,generatorIndex_=0;
-    std::string name_,seed_,message_,saveError_;
+    size_t page_=0;
+    std::string name_,message_,saveError_;
     std::vector<WorldRecord> worlds_;
     std::string backupWorld_;std::vector<std::string> backups_;
     std::vector<CanvasCommand> commands_,previous_;

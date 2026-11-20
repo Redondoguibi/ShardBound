@@ -6,13 +6,13 @@ Extraia o ZIP inteiro e abra `game.exe`. Mantenha as DLLs, `assets` e `content` 
 
 Instalações novas guardam dados em `%LOCALAPPDATA%\ShardBound`. Se já existir uma pasta `user` junto do executável, ela continua sendo usada para preservar os mundos anteriores. `--portable` força o uso dessa pasta; `--user-dir PASTA` escolhe outro local e tem prioridade. Nenhuma dessas opções apaga ou move os saves existentes.
 
-Na tela inicial, **Jogar** permite criar um mundo com nome e seed, ou continuar um mundo salvo. **Configurações** também está disponível na pausa, por Escape.
+Na tela inicial, escolha **Jogar → Criar mundo**, dê um nome e use **Criar e jogar**. O terreno vem do mapa fornecido pelos mods ativos. Você também pode continuar uma partida salva. **Configurações** fica disponível na pausa, por Escape.
 
 ## Mods e perfis
 
 Abra **Mods e perfis** na tela inicial para consultar os pacotes instalados, suas versões e dependências. É possível duplicar, renomear e alternar perfis. Ativar um mod inclui suas dependências obrigatórias; desligar uma dependência também desliga os mods que precisam dela. Dependências opcionais não são ativadas automaticamente.
 
-O perfil escolhido determina os mods dos mundos novos. Um mundo existente continua usando sua seleção salva. Para alterá-la, entre em **Jogar → Mods**, na linha desse mundo, escolha o perfil e use **Aplicar ao mundo com backup**. O jogo cria o backup antes de publicar a seleção. Pacotes ainda exigidos pelas texturas, shaders e pelo gerador do terreno salvo não podem ser retirados dessa seleção.
+O perfil escolhido determina os mods dos mundos novos. Um mundo existente continua usando sua seleção salva. Para alterá-la, entre em **Jogar → Mods**, na linha desse mundo, escolha o perfil e use **Aplicar ao mundo com backup**. O jogo cria o backup antes de publicar a seleção. A seleção precisa incluir os pacotes exigidos pelo mapa salvo e por suas texturas e shaders.
 
 Desativar um mod de entidades/gameplay conserva seus dados no save; eles podem voltar quando o mod for reativado. Isso não substitui a compatibilidade de versões declarada pelo autor. Problemas de dependências, preparação e abertura aparecem em **Ver diagnósticos de mods e dependências**. Conflitos que dependem da execução dos scripts são avaliados na abertura do mundo.
 

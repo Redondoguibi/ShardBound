@@ -14,7 +14,7 @@ Referência e exemplos: [modding/07-MOD-PLATFORM.md](modding/07-MOD-PLATFORM.md)
 | Sistemas de gameplay | Dependências entre sistemas, detecção de ciclos, intervalos, desativação opcional após erro, ordem determinística e orçamento independente por callback externo. Índice de componentes personalizados evita varreduras de todas as entidades. |
 | Geração e edição | Regras volumétricas opcionais por ruído, filtros de bloco/bioma/altura, extensão por mods e persistência no snapshot do gerador. Edição em lote, aplicação de estruturas com rotação, undo/redo e preparação transacional de meshes/colisores. |
 | IA e entidades | A* sobre terreno editado, árvores de comportamento com memória serializável, máquinas de estados com entrada/saída, raycasts e projéteis persistentes com gravidade e eventos. Raios consultam terreno além do streaming. |
-| Equipamentos | Instâncias individuais, durabilidade, afixos determinísticos por seed, atributos, reservas de inventário, hooks, eventos, validação de saves e sockets de modelos animados. O mod foundation integra dano, armadura, desgaste, arma quebrada e restauração do visual. |
+| Equipamentos | Instâncias individuais, durabilidade, afixos determinísticos por chave, atributos, reservas de inventário, hooks, eventos, validação de saves e sockets de modelos animados. O mod foundation integra dano, armadura, desgaste, arma quebrada e restauração do visual. |
 | Interfaces | Telas com namespace, layouts, botões, labels, painéis, toggles, sliders e campos UTF-8. Foco por teclado, eventos, captura modal e composição visual com cache. |
 
 As regras de geração são opcionais. As planícies oficiais continuam com pouco

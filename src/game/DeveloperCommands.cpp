@@ -94,7 +94,6 @@ DeveloperCommands::DeveloperCommands(Runtime& runtime,World& world,PhysicsSystem
     });
     builtin("undo","/undo","Desfaz a última edição de terreno",{},[this](const auto&) { return std::string(requireTerrain().undoEdits()?"Edição desfeita.":"Nada para desfazer."); });
     builtin("redo","/redo","Refaz uma edição de terreno",{},[this](const auto&) { return std::string(requireTerrain().redoEdits()?"Edição refeita.":"Nada para refazer."); });
-    builtin("seed","/seed","Mostra a seed original do mundo",{},[this](const auto&) { (void)requireTerrain();return "Seed: "+seed_; });
     builtin("attribute","/attribute <mod:atributo> <get|set> [valor]","Consulta valor base e efetivo ou altera a base",{{"atributo","attribute"},{"operação","enum",false,{"get","set"}},{"valor","number",true,{}}},[this](const auto& a) {
         if((a[1]=="get" && a.size()!=2) || (a[1]=="set" && a.size()!=3)) throw std::runtime_error("Uso: /attribute mod:atributo get | /attribute mod:atributo set valor");
         const auto actorValue=entityValue(world_,actor());if(a[1]=="set") runtime_.call("set_attribute",{actorValue,Value(a[0]),Value(numeric(a[2]))});

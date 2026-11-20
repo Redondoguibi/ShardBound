@@ -10,9 +10,13 @@ FiniteMap importMapFromSave(const std::filesystem::path& checkpoint, FiniteMap::
     if(std::filesystem::file_size(metadataPath)>16*1024*1024) throw std::runtime_error("World metadata exceeds 16 MiB");
     std::ifstream input(metadataPath,std::ios::binary);
     const auto metadata=nlohmann::json::parse(input);
-    if(metadata.at("format")!="shardbound-world" || metadata.at("version")!=1) throw std::runtime_error("Unsupported world metadata");
+    const auto& version=metadata.at("version");
+    if(metadata.at("format")!="shardbound-world" || (version!=1 && version!=2)) throw std::runtime_error("Formato de mundo indisponivel");
     auto catalog=WorldDefinition::parse(metadata.at("definition"));
-    const TerrainGenerator terrain(catalog,metadata.at("generator"),metadata.at("seed"));
+    const auto mapId=metadata.at(version==1?"generator":"map").get<std::string>();
+    const auto terrain=version==1 && !catalog.maps.contains(mapId)
+        ?TerrainGenerator(catalog,mapId,metadata.at("seed"))
+        :TerrainGenerator(catalog,mapId);
     if(const auto* source=terrain.finiteMap()) {
         const auto area=source->areaAt(selection.minX,selection.minZ);
         if(!area || !area->map->contains(selection.minX+selection.width-1-area->offsetX,

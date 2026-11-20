@@ -91,7 +91,7 @@ afixos e slots. Transformar uma cópia em instância não duplica seu inventári
 - Criação, consulta, enumeração e liberação de instâncias.
 - Equipar/desequipar com veto por hook e eventos posteriores à gravação.
 - Durabilidade e reparo; instâncias quebradas deixam de contribuir bônus.
-- Afixos sorteados por seed, pesos e faixas, sem reposição.
+- Afixos sorteados por chave de sorteio, pesos e faixas, sem reposição.
 - Atributos calculados por `(base + soma_aditiva) * produto_multiplicativo`.
 - Visuais anexados a nós do modelo com `attach_socket`, acompanhando pose e hierarquia.
 

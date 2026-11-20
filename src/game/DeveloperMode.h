@@ -10,7 +10,7 @@ class DeveloperMode {
 public:
     DeveloperMode(script::Runtime& runtime,World& world,PhysicsSystem& physics,PlayerController& player,InputSystem& input);
     ~DeveloperMode();
-    void terrain(ChunkWorld* value,std::string seed);
+    void terrain(ChunkWorld* value);
     // Returns true when this event belongs to the developer UI/camera.
     bool event(const Event& event,bool gameplay=true,bool otherTextInput=false);
     void update(float delta,bool gameplay=true,bool otherInput=false);

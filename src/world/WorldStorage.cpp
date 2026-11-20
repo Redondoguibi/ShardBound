@@ -62,28 +62,44 @@ std::filesystem::path WorldStorage::directory(const std::string& id) const {
     // Validate symbolic links/junctions as well as the lexical filename.
     return VirtualFileSystem::contained(directory_,std::filesystem::path(id)/"world.json").parent_path();
 }
-WorldRecord WorldStorage::create(std::string name,std::string seed,const std::string& generator,const WorldDefinition& definition,const std::map<std::string,std::string>& mods) {
-    validateText(name,96,"Nome");if(seed.empty()) seed=randomId();validateText(seed,128,"Seed");
-    if(!definition.hasTerrain(generator)) throw std::runtime_error("Terreno indisponivel");
+WorldRecord WorldStorage::create(std::string name,const std::string& mapId,const WorldDefinition& definition,const std::map<std::string,std::string>& mods) {
+    validateText(name,96,"Nome");
+    if(!definition.maps.contains(mapId)) throw std::runtime_error("Mapa indisponivel");
     std::filesystem::create_directories(directory_);std::string id;
     for(int attempt=0;attempt<16;++attempt) { id=randomId();if(std::filesystem::create_directory(directory_/id)) break;id.clear(); }
     if(id.empty()) throw std::runtime_error("Cannot allocate world directory");
-    WorldRecord record{id,std::move(name),std::move(seed),generator,definition,mods};
-    try {writeWorldMetadata(directory_/id/"world.json",{{"format","shardbound-world"},{"version",1},{"id",id},{"name",record.name},{"seed",record.seed},{"generator",generator},{"definition",definition.json()},{"mods",mods}},false);}
+    WorldRecord record{id,std::move(name),mapId,definition,mods};
+    record.definition.generators.clear();
+    try {writeWorldMetadata(directory_/id/"world.json",{{"format","shardbound-world"},{"version",2},{"id",id},{"name",record.name},{"map",mapId},{"definition",record.definition.json()},{"mods",mods}},false);}
     catch(...) {std::error_code error;std::filesystem::remove(directory_/id,error);throw;}
     return record;
 }
 WorldRecord WorldStorage::read(const std::string& id) const {
-    auto j=readJson(directory(id)/"world.json",maxWorldMetadata);if(j.at("format")!="shardbound-world" || j.at("version")!=1 || j.at("id")!=id) throw std::runtime_error("Unsupported world metadata");
-    WorldRecord r{id,j.at("name"),j.at("seed"),j.at("generator"),WorldDefinition::parse(j.at("definition")),j.at("mods").get<std::map<std::string,std::string>>(),j.value("mod_schemas",std::map<std::string,unsigned>{})};
+    const auto j=readJson(directory(id)/"world.json",maxWorldMetadata);
+    const auto& version=j.at("version");
+    if(j.at("format")!="shardbound-world" || (version!=1 && version!=2) || j.at("id")!=id)
+        throw std::runtime_error("Formato de mundo indisponivel");
+    WorldRecord r{id,j.at("name"),j.at(version==1?"generator":"map"),WorldDefinition::parse(j.at("definition")),j.at("mods").get<std::map<std::string,std::string>>(),j.value("mod_schemas",std::map<std::string,unsigned>{})};
     if(j.contains("mod_schemas")) for(const auto& [modId,value]:j.at("mod_schemas").items()) {
         const auto schema=value.get<double>();if(!validNamespace(modId) || !std::isfinite(schema) || schema<1 || schema>1000000 || schema!=std::floor(schema)) throw std::runtime_error("Invalid world mod schema");
     }
-    validateText(r.name,96,"Nome");validateText(r.seed,128,"Seed");if(!r.definition.hasTerrain(r.generator)) throw std::runtime_error("Missing saved terrain");return r;
+    validateText(r.name,96,"Nome");
+    if(!r.definition.maps.contains(r.mapId))
+        throw std::runtime_error("Este mundo antigo precisa ser importado como mapa pelo editor");
+    r.definition.generators.clear();
+    return r;
 }
 void WorldStorage::update(const WorldRecord& record) const {
     const auto file=directory(record.id)/"world.json";
-    auto json=readJson(file,maxWorldMetadata);json["mods"]=record.mods;json["mod_schemas"]=record.schemas;writeWorldMetadata(file,json,true);
+    auto json=readJson(file,maxWorldMetadata);
+    if(json.at("version")==1) {
+        json["version"]=2;
+        json["map"]=record.mapId;
+        json.erase("generator");
+        json.erase("seed");
+        json["definition"]=record.definition.json();
+    }
+    json["mods"]=record.mods;json["mod_schemas"]=record.schemas;writeWorldMetadata(file,json,true);
 }
 std::vector<WorldRecord> WorldStorage::list(std::vector<std::string>* errors) const {
     std::vector<WorldRecord> result;if(!std::filesystem::exists(directory_)) return result;
@@ -95,7 +111,7 @@ std::vector<WorldRecord> WorldStorage::list(std::vector<std::string>* errors) co
     for(const auto& entry:std::filesystem::directory_iterator(directory_)) if(entry.is_directory() && entry.path().filename().string().find_first_not_of("0123456789")==std::string::npos) {
         try { result.push_back(read(entry.path().filename().string())); } catch(const std::exception& e) {
             const auto id=entry.path().filename().string();if(errors) errors->push_back(id+": "+e.what());
-            try {if(!backups(id).empty()) {WorldRecord damaged;damaged.id=id;damaged.name="Mundo indisponivel: "+id;damaged.seed="restaure um backup";result.push_back(std::move(damaged));}}catch(const std::exception&) {}
+            try {if(!backups(id).empty()) {WorldRecord damaged;damaged.id=id;damaged.name="Mundo indisponivel: "+id;result.push_back(std::move(damaged));}}catch(const std::exception&) {}
         }
     }
     std::sort(result.begin(),result.end(),[](const auto& a,const auto& b) { return a.name<b.name || (a.name==b.name && a.id<b.id); });return result;

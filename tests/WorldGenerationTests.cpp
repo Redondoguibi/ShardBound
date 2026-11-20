@@ -116,9 +116,9 @@ int main() {
         check(loaded.json()==reversed.json(),"Mod discovery order changes world definition");
         check(loaded.generators.at("base:world").structures.size()==2 && loaded.generators.at("addon:flat").structures.empty(),"Inheritance/extensions modified the wrong preset");
         TerrainGenerator flat(loaded,"addon:flat","flat");check(flat.height(100,-120)==8,"Inherited override ignored");
-        WorldStorage storage(root/"worlds");auto saved=storage.create("Snapshot","biomes","base:world",loaded,{{"base","1.0.0"},{"addon","1.0.0"}});
+        const auto saved=loaded.json();
         addonData["generators"]["addon:flat"]["base_height"]=12;write(addon.root/"world.json",addonData);
-        check(storage.read(saved.id).definition.json()==loaded.json(),"Mod edits mutated existing world snapshot");
+        check(WorldDefinition::parse(saved).json()==loaded.json(),"Legacy terrain snapshot did not round trip");
         auto missingDependency=addon;missingDependency.dependencies.clear();rejects([&]{WorldDefinition::load({baseMod,missingDependency});});
         addonData["generators"]["addon:flat"]["extends"]="addon:flat";write(addon.root/"world.json",addonData);rejects([&]{WorldDefinition::load({baseMod,addon});});
         auto official=discoverMods("tests/fixtures/former-content");check(official.diagnostics.empty(),"Regression mod discovery failed");

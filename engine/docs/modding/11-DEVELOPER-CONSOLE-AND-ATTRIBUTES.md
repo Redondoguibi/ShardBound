@@ -20,7 +20,7 @@ Com o modo ativo, `/` abre o console. Enter envia, Escape fecha, Tab/Shift+Tab p
 | `/spawn <mod:entity> [x y z]` | Usa o `spawn` normal e emite `on_developer_spawn(entidade)` para inicialização pelo conteúdo. Sem coordenadas, cria duas unidades ao lado do jogador. |
 | `/set <x1> <y1> <z1> <x2> <y2> <z2> <mod:block>` | Região inclusiva, até 4096 blocos, uma transação. `air` remove. Coordenadas inteiras; a base de `~` usa o bloco ocupado pelo jogador. |
 | `/undo`, `/redo` | Histórico existente de até 16 edições de terreno. |
-| `/seed` | Seed original, sem convertê-la em número. |
+
 | `/attribute <mod:atributo> get` | Valor base e efetivo do jogador. |
 | `/attribute <mod:atributo> set <valor>` | Altera a base persistente; equipamentos continuam compondo o resultado. |
 

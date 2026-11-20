@@ -73,7 +73,7 @@ private:
     std::optional<WorldRecord> currentWorld_;
     bool procedural_=true,explicitMods_=false;
     bool noVsyncOverride_=false;
-    std::string autoWorldName_,autoWorldSeed_;
+    std::string autoWorldName_;
     std::string openWorldId_;
     double autosave_=0,shaderTime_=0;
     bool menuFrame_=false,worldSavePending_=false;

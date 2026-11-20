@@ -33,7 +33,7 @@ Não houve uma sessão manual prolongada nem benchmark de FPS/GPU.
 ## Atualização — 2026-10-17
 
 A execução padrão foi substituída por menu inicial, configurações persistentes
-e criação/abertura de mundos com nome e seed. O mundo é procedural, com chunks
+e criação/abertura de mundos com nome. O mundo é procedural, com chunks
 carregados ao redor do jogador, origem flutuante e relevo suave sem cavernas.
 Conteúdo padrão fica nos mods `foundation` e `plains`, incluindo assets,
 equipamentos, inimigos, blocos, estruturas e regras. O modo procedural não
@@ -42,10 +42,10 @@ registra o catálogo C++ de modelos `core:*`.
 A aventura fixa e seus testes permanecem em `examples/legacy/adventure`,
 aberta explicitamente com `--mods examples/legacy`; seus saves anteriores não
 são convertidos. As seções abaixo registram a evolução anterior do projeto.
-Contrato, execução, APIs e limites atuais: [27-PROCEDURAL-WORLDS.md](27-PROCEDURAL-WORLDS.md).
+Contrato, execução, APIs e limites atuais: [Partidas com mapas](27-PROCEDURAL-WORLDS.md).
 
 Validação em 2026-10-17: builds MSVC Debug/Release concluídos, com 36/36 testes
-CTest aprovados em ambas as configurações. Incluem geração por seed, menus,
+CTest aprovados em ambas as configurações. Incluem geração de terreno, menus,
 configurações, streaming, origem flutuante, combate/loot dos mods, persistência
 e rejeição de checkpoint inválido. O executável Release também criou e reabriu
 um mundo por CLI. Capturas reais de D3D11 foram conferidas; não se trata de uma

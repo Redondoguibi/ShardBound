@@ -122,8 +122,8 @@ int main() {
         GameUi ui(runtime,renderer,&input);bindRuntimeApi(runtime,world,assets);bindGameplayApi(runtime,world,physics,player,input,audio,assets);
         const auto directory=std::filesystem::path("user/platform-tests")/std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
         SaveGame saves(directory,world,physics,player,assets);Components components;ExtensionBridge extensions(runtime,world,components,saves);
-        WorldRecord record;record.seed="platform";record.generator="plains:gentle";
-        ChunkWorld terrain(renderer,assets,world,physics,player,TerrainGenerator(definition,record.generator,record.seed));bindWorldApi(runtime,terrain,record);bindWorldPersistence(saves,terrain);
+        WorldRecord record;record.mapId="plains:gentle";
+        ChunkWorld terrain(renderer,assets,world,physics,player,TerrainGenerator(definition,record.mapId,"platform"));bindWorldApi(runtime,terrain,record);bindWorldPersistence(saves,terrain);
         auto actor=world.create("actor");world.add(actor,TransformComponent{{{8,5,8}}});physics.attachBox(actor,{.3f,.9f,.3f},true);player.possess(actor,4);terrain.update(2,true);
         check(equal(entityValue(world,actor),entityValue(world,actor)),"Entity equality depends on wrapper allocation");
         runtime.bind("actor",entityValue(world,actor));runtime.execute("qa","@Items\nitem Blade:\n    .damage = 10\n@Globals\nready = true");

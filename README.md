@@ -9,7 +9,7 @@ Mods podem estender ou substituir fases da engine por scripts e DLLs: movimento/
 Para gerar um ZIP com dependências de execução e verificações: `./tools/package.ps1`. Instalações novas usam os dados locais do usuário; pastas `user` existentes continuam sendo utilizadas, e `--portable` mantém os dados ao lado do executável.
 
 O ShardBound começa com zero mods e um catálogo vazio. O jogo abre no menu.
-Para jogar, os mods instalados precisam fornecer terreno e criar o jogador.
+Para jogar, os mods instalados precisam fornecer um mapa e criar o jogador.
 Coloque módulos em `content/` ou selecione a pasta com `--mods`.
 [Guia do conteúdo](content/README.md).
 

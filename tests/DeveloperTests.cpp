@@ -30,7 +30,7 @@ int main() {
         auto definition=WorldDefinition::load(mods.mods);auto& generator=definition.generators.at("plains:gentle");generator.structures.clear();generator.relief=0;generator.noise.clear();
         World world;PhysicsSystem physics(world);PlayerController player(world,physics);InputSystem input;AudioSystem audio(true);Runtime runtime;
         bindRuntimeApi(runtime,world,assets);bindGameplayApi(runtime,world,physics,player,input,audio,assets);DeveloperMode dev(runtime,world,physics,player,input);
-        ChunkWorld terrain(renderer,assets,world,physics,player,TerrainGenerator(definition,"plains:gentle","developer-seed"));dev.terrain(&terrain,"developer-seed");
+        ChunkWorld terrain(renderer,assets,world,physics,player,TerrainGenerator(definition,"plains:gentle","developer-seed"));dev.terrain(&terrain);
         SaveGame saves(directory,world,physics,player,assets);Components components;ExtensionBridge extensions(runtime,world,components,saves);
         saves.setMods({{"qa","1.0.0"}});
         saves.includeEntity=[&](EntityId id){return !terrain.transient(id);};bindWorldPersistence(saves,terrain);
@@ -79,7 +79,7 @@ register_command("qa:broken", options, broken)
         auto out=command("/list");check(out.find("/attribute")!=std::string::npos && out.find("/qa:power")!=std::string::npos,"List omitted registered commands");check(out.find("/heal")==std::string::npos && out.find("/save")==std::string::npos && out.find("/setblock")==std::string::npos,"Excluded commands were added");
         check(command("/help tp").find("/tp <x>")!=std::string::npos,"Help omitted usage");
         check(command("/list items").find("qa:Token")!=std::string::npos,"Item enumeration failed");
-        check(command("/seed").find("developer-seed")!=std::string::npos,"Seed not reported");
+        check(command("/list").find("/seed")==std::string::npos,"Obsolete console command was listed");
         check(command("/give qa:Token 2").find("Erro:")==std::string::npos && itemCount(world,actor,AssetId("qa:Token"))==2,"Give failed");
         for(const auto* bad:{"/give qa:Token -1","/give qa:Token 1.5","/give qa:Token nan","/give qa:Token 4294967296","/give missing:thing","/give qa:Token 1 extra","/give \"qa:Token"}) check(command(bad).find("Erro:")!=std::string::npos,"Bad command accepted");
         check(itemCount(world,actor,AssetId("qa:Token"))==2,"Rejected give changed inventory");

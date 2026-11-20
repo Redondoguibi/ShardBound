@@ -170,11 +170,11 @@ controla o veto. Eventos `on_instance_equipped(actor,slot,id_or_null)` e
 `on_item_durability(actor,id,old,new)` ocorrem após gravar. `core:equip` continua
 atendendo slots antigos. IDs são únicos por ator, não globais.
 
-`roll_affixes(seed,pool,count)` retorna o record pronto para `options.affixes`.
-Seed é texto de até 256 bytes; pool tem até 64 entradas com `id`, `weight` (.001..1000)
+`roll_affixes(chave,pool,count)` retorna o record pronto para `options.affixes`.
+A chave é um texto de até 256 bytes; pool tem até 64 entradas com `id`, `weight` (.001..1000)
 e `stats`. Cada stat contém `add_min`, `add_max`, `multiply_min`, `multiply_max`,
 nos mesmos limites dos bônus. Sorteia até oito entradas sem reposição, usando ordem
-do pool e seed; persista o resultado na instância para preservar o loot após mudanças
+do pool e da chave; persista o resultado na instância para preservar o loot após mudanças
 no pool. Não depende do relógio ou de um RNG global.
 
 No mod oficial `foundation`, `damage` altera dano causado e `armor` reduz o recebido.

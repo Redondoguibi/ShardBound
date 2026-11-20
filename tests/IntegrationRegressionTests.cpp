@@ -31,7 +31,7 @@ replace_definition("Entities", "foundation:Actor", spec)
 item Token:
     .name = "Regression token"
 )");
-        app.userDirectory_=root/"user";app.modsDirectory_=mods;app.explicitMods_=true;app.windowConfig_.hidden=true;app.noVsyncOverride_=true;app.autoWorldName_="Integration regression";app.autoWorldSeed_="regression";
+        app.userDirectory_=root/"user";app.modsDirectory_=mods;app.explicitMods_=true;app.windowConfig_.hidden=true;app.noVsyncOverride_=true;app.autoWorldName_="Integration regression";
         check(app.initialize(),"Application failed to initialize");
         auto actor=app.player_->entity();
         check(app.player_->speed()==9 && app.world_->get<HealthComponent>(actor).maximum==150,"Dependent Actor patches were overwritten by captured defaults");

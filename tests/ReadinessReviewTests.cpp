@@ -14,7 +14,7 @@ struct ReadinessReviewAccess {
         auto app=std::make_unique<Application>();app->root_=std::filesystem::current_path();
         app->modsDirectory_=root/"mods";std::filesystem::create_directories(root);std::filesystem::copy("tests/fixtures/former-content",app->modsDirectory_,std::filesystem::copy_options::recursive);
         app->userDirectory_=root/"user";app->explicitMods_=true;app->windowConfig_.hidden=true;app->noVsyncOverride_=true;
-        app->autoWorldName_="Review world";app->autoWorldSeed_="readiness-review";check(app->initialize(),"Review application initialization failed");return app;
+        app->autoWorldName_="Review world";check(app->initialize(),"Review application initialization failed");return app;
     }
     static void gamepadRemapping(const std::filesystem::path& root) {
         WindowSystem window({"Input review",320,240,true});Renderer renderer(window.nativeHandle(),320,240,"assets/core/shaders/forward.hlsl");InputSystem input;
@@ -39,7 +39,7 @@ struct ReadinessReviewAccess {
         // Runtime resources are valid and the world's generation definition is frozen.
         // A subsequent invalid generation edit must only block creation of NEW worlds.
         atomicWrite(app->modsDirectory_/"plains/world.json","{invalid generation");bool failed=false;try {menu.refreshProfile();}catch(const std::exception&) {failed=true;}check(failed,"Invalid generation fixture was accepted");
-        bool creationRejected=false;try {menu.createRecord("Invalid new world","review");}catch(const std::exception&) {creationRejected=true;}check(creationRejected,"Invalid generation allowed creating a new world");
+        bool creationRejected=false;try {menu.createRecord("Invalid new world");}catch(const std::exception&) {creationRejected=true;}check(creationRejected,"Invalid generation allowed creating a new world");
         menu.profileWorld_=original.id;menu.action(94);menu.maintenance_.wait();menu.update();const auto restored=menu.storage_.read(original.id);
         check(restored.mods==original.mods && restored.definition.json()==original.definition.json(),"Applying a profile discarded selected mods or changed frozen terrain");
         menu.open(restored,true);check(menu.playing() && bool(app->player_->entity()),"Existing world could not resume with its frozen generation definition");

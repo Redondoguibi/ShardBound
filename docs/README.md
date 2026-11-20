@@ -37,7 +37,7 @@ Planejamento da primeira versão do editor e da transição do jogo para um mund
 
 - [modding/09-SHADERS.md](modding/09-SHADERS.md) — contrato executável de shaders de mods.
 
-- [27-PROCEDURAL-WORLDS.md](27-PROCEDURAL-WORLDS.md) — estado atual: menu, configurações, mundos por seed, chunks e conteúdo oficial por mods.
+- [Partidas com mapas](27-PROCEDURAL-WORLDS.md) — criação, carregamento e persistência de mapas por mods.
 - [modding/06-WORLD-GENERATION.md](modding/06-WORLD-GENERATION.md) — guia implementado de biomas, solo, relevo, estruturas, herança e extensões de geração.
 - [28-MOD-PLATFORM-FOUNDATIONS.md](28-MOD-PLATFORM-FOUNDATIONS.md) — sistemas, geração volumétrica, edição transacional, IA, equipamentos e widgets por mods.
 - [modding/07-MOD-PLATFORM.md](modding/07-MOD-PLATFORM.md) — contratos e exemplos das novas APIs.

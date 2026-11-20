@@ -1,15 +1,12 @@
-# Personalizar a geração de mundos por mods
+# Dados de terreno e importação de mundos antigos
 
-O runtime lê `world.json` na raiz de cada mod. Você pode criar blocos, biomas,
-camadas de solo, estruturas, geradores e extensões de geradores existentes.
-Tudo abaixo está implementado. Não é necessário recompilar C++ para mudar
-os dados de um mod instalado em `build/<preset>/content/`.
+O jogo lê blocos, estruturas, biomas e mapas de `world.json` na raiz de cada
+mod. Para publicar o terreno de uma partida, registre um mapa em `maps` ou
+exporte o mapa pelo editor. Veja o [guia de partidas](../27-PROCEDURAL-WORLDS.md).
 
-O exemplo executável fica em `examples/worldgen-addons/gardens/`. Copie a pasta
-`gardens` para o `content/` do executável, ao lado de `foundation` e `plains`,
-reinicie e escolha **Jardins tranquilos** ao criar um mundo. Ele também acrescenta
-flores ao gerador de planícies, sem alterar os arquivos do mod `plains`.
-Execute `modcheck content` a partir da pasta do executável para validar os mods.
+As definições de camadas, geradores e extensões abaixo documentam o formato
+usado pelo importador de mundos antigos. O exemplo em
+`examples/worldgen-addons/gardens/` é usado na regressão desse formato.
 
 ## Biomas e camadas
 
@@ -145,7 +142,7 @@ Espaçamento entre chunks e sustentação de células elevadas não são simulad
 São permitidas até 64 regras e 128 tentativas totais por gerador, com até 512
 células de estruturas aceitas por chunk. Regras anteriores têm prioridade
 quando há disputa por espaço/orçamento. O sorteio de cada regra usa ID, salt,
-seed e coordenadas: acrescentar uma regra não muda as amostras das anteriores,
+identidade do terreno e coordenadas: acrescentar uma regra não muda as amostras das anteriores,
 embora novas colisões possam mudar quais tentativas serão aceitas.
 
 `safe_radius` protege um quadrado de chunks ao redor de (0,0), incluindo-o.
@@ -182,7 +179,7 @@ Para alterar outros parâmetros, crie um preset com `extends`.
 | `terrain_biome(x, z)` | ID do bioma; string vazia nos geradores antigos sem biomas. |
 | `terrain_info(x, z)` | Record com `height`, `biome`, `surface` do terreno base gerado, sem árvores/estruturas nem edições posteriores. |
 | `terrain_block(x, y, z)` | ID do bloco, considerando estruturas e edições; `""` representa ar. |
-| `world_noise(global_x, global_z, period, salt)` | Ruído suave determinístico entre -1 e 1, usando a seed atual. |
+| `world_noise(global_x, global_z, period, salt)` | Ruído suave determinístico entre -1 e 1, usando a identidade do mapa. |
 
 Consultas `terrain_*` recebem coordenadas locais, como as posições das entidades;
 `world_noise` recebe coordenadas globais inteiras. Some `world_origin().x/.z`

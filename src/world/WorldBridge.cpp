@@ -114,8 +114,7 @@ void bindWorldApi(script::Runtime& runtime,ChunkWorld& world,const WorldRecord& 
         const double x=a[0].number(at),z=a[1].number(at);if(!std::isfinite(x+z) || std::abs(x)>100000 || std::abs(z)>100000) fail(at,"TERRAIN101","Invalid local coordinates");
         const auto gx=world.originX()+std::int64_t(std::floor(x)),gz=world.originZ()+std::int64_t(std::floor(z));const auto& generator=world.generator();const int height=generator.height(gx,gz);
         for(int y=height;y<height+3;++y){const auto block=world.blockAt(gx,y,gz);if(!block.empty() && generator.definition().blocks.at(block).solid)return Value(false);}return Value(true); }));
-    runtime.bind("world_seed",native([seed=record.seed](const auto& a,const auto& at){if(!a.empty()) fail(at,"TERRAIN101","world_seed takes no arguments");return Value(seed);}));
-    runtime.bind("world_generator",native([id=record.generator](const auto& a,const auto& at){if(!a.empty()) fail(at,"TERRAIN101","world_generator takes no arguments");return Value(id);}));
+    runtime.bind("world_generator",native([id=record.mapId](const auto& a,const auto& at){if(!a.empty()) fail(at,"TERRAIN101","world_generator takes no arguments");return Value(id);}));
     runtime.bind("world_random",native([&world](const auto& a,const auto& at){
         if(a.size()!=3) fail(at,"TERRAIN101","world_random needs global x, z, salt");
         std::int64_t values[3];for(size_t i=0;i<3;++i){double n=a[i].number(at);if(!std::isfinite(n) || std::abs(n)>1e12 || n!=std::floor(n)) fail(at,"TERRAIN101","Expected integer coordinate");values[i]=std::int64_t(n);}

@@ -39,7 +39,7 @@ std::filesystem::path launchPath(int index,const char* fallback) {
 }
 Application::~Application() { shutdown(); }
 int Application::execute(int argc, char** argv) {
-    static constexpr const char* usage="Usage: game [--frames N] [--fps N] [--hidden] [--no-vsync] [--mods DIRECTORY] [--allow-native] [--performance] [--portable] [--user-dir DIRECTORY] [--create-world NAME] [--seed SEED] [--open-world ID] [--test-map FILE]";
+    static constexpr const char* usage="Usage: game [--frames N] [--fps N] [--hidden] [--no-vsync] [--mods DIRECTORY] [--allow-native] [--performance] [--portable] [--user-dir DIRECTORY] [--create-world NAME] [--open-world ID] [--test-map FILE]";
     try {
         root_ = std::filesystem::absolute(launchPath(0,argv[0])).parent_path();
         for (int i = 1; i < argc; ++i) {
@@ -57,7 +57,6 @@ int Application::execute(int argc, char** argv) {
             else if (arg == "--allow-native") allowNative_=true;
             else if (arg == "--mods" && i + 1 < argc) { ++i;modsDirectory_=launchPath(i,argv[i]);explicitMods_=true; }
             else if (arg == "--create-world" && i + 1 < argc) autoWorldName_=argv[++i];
-            else if (arg == "--seed" && i + 1 < argc) autoWorldSeed_=argv[++i];
             else if (arg == "--open-world" && i + 1 < argc) openWorldId_=argv[++i];
             else if (arg == "--test-map" && i + 1 < argc) {++i;testMap_=std::filesystem::absolute(launchPath(i,argv[i]));}
             else if (arg == "--user-dir" && i + 1 < argc) {++i;userDirectory_=std::filesystem::absolute(launchPath(i,argv[i]));}
@@ -89,7 +88,8 @@ bool Application::initialize() {
     vfs_.mount("core",root_ / "assets/core");
     assets_ = std::make_unique<AssetManager>(vfs_,*renderer_,userDirectory_/"cache");
     const auto discovered=discoverMods(root_/modsDirectory_);
-    procedural_=!explicitMods_ || discovered.mods.empty() || !testMap_.empty();
+    procedural_=!explicitMods_ || discovered.mods.empty() || !testMap_.empty() ||
+        !autoWorldName_.empty() || !openWorldId_.empty();
     for(const auto& mod:discovered.mods) if(std::filesystem::exists(mod.root/"world.json")) procedural_=true;
     if(!procedural_ && std::filesystem::is_regular_file(root_ / "assets/core/models/player.glb"))
         registerCoreModels(*assets_);
@@ -120,7 +120,7 @@ bool Application::initialize() {
             auto record=frontEnd_->createMapTestRecord(testMap_);
             frontEnd_->open(record,false);
         } else if(!autoWorldName_.empty()) {
-            auto record=frontEnd_->createRecord(autoWorldName_,autoWorldSeed_);
+            auto record=frontEnd_->createRecord(autoWorldName_);
             frontEnd_->open(record,false);
         }
         else if(!openWorldId_.empty()) frontEnd_->open(frontEnd_->storage().read(openWorldId_),true);
@@ -195,7 +195,7 @@ void Application::applySettings(const GameSettings& settings) {
 }
 std::string Application::exportPerformance() {
     if(!profiler_.size()) throw std::runtime_error("Ative o diagnostico e jogue antes de exportar");
-    nlohmann::json metadata={{"mods_at_export",modVersions_}};if(currentWorld_) metadata["world_at_export"]={{"id",currentWorld_->id},{"seed",currentWorld_->seed},{"generator",currentWorld_->generator}};
+    nlohmann::json metadata={{"mods_at_export",modVersions_}};if(currentWorld_) metadata["world_at_export"]={{"id",currentWorld_->id},{"map",currentWorld_->mapId}};
     if(engine_) metadata["engine_at_export"]=nlohmann::json::parse(encodeData(engine_->pipeline.inspect()));
     SYSTEM_INFO system{};GetNativeSystemInfo(&system);metadata["hardware"]["logical_processors"]=system.dwNumberOfProcessors;MEMORYSTATUSEX memory{};memory.dwLength=sizeof(memory);if(GlobalMemoryStatusEx(&memory)) metadata["hardware"]["physical_memory_bytes"]=memory.ullTotalPhys;
     int info[4]{};__cpuid(info,int(0x80000000u));if(unsigned(info[0])>=0x80000004u) {char brand[49]{};for(unsigned i=0;i<3;++i) {__cpuid(info,int(0x80000002u+i));std::memcpy(brand+i*16,info,16);}metadata["hardware"]["cpu"]=brand;}
@@ -219,8 +219,8 @@ void Application::openWorld(const WorldRecord& record,bool resume) {
             std::erase_if(versions,[&](const auto& item){return !record.mods.contains(item.first);});
             saves_->checkCompatibility(versions,saved.value("mod_schemas",std::map<std::string,unsigned>{}));
         }
-        terrain_=std::make_unique<ChunkWorld>(*renderer_,*assets_,*world_,*physics_,*player_,TerrainGenerator(record.definition,record.generator,record.seed));
-        developer_->terrain(terrain_.get(),record.seed);
+        terrain_=std::make_unique<ChunkWorld>(*renderer_,*assets_,*world_,*physics_,*player_,TerrainGenerator(record.definition,record.mapId));
+        developer_->terrain(terrain_.get());
         auto emit=[this](const std::string& event){auto errors=scripting_->emit(event);if(!errors.empty()) throw DiagnosticError(errors.front());};
         bindWorldApi(*scripting_,*terrain_,record);
         bindWorldPersistence(*saves_,*terrain_);
@@ -231,7 +231,7 @@ void Application::openWorld(const WorldRecord& record,bool resume) {
         } else emit("on_world_start");
         if(!player_->entity()) throw std::runtime_error("Um mod de gameplay deve criar e possuir o jogador");
         terrain_->update(frontEnd_->settings().viewDistance);emit("on_ready");applySettings(frontEnd_->settings());
-        player_->updateCamera(0);autosave_=0;saveWorld();LOG_INFO("WORLD","World ready: "+record.name+" ("+record.generator+")");
+        player_->updateCamera(0);autosave_=0;saveWorld();LOG_INFO("WORLD","World ready: "+record.name+" ("+record.mapId+")");
     } catch(...) { clearSession();currentWorld_.reset();throw; }
 }
 void Application::pollWorldSave(bool wait) {

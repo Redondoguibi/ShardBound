@@ -137,10 +137,10 @@ set_texture_shader("core:checker", "paint:surface", opts)
         // Block shader snapshots survive world metadata and are used by chunk publication.
         auto mods=loader.load("tests/fixtures/former-content");require(mods.diagnostics.empty(),"Default content failed");auto definition=WorldDefinition::load(mods.mods);
         definition.blocks.at("plains:grass").shader="paint:surface";definition.blocks.at("plains:grass").shaderParameters={0,1,0,1};
-        WorldStorage storage(root/"worlds");auto record=storage.create("Shader terrain","shader seed",definition.generators.begin()->first,definition,{});auto loaded=storage.read(record.id);
-        require(loaded.definition.json()==definition.json(),"Block shader lost in world metadata");
+        WorldStorage storage(root/"worlds");auto record=storage.create("Shader terrain",definition.maps.begin()->first,definition,{});auto loaded=storage.read(record.id);
+        require(loaded.definition.json()==record.definition.json(),"Block shader lost in world metadata");
         renderer.clearShaderEffects();const auto actor=world.find("subject");physics.attachBox(actor,{.3f,.9f,.3f},true);player.possess(actor,5);
-        ChunkWorld terrain(renderer,assets,world,physics,player,TerrainGenerator(loaded.definition,record.generator,record.seed));terrain.update(2,true);
+        ChunkWorld terrain(renderer,assets,world,physics,player,TerrainGenerator(loaded.definition,record.mapId));terrain.update(2,true);
         bool blockShader=false;for(const auto& part:terrain.renderItems()) if(part.material.shader && part.material.shader->shaderId=="paint:surface") blockShader=true;
         require(blockShader,"Block shader not applied to chunk meshes");
         std::cout<<"Shader GPU, script, persistence and terrain checks passed\n";return 0;

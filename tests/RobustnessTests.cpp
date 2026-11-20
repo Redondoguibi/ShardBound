@@ -111,9 +111,9 @@ int main(int argc,char** argv) {
         currentOnly.checkCompatibility(upgraded.at("mods").get<std::map<std::string,std::string>>(),upgraded.at("mod_schemas").get<std::map<std::string,unsigned>>());
         write(migrationMod/"schema1.sl","func migrate(bundle):\n    destroy(get_entity(\"after\"))\n    return bundle\n");const auto still=migrationWorld.find("after");rejects([&]{migrations.load("old");},"Migration accessed live entity APIs");check(migrationWorld.alive(still),"Failed migration mutated live world");
         // Complete world backup, checksum verification, GC with old slots, and recovery of an interrupted restore.
-        WorldStorage storage(root/"worlds");auto record=storage.create("Robust world","robust",definition.generators.begin()->first,definition,{});const auto folder=storage.directory(record.id);
+        WorldStorage storage(root/"worlds");auto record=storage.create("Robust world",definition.maps.begin()->first,definition,{});const auto folder=storage.directory(record.id);
         World terrainWorld;PhysicsSystem terrainPhysics(terrainWorld);PlayerController terrainPlayer(terrainWorld,terrainPhysics);SaveGame terrainSaves(folder,terrainWorld,terrainPhysics,terrainPlayer,assets);
-        ChunkWorld terrain(renderer,assets,terrainWorld,terrainPhysics,terrainPlayer,TerrainGenerator(definition,record.generator,record.seed));bindWorldPersistence(terrainSaves,terrain);
+        ChunkWorld terrain(renderer,assets,terrainWorld,terrainPhysics,terrainPlayer,TerrainGenerator(definition,definition.generators.begin()->first,"robust"));bindWorldPersistence(terrainSaves,terrain);
         terrain.setBlock(1000,10,1000,"plains:stone");terrainSaves.save("checkpoint");const auto backup=storage.backup(record.id);
         terrain.setBlock(1000,10,1000,"plains:dirt");terrainSaves.save("checkpoint");terrain.setBlock(1000,10,1000,"plains:wood");terrainSaves.save("checkpoint");
         // GC is an offline API: discard the live terrain store before deleting unreferenced pages.

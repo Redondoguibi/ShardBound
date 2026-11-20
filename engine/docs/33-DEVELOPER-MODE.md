@@ -8,7 +8,7 @@ Validação realizada em 18/10/2026, Windows x64, MSVC, SDL3 e D3D11.
 - Console por `/`, com histórico, ajuda, sugestões tipadas por Tab/Shift+Tab, rolagem, edição UTF-8 e clipboard. Ações de gameplay ficam capturadas enquanto se digita. Escape, foco e interfaces modais têm tratamento próprio.
 - Câmera orbital em terceira pessoa, zoom e prevenção de atravessamento por raio; câmera livre com WASD/Space/Q/Shift. Mira e projeções da interface usam a mesma câmera da renderização.
 - Streaming visual acompanha a câmera livre e preserva suporte físico sob os atores. As câmeras acompanham as mudanças de origem flutuante.
-- Comandos escolhidos: `help`, `list`, `camera`, `pos`, `tp`, `give`, `spawn`, `set`, `undo`, `redo`, `seed`, `attribute`. `/list` sozinho lista os comandos. `/attribute mod:id get` consulta; `/attribute mod:id set valor` modifica.
+- Comandos escolhidos: `help`, `list`, `camera`, `pos`, `tp`, `give`, `spawn`, `set`, `undo`, `redo`, `attribute`. `/list` sozinho lista os comandos. `/attribute mod:id get` consulta; `/attribute mod:id set valor` modifica.
 - Mods podem registrar comandos com argumentos tipados, documentação e sugestões, em seu próprio namespace. Não existe avaliação de scripts pelo texto do console.
 - Atributos registrados por mods têm bases persistentes por entidade e usam os bônus de equipamentos/afixos existentes. O mod `foundation` aplica velocidade, salto, vida máxima, multiplicador de dano e bônus de armadura ao gameplay e inicializa seus inimigos criados pelo console.
 

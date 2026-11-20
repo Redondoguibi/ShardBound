@@ -15,7 +15,7 @@ struct GameSettings {
     void validate() const;
 };
 struct WorldRecord {
-    std::string id,name,seed,generator;
+    std::string id,name,mapId;
     WorldDefinition definition;
     std::map<std::string,std::string> mods;
     std::map<std::string,unsigned> schemas;
@@ -23,7 +23,7 @@ struct WorldRecord {
 class WorldStorage {
 public:
     explicit WorldStorage(std::filesystem::path directory):directory_(std::move(directory)) {}
-    WorldRecord create(std::string name,std::string seed,const std::string& generator,const WorldDefinition& definition,const std::map<std::string,std::string>& mods);
+    WorldRecord create(std::string name,const std::string& mapId,const WorldDefinition& definition,const std::map<std::string,std::string>& mods);
     void update(const WorldRecord& record) const;
     std::string backup(const std::string& id) const;
     std::vector<std::string> backups(const std::string& id) const;

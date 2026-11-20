@@ -62,6 +62,7 @@ double terrainNoise(std::uint64_t seed,std::int64_t x,std::int64_t z,int period,
 struct TerrainColumn { int height=0; std::string biome; std::vector<std::string> blocks; };
 class TerrainGenerator {
 public:
+    TerrainGenerator(WorldDefinition definition,std::string mapId);
     TerrainGenerator(WorldDefinition definition,std::string generator,std::string seed);
     int height(std::int64_t x,std::int64_t z) const;
     std::string biome(std::int64_t x,std::int64_t z) const;

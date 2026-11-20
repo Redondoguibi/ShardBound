@@ -150,7 +150,7 @@ on_ready():
     scene.lights = [light]
     configure_engine("render", scene)
 )");
-        app.userDirectory_=root/"user";app.explicitMods_=true;app.allowNative_=true;app.windowConfig_.hidden=true;app.noVsyncOverride_=true;app.autoWorldName_="Engine API";app.autoWorldSeed_="engine-api";check(app.initialize(),"Engine integration startup failed");
+        app.userDirectory_=root/"user";app.explicitMods_=true;app.allowNative_=true;app.windowConfig_.hidden=true;app.noVsyncOverride_=true;app.autoWorldName_="Engine API";check(app.initialize(),"Engine integration startup failed");
         check(app.physics_->rules().gravity==2 && app.renderer_->pointLights().size()==1,"Engine services did not reach the real application");check(app.engine_->fixedOrder==std::vector<std::string>{"movement","physics","fixed"},"Application did not receive scheduler order");
         app.config_.maxFrames=80;app.config_.frameLimit=120;app.run();
         check(app.scripting_->global("engine_probe","async_ticks").number()>10,"Application did not advance async tasks");

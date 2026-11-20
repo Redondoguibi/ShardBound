@@ -16,7 +16,7 @@ DeveloperMode::DeveloperMode(script::Runtime& runtime,World& world,PhysicsSystem
 }
 DeveloperMode::~DeveloperMode() {player_.cameraOverride={};player_.movementHeading({});}
 void DeveloperMode::sensitivity(float value) {if(!std::isfinite(value)||value<.1f||value>4) throw std::invalid_argument("Camera sensitivity must be in [0.1,4]");sensitivity_=value;}
-void DeveloperMode::terrain(ChunkWorld* value,std::string seed) { terrain_=value;originX_=value?value->originX():0;originZ_=value?value->originZ():0;commands_.terrain(value,std::move(seed)); }
+void DeveloperMode::terrain(ChunkWorld* value) { terrain_=value;originX_=value?value->originX():0;originZ_=value?value->originZ():0;commands_.terrain(value); }
 void DeveloperMode::enable(bool value) {
     enabled_=value;closeConsole();keys_.clear();looking_=false;
     if(!enabled_) { mode_="default";player_.movementHeading({});pending_.clear(); }

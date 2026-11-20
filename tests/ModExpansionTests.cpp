@@ -43,7 +43,7 @@ int main(int argc,char** argv) {
         auto traversal=checkpoint;traversal["pages"][0][2]="../checkpoint.json";rejects([&]{RegionEdits::restore(directory/"pages",traversal,definition);});
         World world;PhysicsSystem physics(world);PlayerController player(world,physics);InputSystem input;AudioSystem audio(true);Runtime runtime;
         bindRuntimeApi(runtime,world,assets);bindGameplayApi(runtime,world,physics,player,input,audio,assets);SaveGame saves(directory,world,physics,player,assets);Components components;ExtensionBridge extensions(runtime,world,components,saves);
-        WorldRecord record;record.seed="streaming-expansion";record.generator="plains:gentle";ChunkWorld terrain(renderer,assets,world,physics,player,TerrainGenerator(definition,record.generator,record.seed));bindWorldApi(runtime,terrain,record);bindWorldPersistence(saves,terrain);
+        WorldRecord record;record.mapId="plains:gentle";ChunkWorld terrain(renderer,assets,world,physics,player,TerrainGenerator(definition,record.mapId,"streaming-expansion"));bindWorldApi(runtime,terrain,record);bindWorldPersistence(saves,terrain);
         runtime.execute("qa","@Items\nitem Blade:\n    .damage = 10\n@Globals\nready = true\nscroll_result = 0");
         const auto call=[&](const char* name,std::vector<Value> args={}) { return runtime.invoke(runtime.global("qa",name),args); };
         auto actor=world.create("actor");world.add(actor,TransformComponent{{{8,5,8}}});physics.attachBox(actor,{.3f,.9f,.3f},true);player.possess(actor,4);terrain.update(2,true);

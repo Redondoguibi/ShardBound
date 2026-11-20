@@ -2480,7 +2480,7 @@ private:
             std::vector<game::RenderItem> meshes;
             auto definition=catalog_;definition.maps.clear();
             definition.maps.emplace("editor:preview",std::make_shared<FiniteMap>(map_));
-            const game::TerrainGenerator terrain(std::move(definition),"editor:preview","preview");
+            const game::TerrainGenerator terrain(std::move(definition),"editor:preview");
             const auto b=map_.bounds();
             std::map<std::string,game::ModelHandle> blockModels;
             for(auto z=game::floorDiv(b.minZ,16);z<=game::floorDiv(b.minZ+b.depth-1,16);++z) {

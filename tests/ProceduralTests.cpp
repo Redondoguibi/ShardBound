@@ -123,7 +123,7 @@ int main() {
             check(FiniteMap::read(file,definition).block(8,12,8)=="plains:stone","Authored edit lost on disk");
             rejects([&]{map.setBlock(-25,12,8,"plains:stone",definition);});
             rejects([&]{map.setBlock(8,12,8,"missing:block",definition);});
-            const auto world=storage.create("Authored","first","plains:shardbound",definition,versions);
+            const auto world=storage.create("Authored","plains:shardbound",definition,versions);
             check(storage.read(world.id).definition.maps.at("plains:shardbound")->json()==authored.finiteMap()->json(),"Authored map snapshot was not preserved");
             const auto editedMap=FiniteMap::read(file,definition);
             check(editedMap.biome(32,8)=="plains:grove","Authored biome lost on disk");
@@ -190,24 +190,35 @@ int main() {
             check(!std::filesystem::exists(invalidPackage),"Invalid map package was published");
             rejects([&]{exportMapPackage(edited,authoredMods,authoredMods/"nested",validator);});
         }
-        auto record=storage.create("Planicie de teste","test-seed","plains:gentle",definition,versions);
-        auto second=storage.create("Planicie de teste","","plains:gentle",definition,versions);
-        check(record.id!=second.id && !second.seed.empty() && storage.list().size()==3,"World identity/random seed broken");
-        check(storage.read(record.id).definition.json()==definition.json(),"World generator snapshot lost");
-        rejects([&]{(void)storage.read("../outside");});rejects([&]{(void)storage.create("   ","seed","plains:gentle",definition,versions);});
+        auto record=storage.create("Planicie de teste","plains:shardbound",definition,versions);
+        auto second=storage.create("Planicie de teste","plains:shardbound",definition,versions);
+        check(record.id!=second.id && storage.list().size()==3,"World identity broken");
+        check(storage.read(record.id).definition.json()==second.definition.json(),"The same map produced different world snapshots");
+        const auto worldFile=storage.directory(second.id)/"world.json";
+        auto metadata=nlohmann::json::parse(std::ifstream(worldFile));
+        check(metadata.at("version")==2 && metadata.at("map")==second.mapId &&
+            !metadata.contains("generator") && !metadata.contains("seed"),"Save retained legacy terrain fields");
+        metadata["version"]=1;metadata["generator"]=metadata.at("map");metadata.erase("map");metadata["seed"]="old";
+        writeJsonAtomic(worldFile,metadata);
+        const auto old=storage.read(second.id);
+        check(old.mapId==second.mapId && old.definition.json()==second.definition.json(),"Old map save did not reopen");
+        storage.update(old);
+        check(!nlohmann::json::parse(std::ifstream(worldFile)).contains("seed"),"Old map metadata did not migrate");
+        rejects([&]{(void)storage.read("../outside");});
+        rejects([&]{(void)storage.create("   ","plains:shardbound",definition,versions);});
+        rejects([&]{(void)storage.create("Procedural only","plains:gentle",definition,versions);});
         auto settingsFile=testRoot/"settings.json";GameSettings settings;settings.volume=.3f;settings.scale=.5f;settings.viewDistance=5;settings.vsync=false;settings.save(settingsFile);
         const auto restoredSettings=GameSettings::load(settingsFile);check(restoredSettings.volume==.3f && restoredSettings.viewDistance==5 && !restoredSettings.vsync,"Settings persistence failed");
         renderer.configure({false,.5f});check(renderer.renderWidth()==640 && renderer.renderHeight()==360,"Render scale setting has no effect");renderer.configure({false,1});
-        auto proceduralOnly=definition;proceduralOnly.maps.clear();
-        InputSystem menuInput;FrontEnd menu(renderer,window,menuInput,testRoot/"menu",proceduralOnly,versions);
+        InputSystem menuInput;FrontEnd menu(renderer,window,menuInput,testRoot/"menu",definition,versions);
         bool started=false;int saves=0;WorldRecord created;
         menu.startWorld=[&](const WorldRecord& r,bool resume){check(!resume,"New world unexpectedly resumes");created=r;started=true;};menu.saveWorld=[&]{++saves;};
         menu.update();check(menu.screen()==FrontEnd::Screen::Title,"First screen is not the title");renderer.setCanvasOverlay(true);renderer.render(Camera{},std::vector<RenderItem>{},menu.texture());capture(renderer,"user/procedural-preview/title.ppm");
         auto click=[&](int x,int y) { menuInput.beginFrame();Event e;e.type=EventType::MouseMove;e.x=float(x);e.y=float(y);menuInput.process(e);e.type=EventType::MouseDown;e.mouse=MouseButton::Left;menuInput.process(e);menu.update();e.type=EventType::MouseUp;menuInput.process(e);menuInput.beginFrame();menu.update(); };
         click(150,300);check(menu.screen()==FrontEnd::Screen::Worlds,"Play did not open world list");click(150,570);check(menu.screen()==FrontEnd::Screen::Create,"World creation screen missing");
         Event e;e.type=EventType::TextInput;e.text="Mundo á";menu.event(e);e.type=EventType::KeyDown;e.key=Key::Backspace;menu.event(e);e.type=EventType::TextInput;e.text="ç";menu.event(e);
-        e.type=EventType::KeyDown;e.key=Key::Tab;menu.event(e);e.type=EventType::TextInput;e.text="seed-123";menu.event(e);menu.update();renderer.render(Camera{},std::vector<RenderItem>{},menu.texture());capture(renderer,"user/procedural-preview/create.ppm");
-        click(150,570);check(started && created.name=="Mundo ç" && created.seed=="seed-123" && menu.playing(),"Name/seed/UTF-8 creation flow failed");
+        menu.update();renderer.render(Camera{},std::vector<RenderItem>{},menu.texture());capture(renderer,"user/procedural-preview/create.ppm");
+        click(150,570);check(started && created.name=="Mundo ç" && created.mapId=="plains:shardbound" && menu.playing(),"Named map creation flow failed");
         e.type=EventType::KeyDown;e.key=Key::Escape;menu.event(e);menu.update();click(150,410);check(menu.screen()==FrontEnd::Screen::Settings,"Pause settings missing");
         menu.applySettings=[&](const GameSettings& s){renderer.configure({s.vsync,s.scale});};click(700,305);check(renderer.renderWidth()==960,"Settings UI did not apply scale");
         renderer.render(Camera{},std::vector<RenderItem>{},menu.texture());capture(renderer,"user/procedural-preview/settings.ppm");click(150,570);check(menu.screen()==FrontEnd::Screen::Pause,"Settings lost return screen");click(150,330);check(saves==1,"Save action missing");renderer.configure({false,1});
@@ -259,7 +270,8 @@ int main() {
         World world;PhysicsSystem physics(world);PlayerController player(world,physics);InputSystem input;AudioSystem audio(true);script::Runtime runtime;
         GameUi ui(runtime,renderer);bindRuntimeApi(runtime,world,assets);bindGameplayApi(runtime,world,physics,player,input,audio,assets);StudioRuntime studio(world,renderer,audio);bindStudioApi(runtime,world,studio);
         Components components;SaveGame savesystem(storage.directory(record.id),world,physics,player,assets);ExtensionBridge extensions(runtime,world,components,savesystem);
-        ChunkWorld terrain(renderer,assets,world,physics,player,TerrainGenerator(definition,record.generator,record.seed));bindWorldApi(runtime,terrain,record);
+        auto legacyRecord=record;legacyRecord.mapId="plains:gentle";
+        ChunkWorld terrain(renderer,assets,world,physics,player,TerrainGenerator(definition,legacyRecord.mapId,"test-seed"));bindWorldApi(runtime,terrain,legacyRecord);
         bindWorldPersistence(savesystem,terrain);
         savesystem.setMods(versions);savesystem.includeEntity=[&](EntityId id){return !terrain.transient(id);};savesystem.definitionAvailable=[&](const std::string& id){return runtime.registry().contains("Entities",id);};
         for(const auto& m:report.mods) { std::vector<std::string> dependencies;for(const auto& d:m.dependencies)dependencies.push_back(d.id);runtime.load(m.id,m.root,m.entry,dependencies); }
@@ -480,7 +492,12 @@ equip_instance(hero, "weapon", qa_weapon_instance)
 item_durability(hero, qa_weapon_instance, 0)
 )");
         emit("on_before_save");savesystem.save("checkpoint");
-        const auto imported=importMapFromSave(storage.directory(record.id)/"checkpoint.json",{11,11,4,4});
+        const auto oldWorldFolder=storage.directory(record.id);
+        writeJsonAtomic(oldWorldFolder/"world.json",{{"format","shardbound-world"},{"version",1},
+            {"id",record.id},{"name",record.name},{"generator",legacyRecord.mapId},{"seed","test-seed"},
+            {"definition",definition.json()},{"mods",versions}});
+        rejects([&]{(void)storage.read(record.id);});
+        const auto imported=importMapFromSave(oldWorldFolder/"checkpoint.json",{11,11,4,4});
         check(imported.block(12,editHeight+3,12)=="plains:stone" &&
             imported.block(13,terrain.generator().height(13,13)-1,13).empty(),"Save import lost placed or removed voxels");
         check(imported.block(12,0,12)==terrain.blockAt(12,0,12) && imported.block(10,0,12).empty(),"Save import lost base terrain or escaped the crop");
